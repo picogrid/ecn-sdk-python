@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib
 import gzip
 import hashlib
 import json
@@ -4141,11 +4142,10 @@ def verify_release(source_date_epoch: int) -> None:
             return build_inputs
 
         def public_export_stage() -> Any:
-            from scripts.public_export import (
-                PublicExportError,
-                git_tracked_paths,
-                verify_public_export,
-            )
+            public_export = importlib.import_module("scripts.public_export")
+            PublicExportError = public_export.PublicExportError
+            git_tracked_paths = public_export.git_tracked_paths
+            verify_public_export = public_export.verify_public_export
 
             tracked = git_tracked_paths(REPOSITORY)
             try:
