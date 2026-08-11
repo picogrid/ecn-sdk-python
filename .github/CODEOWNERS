@@ -1,0 +1,35 @@
+# Temporary bootstrap owner. This does not provide independent review when that owner
+# authors a change. Code-owner review is required by the default-branch ruleset as of
+# the 2026-08-10 audit, so this file is live enforcement, not a placeholder: replace
+# it with an independent, write-capable owner or team, then update the live protection
+# and the governance records together.
+* @picogrid/edge
+
+# Public runtime, protocol boundary, and artifact policy.
+/src/ @picogrid/edge
+/scripts/ @picogrid/edge
+/pyproject.toml @picogrid/edge
+/uv.lock @picogrid/edge
+/MANIFEST.in @picogrid/edge
+/LICENSE @picogrid/edge
+/NOTICE.md @picogrid/edge
+
+# Public guide and downstream example applications.
+/docs/ @picogrid/edge
+/examples/ @picogrid/edge
+/operator-app/ @picogrid/edge
+
+# Delivery and dependency automation requires both operational and security review.
+/.github/workflows/ @picogrid/edge
+/.github/CODEOWNERS @picogrid/edge
+/.github/release-please-config.json @picogrid/edge
+/.github/.release-please-manifest.json @picogrid/edge
+
+# Changes to public security and release promises require explicit owner review.
+/CHANGELOG.md @picogrid/edge
+/CONTRIBUTING.md @picogrid/edge
+/SECURITY.md @picogrid/edge
+/SUPPORT.md @picogrid/edge
+/VERIFYING_ARTIFACTS.md @picogrid/edge
+/VERSIONING.md @picogrid/edge
+/VULNERABILITY_REPORTING.md @picogrid/edge

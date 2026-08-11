@@ -1,0 +1,734 @@
+{
+  "schema_version": 1,
+  "examples": [
+    {
+      "id": "check-clock",
+      "source_path": "examples/check_clock.py",
+      "title": "Check clock",
+      "summary": "Measure the configured ECN's time relative to the local process clock.",
+      "workflow": {
+        "module": "picogrid_ecn_client.workflows.diagnostics",
+        "function": "check_clock"
+      },
+      "required_inputs": [
+        {
+          "name": "ECN_CLOCK_SAMPLES",
+          "kind": "env",
+          "type": "integer",
+          "required": false,
+          "default": 3,
+          "description": "Number of valid NTP samples to collect."
+        },
+        {
+          "name": "ECN_CLOCK_TIMEOUT_SECONDS",
+          "kind": "env",
+          "type": "number",
+          "required": false,
+          "default": null,
+          "description": "Optional total measurement timeout in seconds."
+        },
+        {
+          "name": "ECN_CLOCK_MAX_OFFSET_SECONDS",
+          "kind": "env",
+          "type": "number",
+          "required": false,
+          "default": null,
+          "description": "Optional maximum permitted absolute clock offset in seconds."
+        }
+      ],
+      "safety_class": "read",
+      "modes": [
+        "offline-check",
+        "live"
+      ],
+      "documentation": [
+        "docs/how-to/check-clock.md"
+      ],
+      "notebook_eligible": true,
+      "exclusion_reason": null
+    },
+    {
+      "id": "convert-location-to-ecef",
+      "source_path": "examples/convert_location_to_ecef.py",
+      "title": "Convert location to ECEF",
+      "summary": "Convert a WGS-84 location and optional velocity to ECEF coordinates locally.",
+      "workflow": {
+        "module": "picogrid_ecn_client.workflows.geodesy",
+        "function": "convert_location_to_ecef"
+      },
+      "required_inputs": [
+        {
+          "name": "ECN_LATITUDE",
+          "kind": "env",
+          "type": "number",
+          "required": true,
+          "description": "Latitude in decimal degrees."
+        },
+        {
+          "name": "ECN_LONGITUDE",
+          "kind": "env",
+          "type": "number",
+          "required": true,
+          "description": "Longitude in decimal degrees."
+        },
+        {
+          "name": "ECN_ALTITUDE",
+          "kind": "env",
+          "type": "number",
+          "required": false,
+          "default": null,
+          "description": "Optional altitude in meters."
+        },
+        {
+          "name": "ECN_BEARING",
+          "kind": "env",
+          "type": "number",
+          "required": false,
+          "default": null,
+          "description": "Optional bearing in degrees."
+        },
+        {
+          "name": "ECN_ACCURACY",
+          "kind": "env",
+          "type": "number",
+          "required": false,
+          "default": null,
+          "description": "Optional accuracy in meters."
+        },
+        {
+          "name": "ECN_CONFIDENCE",
+          "kind": "env",
+          "type": "number",
+          "required": false,
+          "default": null,
+          "description": "Optional confidence value."
+        },
+        {
+          "name": "ECN_LOCATION_SOURCE",
+          "kind": "env",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Optional location source; defaults to convert-location-to-ecef."
+        }
+      ],
+      "safety_class": "local",
+      "modes": [
+        "offline-check",
+        "live"
+      ],
+      "documentation": [
+        "docs/concepts/locations.md"
+      ],
+      "notebook_eligible": true,
+      "exclusion_reason": null
+    },
+    {
+      "id": "decode-public-protobuf",
+      "source_path": "examples/decode_public_protobuf.py",
+      "title": "Decode public protobuf",
+      "summary": "Decode one public entity-event protobuf file locally.",
+      "workflow": {
+        "module": "picogrid_ecn_client.workflows.protobuf",
+        "function": "decode_public_protobuf"
+      },
+      "required_inputs": [
+        {
+          "name": "ECN_PROTOBUF_PAYLOAD_FILE",
+          "kind": "env",
+          "type": "path",
+          "required": true,
+          "description": "Path to the protobuf payload file."
+        },
+        {
+          "name": "ECN_INTEGRATION_NAME",
+          "kind": "env",
+          "type": "string",
+          "required": true,
+          "description": "Topic-derived integration name."
+        },
+        {
+          "name": "ECN_ENTITY_CATEGORY",
+          "kind": "env",
+          "type": "enum",
+          "required": true,
+          "description": "Topic-derived entity category."
+        },
+        {
+          "name": "ECN_MAXIMUM_PAYLOAD_SIZE",
+          "kind": "env",
+          "type": "integer",
+          "required": false,
+          "default": 1048576,
+          "description": "Maximum accepted payload size in bytes."
+        }
+      ],
+      "safety_class": "local",
+      "modes": [
+        "offline-check",
+        "live"
+      ],
+      "documentation": [
+        "docs/how-to/protobuf-decode.md"
+      ],
+      "notebook_eligible": true,
+      "exclusion_reason": null
+    },
+    {
+      "id": "dispatch-mesh-task",
+      "source_path": "examples/dispatch_mesh_task.py",
+      "title": "Dispatch terminal-addressed task",
+      "summary": "Dispatch one typed request through an explicit deployment-provided target terminal route.",
+      "workflow": {
+        "module": "picogrid_ecn_client.workflows.tasks",
+        "function": "dispatch_mesh_task"
+      },
+      "required_inputs": [
+        {
+          "name": "ECN_TERMINAL_ID",
+          "kind": "env",
+          "type": "uuid",
+          "required": true,
+          "description": "Canonical source terminal UUID configured on the client."
+        },
+        {
+          "name": "ECN_TARGET_TERMINAL_ID",
+          "kind": "env",
+          "type": "uuid",
+          "required": true,
+          "description": "Canonical target terminal UUID for the routed request."
+        },
+        {
+          "name": "ECN_TARGET_ENTITY_ID",
+          "kind": "env",
+          "type": "uuid",
+          "required": true,
+          "description": "Canonical target entity UUID."
+        },
+        {
+          "name": "ECN_TARGET_INTEGRATION",
+          "kind": "env",
+          "type": "string",
+          "required": true,
+          "description": "Exact target integration name."
+        },
+        {
+          "name": "ECN_TASK_COMMAND",
+          "kind": "env",
+          "type": "string",
+          "required": true,
+          "description": "Exact command name."
+        },
+        {
+          "name": "ECN_TASK_MESSAGE",
+          "kind": "env",
+          "type": "string",
+          "required": true,
+          "description": "Echo request message."
+        },
+        {
+          "name": "ECN_TASK_TIMEOUT",
+          "kind": "env",
+          "type": "number",
+          "required": false,
+          "default": null,
+          "description": "Optional response timeout in seconds."
+        },
+        {
+          "name": "ECN_TASK_MODE",
+          "kind": "env",
+          "type": "enum",
+          "required": false,
+          "default": "complete",
+          "description": "Task completion mode."
+        }
+      ],
+      "safety_class": "write",
+      "modes": [
+        "offline-check",
+        "live"
+      ],
+      "documentation": [
+        "docs/how-to/dispatch-mesh-tasks.md"
+      ],
+      "notebook_eligible": true,
+      "exclusion_reason": null
+    },
+    {
+      "id": "dispatch-task",
+      "source_path": "examples/dispatch_task.py",
+      "title": "Dispatch task",
+      "summary": "Dispatch one typed request to an exact integration and entity.",
+      "workflow": {
+        "module": "picogrid_ecn_client.workflows.tasks",
+        "function": "dispatch_task"
+      },
+      "required_inputs": [
+        {
+          "name": "ECN_TARGET_ENTITY_ID",
+          "kind": "env",
+          "type": "uuid",
+          "required": true,
+          "description": "Canonical target entity UUID."
+        },
+        {
+          "name": "ECN_TARGET_INTEGRATION",
+          "kind": "env",
+          "type": "string",
+          "required": true,
+          "description": "Exact target integration name."
+        },
+        {
+          "name": "ECN_TASK_COMMAND",
+          "kind": "env",
+          "type": "string",
+          "required": true,
+          "description": "Exact command name."
+        },
+        {
+          "name": "ECN_TASK_MESSAGE",
+          "kind": "env",
+          "type": "string",
+          "required": true,
+          "description": "Echo request message."
+        },
+        {
+          "name": "ECN_TASK_TIMEOUT",
+          "kind": "env",
+          "type": "number",
+          "required": false,
+          "default": null,
+          "description": "Optional response timeout in seconds."
+        },
+        {
+          "name": "ECN_TASK_MODE",
+          "kind": "env",
+          "type": "enum",
+          "required": false,
+          "default": "complete",
+          "description": "Task completion mode."
+        }
+      ],
+      "safety_class": "write",
+      "modes": [
+        "offline-check",
+        "mock",
+        "live"
+      ],
+      "documentation": [
+        "docs/how-to/dispatch-local-tasks.md"
+      ],
+      "notebook_eligible": true,
+      "exclusion_reason": null
+    },
+    {
+      "id": "get-ecn-location",
+      "source_path": "examples/get_ecn_location.py",
+      "title": "Get ECN location",
+      "summary": "Wait for the next terminal-geolocation MQTT update without claiming query semantics.",
+      "workflow": {
+        "module": "picogrid_ecn_client.workflows.observe",
+        "function": "get_ecn_location"
+      },
+      "required_inputs": [
+        {
+          "name": "ECN_OBSERVATION_TIMEOUT",
+          "kind": "env",
+          "type": "number",
+          "required": false,
+          "default": null,
+          "description": "Optional observation timeout in seconds."
+        }
+      ],
+      "safety_class": "read",
+      "modes": [
+        "offline-check",
+        "mock",
+        "live"
+      ],
+      "documentation": [
+        "docs/how-to/observe-location.md"
+      ],
+      "notebook_eligible": true,
+      "exclusion_reason": null
+    },
+    {
+      "id": "observe-mesh-data",
+      "source_path": "examples/observe_mesh_data.py",
+      "title": "Observe mesh-routed data",
+      "summary": "Collect bounded entity or location events from exact allowed integrations.",
+      "workflow": {
+        "module": "picogrid_ecn_client.workflows.observe",
+        "function": "observe_mesh_data"
+      },
+      "required_inputs": [
+        {
+          "name": "ECN_OBSERVED_INTEGRATIONS",
+          "kind": "env",
+          "type": "string",
+          "required": true,
+          "description": "Comma-separated exact integration allowlist."
+        },
+        {
+          "name": "ECN_MAX_EVENTS",
+          "kind": "env",
+          "type": "integer",
+          "required": false,
+          "default": 0,
+          "description": "Maximum events per consumer; zero runs until interrupted."
+        }
+      ],
+      "safety_class": "read",
+      "modes": [
+        "offline-check",
+        "mock",
+        "live"
+      ],
+      "documentation": [
+        "docs/how-to/observe-mesh-data.md"
+      ],
+      "notebook_eligible": true,
+      "exclusion_reason": null
+    },
+    {
+      "id": "preflight",
+      "source_path": "examples/preflight.py",
+      "title": "Preflight",
+      "summary": "Run read-only ECN connectivity and authorization diagnostics.",
+      "workflow": {
+        "module": "picogrid_ecn_client.workflows.diagnostics",
+        "function": "preflight"
+      },
+      "required_inputs": [],
+      "safety_class": "read",
+      "modes": [
+        "offline-check",
+        "mock",
+        "live"
+      ],
+      "documentation": [
+        "docs/getting-started/installation.md"
+      ],
+      "notebook_eligible": true,
+      "exclusion_reason": null
+    },
+    {
+      "id": "publish-entity",
+      "source_path": "examples/publish_entity.py",
+      "title": "Publish entity",
+      "summary": "Construct and publish one typed public entity.",
+      "workflow": {
+        "module": "picogrid_ecn_client.workflows.publish",
+        "function": "publish_entity"
+      },
+      "required_inputs": [
+        {
+          "name": "ECN_ENTITY_ID",
+          "kind": "env",
+          "type": "uuid",
+          "required": true,
+          "description": "Canonical entity UUID."
+        },
+        {
+          "name": "ECN_ENTITY_CATEGORY",
+          "kind": "env",
+          "type": "enum",
+          "required": true,
+          "description": "Public entity category."
+        },
+        {
+          "name": "ECN_ENTITY_TYPE",
+          "kind": "env",
+          "type": "string",
+          "required": true,
+          "description": "Deployment-defined entity type."
+        },
+        {
+          "name": "ECN_ENTITY_NAME",
+          "kind": "env",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Optional entity name."
+        },
+        {
+          "name": "ECN_DISPLAY_NAME",
+          "kind": "env",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Optional display label."
+        }
+      ],
+      "safety_class": "write",
+      "modes": [
+        "offline-check",
+        "mock",
+        "live"
+      ],
+      "documentation": [
+        "docs/how-to/pli-entities.md"
+      ],
+      "notebook_eligible": true,
+      "exclusion_reason": null
+    },
+    {
+      "id": "publish-location",
+      "source_path": "examples/publish_location.py",
+      "title": "Publish location",
+      "summary": "Construct and publish one typed location for an entity.",
+      "workflow": {
+        "module": "picogrid_ecn_client.workflows.publish",
+        "function": "publish_location"
+      },
+      "required_inputs": [
+        {
+          "name": "ECN_ENTITY_ID",
+          "kind": "env",
+          "type": "uuid",
+          "required": true,
+          "description": "Canonical entity UUID."
+        },
+        {
+          "name": "ECN_LATITUDE",
+          "kind": "env",
+          "type": "number",
+          "required": true,
+          "description": "Latitude in decimal degrees."
+        },
+        {
+          "name": "ECN_LONGITUDE",
+          "kind": "env",
+          "type": "number",
+          "required": true,
+          "description": "Longitude in decimal degrees."
+        },
+        {
+          "name": "ECN_ALTITUDE",
+          "kind": "env",
+          "type": "number",
+          "required": false,
+          "default": null,
+          "description": "Optional altitude in meters."
+        },
+        {
+          "name": "ECN_BEARING",
+          "kind": "env",
+          "type": "number",
+          "required": false,
+          "default": null,
+          "description": "Optional bearing in degrees."
+        },
+        {
+          "name": "ECN_ACCURACY",
+          "kind": "env",
+          "type": "number",
+          "required": false,
+          "default": null,
+          "description": "Optional accuracy in meters."
+        },
+        {
+          "name": "ECN_CONFIDENCE",
+          "kind": "env",
+          "type": "number",
+          "required": false,
+          "default": null,
+          "description": "Optional confidence value."
+        },
+        {
+          "name": "ECN_LOCATION_SOURCE",
+          "kind": "env",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Optional location source; defaults to the configured integration."
+        }
+      ],
+      "safety_class": "write",
+      "modes": [
+        "offline-check",
+        "mock",
+        "live"
+      ],
+      "documentation": [
+        "docs/how-to/pli-entities.md"
+      ],
+      "notebook_eligible": true,
+      "exclusion_reason": null
+    },
+    {
+      "id": "receive-mesh-task",
+      "source_path": "examples/receive_mesh_task.py",
+      "title": "Receive terminal-sourced task",
+      "summary": "Register an exact typed handler for a deployment-provided terminal-addressed task route.",
+      "workflow": {
+        "module": "picogrid_ecn_client.workflows.tasks",
+        "function": "receive_mesh_task"
+      },
+      "required_inputs": [
+        {
+          "name": "ECN_TERMINAL_ID",
+          "kind": "env",
+          "type": "uuid",
+          "required": true,
+          "description": "Canonical local terminal UUID configured for routed task delivery."
+        },
+        {
+          "name": "ECN_ENTITY_ID",
+          "kind": "env",
+          "type": "uuid",
+          "required": true,
+          "description": "Canonical entity UUID handled by this integration."
+        },
+        {
+          "name": "ECN_TASK_COMMAND",
+          "kind": "env",
+          "type": "string",
+          "required": true,
+          "description": "Exact command name to handle."
+        },
+        {
+          "name": "ECN_TASK_LIMIT",
+          "kind": "env",
+          "type": "integer",
+          "required": false,
+          "default": 0,
+          "description": "Requests to handle before cleanup; zero runs until interrupted."
+        }
+      ],
+      "safety_class": "task-receive",
+      "modes": [
+        "offline-check",
+        "live"
+      ],
+      "documentation": [
+        "docs/how-to/dispatch-mesh-tasks.md"
+      ],
+      "notebook_eligible": true,
+      "exclusion_reason": null
+    },
+    {
+      "id": "receive-task",
+      "source_path": "examples/receive_task.py",
+      "title": "Receive task",
+      "summary": "Register an exact typed task handler and clean it up after a bounded number of requests.",
+      "workflow": {
+        "module": "picogrid_ecn_client.workflows.tasks",
+        "function": "receive_task"
+      },
+      "required_inputs": [
+        {
+          "name": "ECN_ENTITY_ID",
+          "kind": "env",
+          "type": "uuid",
+          "required": true,
+          "description": "Canonical entity UUID handled by this integration."
+        },
+        {
+          "name": "ECN_TASK_COMMAND",
+          "kind": "env",
+          "type": "string",
+          "required": true,
+          "description": "Exact command name to handle."
+        },
+        {
+          "name": "ECN_TASK_LIMIT",
+          "kind": "env",
+          "type": "integer",
+          "required": false,
+          "default": 0,
+          "description": "Requests to handle before cleanup; zero runs until interrupted."
+        }
+      ],
+      "safety_class": "task-receive",
+      "modes": [
+        "offline-check",
+        "mock",
+        "live"
+      ],
+      "documentation": [
+        "docs/how-to/receive-local-tasks.md"
+      ],
+      "notebook_eligible": true,
+      "exclusion_reason": null
+    },
+    {
+      "id": "watch-detections",
+      "source_path": "examples/watch_detections.py",
+      "title": "Watch detections",
+      "summary": "Collect a bounded stream of authorized detection events.",
+      "workflow": {
+        "module": "picogrid_ecn_client.workflows.observe",
+        "function": "watch_detections"
+      },
+      "required_inputs": [
+        {
+          "name": "ECN_OBSERVED_INTEGRATION",
+          "kind": "env",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Exact integration name to observe; all authorized integrations when omitted."
+        },
+        {
+          "name": "ECN_MAX_EVENTS",
+          "kind": "env",
+          "type": "integer",
+          "required": false,
+          "default": 0,
+          "description": "Maximum events to collect; zero runs until interrupted."
+        }
+      ],
+      "safety_class": "read",
+      "modes": [
+        "offline-check",
+        "mock",
+        "live"
+      ],
+      "documentation": [
+        "docs/how-to/tracks-detections.md"
+      ],
+      "notebook_eligible": true,
+      "exclusion_reason": null
+    },
+    {
+      "id": "watch-tracks",
+      "source_path": "examples/watch_tracks.py",
+      "title": "Watch tracks",
+      "summary": "Collect a bounded stream of authorized track events.",
+      "workflow": {
+        "module": "picogrid_ecn_client.workflows.observe",
+        "function": "watch_tracks"
+      },
+      "required_inputs": [
+        {
+          "name": "ECN_OBSERVED_INTEGRATION",
+          "kind": "env",
+          "type": "string",
+          "required": false,
+          "default": null,
+          "description": "Exact integration name to observe; all authorized integrations when omitted."
+        },
+        {
+          "name": "ECN_MAX_EVENTS",
+          "kind": "env",
+          "type": "integer",
+          "required": false,
+          "default": 0,
+          "description": "Maximum events to collect; zero runs until interrupted."
+        }
+      ],
+      "safety_class": "read",
+      "modes": [
+        "offline-check",
+        "mock",
+        "live"
+      ],
+      "documentation": [
+        "docs/how-to/tracks-detections.md"
+      ],
+      "notebook_eligible": true,
+      "exclusion_reason": null
+    }
+  ]
+}

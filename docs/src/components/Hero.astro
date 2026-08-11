@@ -1,0 +1,160 @@
+---
+/**
+ * The overview's hero, and the four outcomes a reader can start from.
+ *
+ * The guide's front page asks one question — what are you trying to build — and
+ * the answer used to be a table further down the page, below three paragraphs
+ * of context. It is the page's real navigation, so it sits directly under the
+ * hero's single call to action, where a reader looking for their own case finds
+ * it before the prose that explains the boundary they are working inside.
+ *
+ * Each card names the outcome, says what the SDK gives it, and links the
+ * quickstart that gets there. The link carries the quickstart's own name, so it
+ * is the same name the sidebar and the trail use for that page.
+ *
+ * The theme's own hero is imported directly rather than through the override
+ * indirection, which would resolve back to this one.
+ */
+import { Icon } from '@astrojs/starlight/components';
+import Hero from '@astrojs/starlight/components/Hero.astro';
+
+interface Outcome {
+  title: string;
+  note: string;
+  action: string;
+  href: string;
+}
+
+const base = import.meta.env.BASE_URL;
+const outcomes: Outcome[] = [
+  {
+    title: 'Observe tracks, detections, or locations',
+    note: 'Bounded entity and location watchers that subscribe only to the topic family you ask for.',
+    action: 'Observe ECN data',
+    href: `${base}quickstarts/observe-data/`,
+  },
+  {
+    title: 'Connect a sensor',
+    note: 'Entity and location publication, including Position Location Information.',
+    action: 'Build a sensor publisher',
+    href: `${base}quickstarts/sensor-publisher/`,
+  },
+  {
+    title: 'Connect an effector',
+    note: 'Exact local or configured terminal task registration, with typed task payloads.',
+    action: 'Build an effector task handler',
+    href: `${base}quickstarts/effector-handler/`,
+  },
+  {
+    title: 'Run a tactical display',
+    note: 'A read-only map of live entities and tracks, with explicit task controls.',
+    action: 'Run the operator view',
+    href: `${base}quickstarts/operator-view/`,
+  },
+];
+
+const { siteTitleHref } = Astro.locals.starlightRoute;
+const onFrontPage = Astro.url.pathname === siteTitleHref;
+---
+
+<Hero />
+{
+  onFrontPage && (
+    <ul class="outcomes">
+      {outcomes.map((outcome) => (
+        <li class="outcome">
+          <p class="outcome-title">{outcome.title}</p>
+          <p class="outcome-note">{outcome.note}</p>
+          <a class="outcome-action" href={outcome.href}>
+            {outcome.action}
+            <Icon name="right-arrow" />
+          </a>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+<style>
+  /*
+   * Two by two in the content column, one column where that no longer fits.
+   * Four across would leave each outcome a phrase per line beside the sidebar
+   * and the table of contents.
+   */
+  .outcomes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+    gap: 1rem;
+    margin: 2rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .outcome {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1.25rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: var(--pg-radius);
+    background: var(--sl-color-black);
+  }
+
+  .outcome:hover {
+    border-color: var(--sl-color-gray-3);
+  }
+
+  .outcome-title {
+    margin: 0;
+    color: var(--sl-color-white);
+    font-size: var(--sl-text-base);
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  .outcome-note {
+    margin: 0 0 0.25rem;
+    color: var(--sl-color-gray-2);
+    font-size: var(--sl-text-sm);
+    line-height: 1.5;
+  }
+
+  /*
+   * The card is one target: the link is the last line, and it covers the card
+   * so the whole of it is clickable while the accessible name stays the page it
+   * leads to rather than everything written on the card.
+   */
+  .outcome-action {
+    display: flex;
+    gap: 0.375rem;
+    align-items: center;
+    margin-block-start: auto;
+    color: var(--sl-color-text-accent);
+    font-size: var(--sl-text-sm);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .outcome-action::after {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    content: '';
+  }
+
+  .outcome:hover .outcome-action {
+    text-decoration: underline;
+  }
+
+  @media print {
+    .outcome {
+      background: none;
+    }
+
+    .outcome-title,
+    .outcome-note {
+      color: var(--pg-foreground);
+    }
+  }
+</style>

@@ -1,0 +1,12 @@
+{
+  "id": "10000000-0000-4000-8000-000000000002",
+  "integration_name": "synthetic-vendor",
+  "recorded_at": "2026-01-01T12:00:01Z",
+  "category": "DETECTION",
+  "type_": "synthetic-detection",
+  "status": "active",
+  "affiliation": "UNKNOWN",
+  "metadata": {
+    "confidence_label": "test-only"
+  }
+}

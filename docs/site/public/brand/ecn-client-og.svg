@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title description">
+  <title id="title">Picogrid ECN SDK</title>
+  <desc id="description">Observe ECN data, publish sensor data, and dispatch approved tasks</desc>
+  <defs>
+    <pattern id="grid" width="200" height="105" patternUnits="userSpaceOnUse">
+      <path d="M200 0H0V105" fill="none" stroke="#232323" />
+    </pattern>
+  </defs>
+  <rect width="1200" height="630" fill="#181818" />
+  <rect width="1200" height="630" fill="url(#grid)" />
+  <rect x="70" y="65" width="1060" height="500" rx="28" fill="#181818" stroke="#1a6b76" stroke-width="4" />
+  <image href="picogrid-wordmark-dark.png" x="112" y="130" width="660" height="62" />
+  <text x="112" y="340" fill="#fafafa" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="68" font-weight="700" letter-spacing="2">ECN SDK</text>
+  <text x="115" y="415" fill="#27c5e5" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="24" letter-spacing="1">Observe data · Publish sensor data · Dispatch approved tasks</text>
+  <rect x="70" y="539" width="1060" height="26" rx="0 0 26 26" fill="#27c5e5" />
+</svg>

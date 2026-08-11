@@ -1,0 +1,87 @@
+{
+  "packages": {
+    ".": {
+      "changelog-path": "CHANGELOG.md",
+      "draft": true,
+      "include-component-in-tag": false,
+      "include-v-in-tag": true,
+      "initial-version": "0.1.0",
+      "package-name": "picogrid-ecn-client",
+      "release-type": "python",
+      "extra-files": [
+        {
+          "type": "generic",
+          "path": "README.md"
+        },
+        {
+          "type": "generic",
+          "path": "docs/getting-started/installation.md"
+        },
+        {
+          "type": "generic",
+          "path": "docs/shipped-tooling.md"
+        },
+        {
+          "type": "generic",
+          "path": "VERIFYING_ARTIFACTS.md"
+        },
+        {
+          "type": "generic",
+          "path": "VERSIONING.md"
+        },
+        {
+          "type": "generic",
+          "path": "operator-app/pyproject.toml"
+        },
+        {
+          "type": "generic",
+          "path": "operator-app/README.md"
+        },
+        {
+          "type": "json",
+          "path": "operator-app/package.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "generic",
+          "path": "src/picogrid_ecn_client/__init__.py"
+        },
+        {
+          "type": "json",
+          "path": "docs/package.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "operator-app/package-lock.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "docs/package-lock.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "operator-app/package-lock.json",
+          "jsonpath": "$.packages[\"\"].version"
+        },
+        {
+          "type": "json",
+          "path": "docs/package-lock.json",
+          "jsonpath": "$.packages[''].version"
+        },
+        {
+          "type": "json",
+          "path": "scripts/release-policy.json",
+          "jsonpath": "$.project_version"
+        },
+        {
+          "type": "toml",
+          "path": "uv.lock",
+          "jsonpath": "$.package[?(@.name=='picogrid-ecn-client')].version"
+        }
+      ]
+    }
+  }
+}

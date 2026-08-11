@@ -1,0 +1,9 @@
+{
+  "status": "SUCCESS",
+  "source": "local",
+  "task_id": "synthetic-task-001",
+  "payload": {
+    "doubled": 42
+  },
+  "_response_type": "full"
+}

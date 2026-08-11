@@ -1,0 +1,18 @@
+---
+/**
+ * Withdraw the theme's `On this page` panel below the two-column breakpoint.
+ *
+ * Above that breakpoint the outline is a column of its own and costs a reader
+ * nothing. Below it, the theme collapses the outline into a disclosure that sits
+ * between the page's title and its first paragraph, so every page opened on a
+ * phone begins with a control rather than with the page. The trail published
+ * above the title already says where the reader is and how they arrived, which
+ * is the question the panel was answering at that width; the outline itself is
+ * reachable by reading the page it summarises.
+ *
+ * Rendering nothing rather than hiding it in CSS keeps the markup, the outline's
+ * script, and the disclosure out of the page entirely instead of shipping them
+ * to the readers least able to spend them. The outline in the right column is
+ * untouched, so `tableOfContents` still governs which headings it lists.
+ */
+---

@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Bounded public MQTT v5 entity and location operator view"
+    />
+    <meta name="theme-color" content="#181818" />
+    <meta property="og:title" content="Picogrid ECN Operator View" />
+    <meta property="og:description" content="Bounded MQTT v5 entity and location operations" />
+    <meta property="og:image" content="/brand/ecn-client-og.png" />
+    <link rel="icon" href="/brand/picogrid-app-icon-192.png" />
+    <link rel="apple-touch-icon" href="/brand/picogrid-app-icon-192.png" />
+    <title>Picogrid ECN Operator View</title>
+  </head>
+  <body>
+    <div id="app">
+      <header class="app-header">
+        <div class="brand-lockup">
+          <span class="brand-wordmark" aria-hidden="true">
+            <img class="wordmark-light" src="/brand/picogrid-wordmark-light.png" alt="" />
+            <img class="wordmark-dark" src="/brand/picogrid-wordmark-dark.png" alt="" />
+          </span>
+          <div class="brand-product">
+            <p class="eyebrow">PICOGRID ECN SDK EXAMPLE</p>
+            <h1>ECN Operator View</h1>
+          </div>
+        </div>
+        <div class="connection-block">
+          <button id="theme-toggle" class="icon-button" type="button" aria-label="Use light theme">
+            <span aria-hidden="true">◐</span>
+          </button>
+          <span id="connection-pill" class="pill disconnected" data-testid="connection-state">
+            connecting
+          </span>
+          <button id="reconnect-view" class="button secondary" type="button">
+            Reconnect view
+          </button>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <aside class="filters panel" aria-label="Display filters">
+          <h2>Display</h2>
+          <p id="mode-label" class="muted">Loading configuration…</p>
+          <fieldset>
+            <legend>Category</legend>
+            <div id="category-filters"></div>
+          </fieldset>
+          <fieldset>
+            <legend>Affiliation</legend>
+            <div id="affiliation-filters"></div>
+          </fieldset>
+          <div class="metric-grid">
+            <div><span id="visible-count">0</span><small>visible</small></div>
+            <div><span id="stale-count">0</span><small>stale</small></div>
+            <div><span id="location-only-count">0</span><small>location only</small></div>
+          </div>
+        </aside>
+
+        <section class="map-panel panel" aria-label="Observed entity map">
+          <div id="map" data-testid="operator-map"></div>
+          <div class="map-status" aria-live="polite">
+            <span id="basemap-status">Offline graticule</span>
+            <span id="map-coordinate">34.0500° N · 118.2400° W</span>
+          </div>
+          <div class="map-legends">
+            <div class="map-legend" aria-label="Category legend">
+              <strong>Category</strong>
+              <div id="category-legend-items" class="legend-items"></div>
+            </div>
+            <div class="map-legend" aria-label="Affiliation legend">
+              <strong>Affiliation</strong>
+              <div id="affiliation-legend-items" class="legend-items"></div>
+            </div>
+          </div>
+          <div class="map-attribution" aria-label="Map attribution">
+            <span id="basemap-attribution">Offline graticule · WGS 84</span>
+            <span aria-hidden="true">·</span>
+            <a href="https://leafletjs.com" rel="noreferrer">Leaflet</a>
+          </div>
+        </section>
+
+        <aside class="detail panel" aria-label="Selected entity" tabindex="0">
+          <h2>Selection</h2>
+          <div id="empty-selection" class="empty">Select a marker or observed item.</div>
+          <div id="selection" hidden data-testid="selection-panel">
+            <h3 id="selection-name"></h3>
+            <dl id="selection-fields"></dl>
+            <details>
+              <summary>Bounded metadata</summary>
+              <pre id="selection-metadata"></pre>
+            </details>
+          </div>
+
+          <section class="task-panel" aria-labelledby="task-heading">
+            <h2 id="task-heading">Task action</h2>
+            <p id="task-policy" class="muted"></p>
+            <label class="arm-control">
+              <input id="arm-tasking" type="checkbox" />
+              Arm task controls for this browser session
+            </label>
+            <label>
+              Command
+              <select id="task-command" disabled></select>
+            </label>
+            <div id="task-fields"></div>
+            <button id="prepare-task" class="button danger" type="button" disabled>
+              Prepare task
+            </button>
+            <output id="task-outcome" data-testid="task-outcome"></output>
+            <ol id="task-outcomes" data-testid="task-outcomes" aria-label="Recent task outcomes"></ol>
+          </section>
+        </aside>
+
+        <section class="observed panel" aria-labelledby="observed-heading">
+          <h2 id="observed-heading">Observed state</h2>
+          <div id="entity-list" class="entity-list" data-testid="entity-list"></div>
+        </section>
+
+        <section class="diagnostics panel" aria-labelledby="diagnostics-heading" tabindex="0">
+          <h2 id="diagnostics-heading">Diagnostics</h2>
+          <ol id="diagnostic-list" data-testid="diagnostics"></ol>
+        </section>
+      </main>
+    </div>
+
+    <dialog
+      id="confirm-dialog"
+      data-testid="confirm-dialog"
+      data-state="review"
+      aria-labelledby="confirm-dialog-title"
+      aria-describedby="confirm-warning confirm-invalidation"
+    >
+      <form method="dialog">
+        <p class="eyebrow">SECOND PHASE</p>
+        <h2 id="confirm-dialog-title">Confirm one MQTT task dispatch</h2>
+        <div id="confirm-summary"></div>
+        <pre id="confirm-payload"></pre>
+        <p id="confirm-warning" class="warning"></p>
+        <p id="confirm-invalidation" class="warning" data-testid="confirm-invalidation"></p>
+        <label class="confirm-check">
+          <input id="confirm-check" type="checkbox" />
+          I reviewed the target, command, and complete payload.
+        </label>
+        <div class="dialog-actions">
+          <button id="recover-view" class="button" type="button" disabled>
+            Reconnect the operator view
+          </button>
+          <button id="cancel-confirm" class="button secondary" value="cancel">Cancel</button>
+          <button id="confirm-task" class="button danger" value="default" disabled>
+            Confirm and send once
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

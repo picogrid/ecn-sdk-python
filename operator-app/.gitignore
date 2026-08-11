@@ -1,0 +1,15 @@
+.env
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.venv/
+__pycache__/
+backend/operator_app.egg-info/
+backend/picogrid_ecn_operator_app.egg-info/
+build/
+frontend/dist/
+node_modules/
+playwright-report/
+test-results/
+wheelhouse/
+*.pyc

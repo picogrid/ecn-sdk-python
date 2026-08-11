@@ -1,0 +1,32 @@
+{
+  "name": "picogrid-ecn-operator-app",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MPL-2.0",
+  "type": "module",
+  "packageManager": "npm@11.17.0",
+  "engines": {
+    "node": "24.19.0",
+    "npm": "11.17.0"
+  },
+  "scripts": {
+    "build": "tsc --noEmit && vite build --config frontend/vite.config.ts",
+    "dev": "vite --config frontend/vite.config.ts --host 127.0.0.1 --port 4173",
+    "pretest:e2e": "npm run build",
+    "test:e2e": "playwright test --config tests/playwright.config.ts",
+    "test:e2e:built": "playwright test --config tests/playwright.config.ts",
+    "test:e2e:install": "playwright install chromium",
+    "screenshot:generate": "playwright test --config tests/screenshot.config.ts"
+  },
+  "dependencies": {
+    "leaflet": "1.9.4"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.12.1",
+    "@playwright/test": "1.62.1",
+    "@types/leaflet": "1.9.22",
+    "@types/node": "26.1.2",
+    "typescript": "7.0.2",
+    "vite": "8.2.1"
+  }
+}

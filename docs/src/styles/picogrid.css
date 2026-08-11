@@ -1,0 +1,997 @@
+/* Copyright (c) Picogrid, Inc. */
+/* SPDX-License-Identifier: MPL-2.0 */
+
+/*
+ * Public documentation theme adapted from static Picogrid design tokens in
+ * picogrid/web packages/ui/src/styles.css at commit
+ * 711e3a3f7d9c5ed233425a6c218929e14697d80e. See NOTICE.md.
+ */
+
+:root {
+  color-scheme: light;
+  --pg-background: oklch(0.9851 0 89.88);
+  --pg-foreground: oklch(0.209 0 89.88);
+  --pg-muted: oklch(0.9461 0 89.88);
+  --pg-muted-foreground: oklch(0.5521 0 89.88);
+  --pg-border: oklch(0.8619 0 89.88);
+  --pg-accent: oklch(0.4863 0.0756 208.51);
+  --pg-accent-bright: oklch(0.7609 0.1283 215.93);
+  --pg-confirm: #3455b8;
+  --pg-confirm-foreground: #fafafa;
+  --pg-positive: oklch(0.7034 0.176 150.1);
+  --pg-positive-text: #1b5e20;
+  --pg-warning: oklch(0.8171 0.151 76.4);
+  --pg-warning-text: #66491c;
+  --pg-danger: oklch(0.631 0.207 29.2);
+  --pg-danger-text: #b71c1c;
+  --pg-radius: 0.625rem;
+
+  /*
+   * What a reader is looking at is marked by raising the surface under it, not
+   * by filling it with the accent. The accent stays with the things a reader
+   * can act on — links and the page's one action — so a marked place and a
+   * live control do not read as the same thing.
+   */
+  --pg-highlight: var(--pg-muted);
+  --pg-highlight-foreground: var(--pg-foreground);
+
+  /*
+   * The navigation band is the surface this guide shares with the Legion API
+   * documentation, so it stays the same dark Picogrid field in either theme
+   * rather than following the page. The colour matches the mean tone of the
+   * band artwork and is what a reader sees before that image loads.
+   */
+  --pg-nav-surface: oklch(0.354 0.0397 198.01);
+  --pg-nav-foreground: oklch(0.9851 0 89.88);
+  /*
+   * The artwork is 2256x382. The minimum is set by the taller of the band's two
+   * heights — the 6.4375rem mobile band, which is also the one drawn at the
+   * narrow widths where this minimum is what applies — and preserving the
+   * artwork's aspect ratio over that needs 38.25rem. The 96rem cap is 1536 CSS
+   * pixels at the default root size — about 68% of the source width — so the
+   * dot field stays dense rather than being enlarged with every wider viewport.
+   * Between those bounds the artwork follows the viewport; beyond the cap its
+   * centred slice holds that density.
+   */
+  --pg-nav-texture-max-width: 96rem;
+  --pg-nav-texture-width: clamp(38.25rem, 100%, var(--pg-nav-texture-max-width));
+  /*
+   * Past that width the band is wider than the artwork, and what shows is not
+   * a change of colour — the surface is the artwork's own mean tone — but the
+   * dot field stopping on a line. Its ends are faded out instead, over a
+   * distance that opens with the space the band has spare, so there is no
+   * width at which the artwork's edges appear as a reader resizes.
+   */
+  --pg-nav-texture-fade: clamp(
+    0rem,
+    (100vw - var(--pg-nav-texture-max-width)) / 2,
+    10rem
+  );
+  --pg-nav-muted: color-mix(
+    in oklch,
+    var(--pg-nav-foreground) 88%,
+    transparent
+  );
+  --pg-nav-hairline: color-mix(
+    in oklch,
+    var(--pg-nav-foreground) 24%,
+    transparent
+  );
+  /*
+   * The band closes on a shadow rather than a highlight. Drawing this edge in
+   * the foreground colour put a light line between a dark band and a light
+   * page, which read as part of neither; darkening it instead lets the band
+   * end in itself, and it still separates from the dark page in that theme.
+   */
+  --pg-nav-main: color-mix(in oklch, black 45%, transparent);
+  --pg-nav-control: color-mix(in oklch, black 28%, transparent);
+
+  /*
+   * One curve and one length for everything the flyout does, so the pane, the
+   * entries inside it, and the button that opened it are all moving together.
+   * It settles rather than arriving, which is what keeps a surface this size
+   * from reading as a jump, and it is short enough that a reader who knows
+   * where they are going is not waiting the menu out. The reduced-motion rule
+   * at the end of this file removes all of it for anyone who asks it to.
+   */
+  --pg-flyout-duration: 240ms;
+  --pg-flyout-ease: cubic-bezier(0.32, 0.72, 0, 1);
+
+  --sl-color-accent-low: oklch(0.929 0.036 210);
+  --sl-color-accent: oklch(0.4863 0.0756 208.51);
+  --sl-color-accent-high: oklch(0.302 0.048 208.51);
+  --sl-color-bg: var(--pg-background);
+  --sl-color-bg-nav: color-mix(in oklch, var(--pg-background) 94%, transparent);
+  /* The guide's tree stands on the page's own surface, divided by the hairline. */
+  --sl-color-bg-sidebar: var(--pg-background);
+  --sl-color-hairline: var(--pg-border);
+  --sl-color-hairline-light: var(--pg-border);
+  --sl-color-text: var(--pg-foreground);
+  --sl-color-text-accent: var(--sl-color-accent);
+  /*
+   * Prose is set in whatever the reader's device sets prose in. It is the face
+   * they already read at that size, it is already on the machine, and a guide
+   * that is mostly running text has nothing to gain from shipping a second
+   * one. Naming a webfont first here and not serving it only meant the page
+   * changed typeface depending on what a reader happened to have installed.
+   */
+  --sl-font:
+    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  /*
+   * The mono face is the one thing this guide does ship, because it is doing
+   * more than setting code: it carries the headings and the site title, so it
+   * is the voice of the page and cannot be left to whatever each device
+   * happens to call monospace. The system stack stays behind it, in the order
+   * it was already in, for the moment before it loads and for anyone who
+   * blocks it.
+   */
+  --sl-font-mono:
+    "Chivo Mono Variable", "SF Mono", ui-monospace, SFMono-Regular,
+    "Cascadia Code", "Source Code Pro", Menlo, Consolas, "DejaVu Sans Mono",
+    monospace;
+  --sl-content-width: 52rem;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --pg-background: oklch(0.209 0 89.88);
+  --pg-foreground: oklch(0.9851 0 89.88);
+  --pg-muted: oklch(0.292 0 89.88);
+  --pg-muted-foreground: oklch(0.7058 0 89.88);
+  --pg-border: oklch(0.363 0 89.88);
+  --pg-accent: oklch(0.7609 0.1283 215.93);
+  --pg-confirm: #7b9aeb;
+  --pg-confirm-foreground: #111d5c;
+  --pg-positive-text: #92cf96;
+  --pg-warning-text: #ffc870;
+  --pg-danger-text: #f88f86;
+
+  --sl-color-accent-low: oklch(0.326 0.047 208.51);
+  --sl-color-accent: oklch(0.7609 0.1283 215.93);
+  --sl-color-accent-high: oklch(0.899 0.059 211);
+  --sl-color-bg: var(--pg-background);
+  --sl-color-bg-nav: color-mix(in oklch, var(--pg-background) 94%, transparent);
+  --sl-color-bg-sidebar: var(--pg-background);
+  --sl-color-hairline: var(--pg-border);
+  --sl-color-hairline-light: var(--pg-border);
+  --sl-color-text: var(--pg-foreground);
+}
+
+/*
+ * Layout shell matched to Legion’s ReadMe chrome (docs.picogrid.com):
+ *
+ *   — max content width 1440px centered (`.rm-Container`)
+ *   — header surface full-bleed; logo / search / sidebar sit in the shell
+ *   — desktop band 93px = 51 brand + 42 product
+ *   — shell-relative insets: logo ~20px in, search ends ~10px before shell edge
+ *   — sidebar 288px (Legion); outer gutters = (100vw − 1440) / 2 when wide
+ */
+:root {
+  --pg-shell-max: 90rem; /* 1440px */
+  --pg-shell-gutter: max(0px, calc((100vw - var(--pg-shell-max)) / 2));
+  --sl-nav-height: 6.4375rem; /* 103px — Legion mobile / collapsible band */
+  --sl-sidebar-width: 18rem; /* 288px — Legion sidebar */
+  --pg-nav-row-brand: 3.1875rem; /* 51px */
+  --pg-nav-row-product: 2.625rem; /* 42px */
+  --pg-nav-control-size: 2rem; /* 32px — Legion search + version control */
+  --pg-nav-control-radius: 0.375rem; /* 6px */
+  --pg-nav-inset-start: 1.25rem; /* 20px — Legion logo inside shell */
+  --pg-nav-inset-end: 0.625rem; /* 10px — search to shell edge */
+  /* The menu button is fixed over the band, held against the brand row. */
+  --pg-menu-button-inset: calc(
+    var(--sl-nav-pad-y) + (2.25rem - var(--sl-menu-button-size)) / 2
+  );
+}
+
+@media (min-width: 50rem) {
+  :root {
+    /*
+     * Legion's desktop band is 93px, which is what its two rows add up to. The
+     * height is a border box and this band closes on a hairline, so it is asked
+     * for a pixel taller: at 93px the rows are laid out in the 92px left over
+     * and the second one is cut by the edge.
+     */
+    --sl-nav-height: 5.875rem; /* 94px — Legion's 93px of rows, plus the edge */
+    /* Starlight still reads pad-x for a few secondary measurements; keep the
+     * start inset as the public value and override the end on the header. */
+    --sl-nav-pad-x: var(--pg-nav-inset-start);
+    --sl-nav-pad-y: 0;
+  }
+
+  /*
+   * Band surface stays full-bleed (Legion does the same). Content of the band,
+   * the left guide tree, and the main column share one centered 1440 shell so
+   * navigating Legion ↔ ECN keeps the same outer gutters.
+   */
+  header.header {
+    padding-inline-start: calc(
+      var(--pg-shell-gutter) + var(--pg-nav-inset-start)
+    );
+    padding-inline-end: calc(var(--pg-shell-gutter) + var(--pg-nav-inset-end));
+  }
+
+  .sidebar-pane {
+    inset-inline-start: var(--pg-shell-gutter);
+  }
+
+  .main-frame {
+    padding-inline-start: calc(
+      var(--pg-shell-gutter) + var(--sl-content-inline-start, 0rem)
+    );
+    padding-inline-end: var(--pg-shell-gutter);
+  }
+}
+
+/*
+ * Below the flyout breakpoint the band's rows change hands: the menu button and
+ * the page being read on one side of the first row and the colour scheme on the
+ * other, and search in the second, where the version sits above the breakpoint.
+ * The guide's pages, the version, the documentation sets, and the wordmark are
+ * all in the flyout, which is what the menu button opens.
+ *
+ * This is the theme's own breakpoint for turning the sidebar into a drawer, so
+ * the band and the sidebar change together: there is one width at which the
+ * page rearranges rather than a band between two that belongs to neither.
+ */
+@media screen and (max-width: 49.9375rem) {
+  :root {
+    /* Legion mobile row metrics: menu/controls 32px at y=9 in the 51px row,
+     * 20px start inset, 10px end inset. */
+    --sl-nav-pad-x: 1.25rem;
+    --pg-menu-button-inset: 0.59375rem; /* (51 − 32) / 2 */
+  }
+
+  header.header .site-header-product,
+  header.header .site-header-brand .documentation-sets,
+  header.header .site-title,
+  /* Both are in the flyout at this width, so the band does not repeat them. */
+  .mobile-preferences picogrid-color-scheme {
+    display: none;
+  }
+
+  /*
+   * The menu button leads the band here rather than trailing it, as the Legion
+   * header does, so the row reads as menu, where you are, then the controls.
+   */
+  header.header {
+    padding-inline-start: calc(
+      var(--sl-nav-gap) + var(--sl-nav-pad-x) + var(--sl-menu-button-size)
+    );
+    padding-inline-end: var(--pg-nav-inset-end);
+    /* The rows carry the band's height themselves (51px + the rest), so each
+     * row centres its contents the way Legion's do. */
+    padding-block: 0;
+  }
+
+  starlight-menu-button button {
+    inset-inline-start: var(--sl-nav-pad-x);
+    inset-inline-end: auto;
+  }
+
+  /*
+   * Search has the band's second row to itself here, so it is drawn as the
+   * field the Legion menu opens with — sunk into the band and spanning it —
+   * rather than the icon the theme collapses it to beside other controls.
+   */
+  header.header button[data-open-modal] {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    justify-content: flex-start;
+    inline-size: 100%;
+    /* Legion's second-row control: 32px at y=61, 10% black fill with a 10%
+     * light inset ring, and no hover change. */
+    block-size: var(--pg-nav-control-size);
+    min-block-size: var(--pg-nav-control-size);
+    padding: 0 0.625rem;
+    border: 0;
+    border-radius: var(--pg-nav-control-radius);
+    background: rgb(0 0 0 / 0.1);
+    box-shadow: inset rgb(255 255 255 / 0.1) 0 0 0 1px;
+    color: rgb(198 205 212);
+    font-size: var(--sl-text-sm);
+  }
+
+  /* The theme hides the word at this width; a field has room to name itself. */
+  header.header button[data-open-modal] > span {
+    display: block;
+  }
+
+  /*
+   * The first row is crowded at this width, and the Legion header answers that
+   * by drawing its icons bare: the outline is the hover and open state rather
+   * than the resting one, so the buttons do not compete with the field below
+   * them. Above this width the band keeps the resting outline it was matched to.
+   */
+  starlight-menu-button button:not(:hover, [aria-expanded="true"]),
+  header.header .scheme-trigger:not(:hover, [aria-expanded="true"]) {
+    border-color: transparent;
+  }
+}
+
+/*
+ * The band is the flat surface with the artwork laid in it: the fade, placed
+ * and sized with the texture so it works on the artwork's ends rather than the
+ * band's, then the texture, then the surface the two of them resolve to.
+ */
+header.header {
+  border-block-end: 1px solid var(--pg-nav-main);
+  background:
+    linear-gradient(
+        to right,
+        var(--pg-nav-surface),
+        transparent var(--pg-nav-texture-fade),
+        transparent calc(100% - var(--pg-nav-texture-fade)),
+        var(--pg-nav-surface)
+      )
+      no-repeat center / var(--pg-nav-texture-width) 100%,
+    var(--pg-nav-texture) no-repeat center / var(--pg-nav-texture-width) auto,
+    var(--pg-nav-surface);
+  color: var(--pg-nav-foreground);
+}
+
+/*
+ * Desktop search + version: Legion field is 150×32. Icon + "Search" cluster on
+ * the start; ⌘K is pinned to the end with free space between (not under a
+ * flex-grown label, which stretched the word into the middle of the field).
+ */
+@media (min-width: 50rem) {
+  header.header button[data-open-modal] {
+    display: flex;
+    gap: 0.3125rem; /* 5px icon→label */
+    align-items: center;
+    justify-content: flex-start;
+    box-sizing: border-box;
+    inline-size: 100%;
+    block-size: var(--pg-nav-control-size);
+    min-block-size: var(--pg-nav-control-size);
+    padding: 0 0.5rem;
+    border: 0;
+    border-radius: var(--pg-nav-control-radius);
+    background: rgb(0 0 0 / 0.5);
+    box-shadow: rgb(255 255 255 / 0.1) 0 0 0 1px;
+    color: rgb(255 255 255 / 0.75);
+    font-size: 0.875rem; /* 14px */
+    font-weight: 400;
+    line-height: 1;
+  }
+
+  header.header button[data-open-modal] > span {
+    display: block;
+    flex: 0 1 auto;
+    min-inline-size: 0;
+    overflow: hidden;
+    color: rgb(255 255 255 / 0.75);
+    font-size: 0.875rem;
+    line-height: 1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /*
+   * Starlight nests a kbd chip of two key glyphs. Drop the chip surface and pin
+   * the shortcut to the trailing edge so it reads like Legion’s plain ⌘K.
+   */
+  header.header button[data-open-modal] > kbd {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 0;
+    align-items: center;
+    margin-inline-start: auto;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    color: rgb(255 255 255 / 0.75);
+    font-size: 0.6875rem; /* 11px */
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  header.header button[data-open-modal] > kbd kbd {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    color: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    line-height: inherit;
+  }
+
+  /* Legion's field is inert on hover — its rest state is its only state — so
+   * the band's field does not brighten either. */
+
+  header.header .version-trigger {
+    box-sizing: border-box;
+    block-size: var(--pg-nav-control-size);
+    min-block-size: var(--pg-nav-control-size);
+    padding-block: 0;
+    padding-inline: 0.625rem;
+    border-radius: var(--pg-nav-control-radius);
+    font-size: 0.875rem;
+  }
+
+  /* Wordmark sits at Legion’s measured spot: x = shell + 26, y ≈ 11.5 of the
+   * 51px brand row (Legion's logo anchor pads the image 6px past the 20px
+   * shell inset). */
+  .site-title {
+    min-block-size: 1.5rem;
+    margin-inline-start: 0.375rem;
+    margin-block-start: -0.1875rem;
+  }
+}
+
+/*
+ * The theme's search glyph is a filled magnifier at full strength; Legion's is
+ * a thin stroke at 0.6 opacity, which reads dimmer and lighter. The theme's
+ * SVG cannot be thinned from CSS, so it is withdrawn and the field draws the
+ * stroke form itself, in the field's own colour at Legion's strength.
+ */
+header.header button[data-open-modal] > svg {
+  display: none;
+}
+
+header.header button[data-open-modal]::before {
+  content: "";
+  flex: 0 0 auto;
+  inline-size: 1rem;
+  block-size: 1rem;
+  background-color: currentcolor;
+  opacity: 0.6;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E")
+    no-repeat center / contain;
+}
+
+/*
+ * Recolour the theme's own header controls for the band instead of restyling
+ * each one. The search dialog is a child of the header but is drawn over the
+ * page, so the band palette is applied to the header's control groups rather
+ * than to the header itself.
+ */
+header.header
+  :is(.site-header-brand, .site-header-actions, .site-header-product),
+header.header button[data-open-modal] {
+  --sl-color-bg-nav: var(--pg-nav-surface);
+  --sl-color-black: var(--pg-nav-control);
+  --sl-color-gray-1: var(--pg-nav-foreground);
+  --sl-color-gray-2: var(--pg-nav-muted);
+  --sl-color-gray-5: var(--pg-nav-hairline);
+  --sl-color-gray-6: var(--pg-nav-control);
+  --sl-color-text-accent: var(--pg-nav-foreground);
+  --sl-color-white: var(--pg-nav-foreground);
+}
+
+/*
+ * The flyout is the band continued, so the theme's menu pane takes the band's
+ * surface and palette while it is the flyout. Above that breakpoint the pane is
+ * the desktop sidebar again and keeps the page palette.
+ *
+ * It also arrives rather than appearing. It comes in from the side the menu
+ * button is on, which at this width is the start of the band: it is a
+ * full-width surface, so it waits one width off that edge and crosses the page
+ * to reach its own.
+ *
+ * It stays opaque the whole way. Fading a surface this size means reading the
+ * page through the menu for as long as the fade lasts, and the menu is the same
+ * dark field as the band, so there is nothing a fade would soften.
+ *
+ * The theme opens the pane by turning its visibility on, which is a state with
+ * no middle. Giving visibility the movement's own duration holds the closing
+ * pane on screen for as long as it takes to leave, so closing is the same
+ * movement backwards instead of the menu being gone on the first frame.
+ */
+@media (max-width: 49.9375rem) {
+  .sidebar-pane {
+    --pg-flyout-offset: -100%;
+    --pg-flyout-entry-offset: -0.5rem;
+    --sl-color-bg-sidebar: var(--pg-nav-surface);
+    --sl-color-black: var(--pg-nav-surface);
+    --sl-color-gray-1: var(--pg-nav-foreground);
+    --sl-color-gray-2: var(--pg-nav-muted);
+    --sl-color-gray-3: var(--pg-nav-muted);
+    --sl-color-gray-5: var(--pg-nav-hairline);
+    --sl-color-gray-6: var(--pg-nav-hairline);
+    --sl-color-text-accent: var(--pg-nav-foreground);
+    --sl-color-white: var(--pg-nav-foreground);
+    /*
+     * The chip is the band raised, so it marks the page in either theme. It is
+     * raised further here than the page tree needs to be: the flyout is read at
+     * arm's length on a phone, against the band's own dark field rather than a
+     * light page, and the smaller separation the desktop tree uses did not
+     * survive that.
+     */
+    --pg-highlight: oklch(0.53 0.0416 198.01);
+    --pg-highlight-foreground: var(--pg-nav-foreground);
+
+    background-color: var(--pg-nav-surface);
+    color: var(--pg-nav-foreground);
+    /* An open flyout owns the scroll: it does not chain onto the page behind. */
+    overscroll-behavior: contain;
+    translate: var(--pg-flyout-offset);
+    transition:
+      translate var(--pg-flyout-duration) var(--pg-flyout-ease),
+      visibility var(--pg-flyout-duration);
+  }
+
+  /* It leaves and returns by the start edge, whichever side that is. */
+  [dir="rtl"] .sidebar-pane {
+    --pg-flyout-offset: 100%;
+    --pg-flyout-entry-offset: 0.5rem;
+  }
+
+  starlight-menu-button[aria-expanded="true"] ~ .sidebar-pane {
+    translate: none;
+  }
+
+  /*
+   * The entries follow the pane across, each a little after the one above it,
+   * so the menu fills in from the top as it arrives rather than landing
+   * complete. They travel the same way it does and barely move: the pane is
+   * already carrying them, and a second travel of any length would read as the
+   * two coming apart. Only the opening is staggered; on the way out the pane
+   * takes its contents with it.
+   */
+  starlight-menu-button[aria-expanded="true"]
+    ~ .sidebar-pane
+    :is(.top-level > li, .mobile-nav-site, .mobile-preferences) {
+    animation: pg-flyout-entry 220ms var(--pg-flyout-ease) both;
+  }
+
+  /*
+   * The stagger is capped rather than counted out to the end of the guide: an
+   * entry far enough down the list is below the fold on the phone this runs
+   * on, and waiting for it would only make the menu slower to settle.
+   */
+  starlight-menu-button[aria-expanded="true"]
+    ~ .sidebar-pane
+    .top-level
+    > li:nth-child(2) {
+    animation-delay: 20ms;
+  }
+
+  starlight-menu-button[aria-expanded="true"]
+    ~ .sidebar-pane
+    .top-level
+    > li:nth-child(3) {
+    animation-delay: 40ms;
+  }
+
+  starlight-menu-button[aria-expanded="true"]
+    ~ .sidebar-pane
+    .top-level
+    > li:nth-child(4) {
+    animation-delay: 60ms;
+  }
+
+  starlight-menu-button[aria-expanded="true"]
+    ~ .sidebar-pane
+    .top-level
+    > li:nth-child(n + 5) {
+    animation-delay: 80ms;
+  }
+
+  /* What the band gave up sits below the guide, so it arrives last. */
+  starlight-menu-button[aria-expanded="true"]
+    ~ .sidebar-pane
+    :is(.mobile-nav-site, .mobile-preferences) {
+    animation-delay: 100ms;
+  }
+}
+
+@keyframes pg-flyout-entry {
+  from {
+    translate: var(--pg-flyout-entry-offset);
+    opacity: 0;
+  }
+}
+
+/*
+ * In the mobile menu the colour-scheme control sits at the foot of the pane, so
+ * its panel opens upward instead of off the end of the page.
+ */
+.mobile-preferences .scheme-panel {
+  inset-block-start: auto;
+  inset-block-end: calc(100% + 0.5rem);
+}
+
+/*
+ * The menu button is the same icon button as the colour-scheme control: a
+ * square outline drawn from the colour it sits on, filling on hover, rather
+ * than the theme's white disc. It is fixed over the band, so it is held against
+ * the brand row rather than centred on both rows.
+ */
+:root {
+  --sl-menu-button-size: 2rem;
+}
+
+/* Display is left to the theme, which hides its own button above 50rem. */
+starlight-menu-button button {
+  align-items: center;
+  justify-content: center;
+  inset-block-start: var(--pg-menu-button-inset);
+  padding: 0;
+  border: 1px solid color-mix(in oklch, currentcolor 24%, transparent);
+  border-radius: 0.5rem;
+  background: none;
+  box-shadow: none;
+  color: var(--pg-nav-foreground);
+  font-size: var(--sl-text-base);
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease;
+}
+
+starlight-menu-button button:hover,
+starlight-menu-button[aria-expanded="true"] button,
+starlight-menu-button button[aria-expanded="true"] {
+  border-color: color-mix(in oklch, currentcolor 55%, transparent);
+  background: color-mix(in oklch, currentcolor 12%, transparent);
+}
+
+/*
+ * The theme swaps the button's two glyphs by drawing one and not the other.
+ * Both are kept, stacked in one cell, and turned through each other instead,
+ * so the control rotates between the menu it opens and the menu it closes on
+ * the same curve the flyout is travelling on. They turn the same way round:
+ * the one leaving carries on clockwise as the one arriving comes up to square.
+ *
+ * Stacking them is a change of display, which is also how the theme takes the
+ * button away above the flyout breakpoint, so it is made only below it.
+ */
+@media (max-width: 49.9375rem) {
+  starlight-menu-button button {
+    display: grid;
+  }
+}
+
+starlight-menu-button button > :is(.open-menu, .close-menu) {
+  display: block;
+  grid-area: 1 / 1;
+  transition:
+    opacity 140ms ease,
+    rotate var(--pg-flyout-duration) var(--pg-flyout-ease),
+    scale var(--pg-flyout-duration) var(--pg-flyout-ease);
+}
+
+starlight-menu-button:not([aria-expanded="true"]) button .close-menu {
+  rotate: -90deg;
+  scale: 0.6;
+  opacity: 0;
+}
+
+starlight-menu-button[aria-expanded="true"] button .open-menu {
+  rotate: 90deg;
+  scale: 0.6;
+  opacity: 0;
+}
+
+.site-title {
+  display: inline-flex;
+  align-items: center;
+  /* Matches the 32px control height; wordmark itself is Legion’s 24px. */
+  min-block-size: var(--pg-nav-control-size);
+  font-family: var(--sl-font-mono);
+  letter-spacing: -0.02em;
+}
+
+/* The band is dark in both themes, so it always carries the white wordmark. */
+.site-title::before,
+.site-title-print-wordmark {
+  flex: 0 0 auto;
+  block-size: 1.5rem; /* 24px — Legion logo height */
+  inline-size: 16rem; /* ~256px — Legion wordmark width */
+}
+
+.site-title::before {
+  display: inline-block;
+  background: center / contain no-repeat var(--pg-wordmark-dark);
+  content: "";
+}
+
+.site-title-print-wordmark {
+  display: none;
+  object-fit: contain;
+}
+
+/* The brand mark and the documentation sets read as one unit on the band. */
+.site-header-brand {
+  gap: 1.25rem;
+  align-items: center;
+  block-size: 100%;
+}
+
+/*
+ * The overview is a page of the guide rather than a splash, so its hero is
+ * sized for the content column: one column, since the theme otherwise holds
+ * four elevenths of the width for an image this guide does not publish, and a
+ * title that stays on one line beside the sidebar and the table of contents.
+ */
+.hero {
+  grid-template-columns: 100%;
+  padding-block: clamp(1.5rem, 1rem + 4vmin, 3.5rem) 0;
+}
+
+.hero h1 {
+  font-size: clamp(var(--sl-text-3xl), 0.25rem + 3.5vw, var(--sl-text-4xl));
+}
+
+.hero h1,
+.sl-markdown-content :is(h1, h2, h3) {
+  font-family: var(--sl-font-mono);
+  letter-spacing: -0.035em;
+}
+
+/*
+ * The page's one action is drawn in the foreground colour rather than the
+ * accent. It is the heaviest thing on the first screen either way, and an
+ * opaque surface says that without a field of colour behind it.
+ */
+.sl-link-button.primary,
+.sl-link-button.primary:hover {
+  border-color: var(--pg-foreground);
+  background: var(--pg-foreground);
+  color: var(--pg-background);
+}
+
+.sl-link-button.primary:hover {
+  border-color: color-mix(
+    in oklch,
+    var(--pg-foreground) 86%,
+    var(--pg-background)
+  );
+  background: color-mix(
+    in oklch,
+    var(--pg-foreground) 86%,
+    var(--pg-background)
+  );
+}
+
+/*
+ * The guide's tree marks the page being read by raising the surface under it.
+ * The theme fills that row with the accent, which put the loudest colour on the
+ * page beside every heading a reader scrolls past.
+ */
+#starlight__sidebar :is(a, a:hover, a:focus)[aria-current="page"] {
+  background-color: var(--pg-highlight);
+  color: var(--pg-highlight-foreground);
+}
+
+.sl-markdown-content a:not(.sl-link-button) {
+  text-underline-offset: 0.18em;
+  text-decoration-thickness: 0.08em;
+}
+
+.sl-link-button {
+  min-block-size: 2.75rem;
+  border-radius: var(--pg-radius);
+  font-family: var(--sl-font-mono);
+  font-weight: 650;
+}
+
+.starlight-aside {
+  border: 1px solid var(--sl-color-asides-border);
+  border-inline-start-width: 0.25rem;
+  border-radius: var(--pg-radius);
+  color: var(--pg-foreground);
+}
+
+.starlight-aside--note {
+  --sl-color-asides-border: var(--pg-confirm);
+  --sl-color-asides-text-accent: var(--pg-confirm);
+
+  background: color-mix(in oklch, var(--pg-confirm) 12%, var(--pg-background));
+}
+
+.starlight-aside--tip {
+  --sl-color-asides-border: var(--pg-positive);
+  --sl-color-asides-text-accent: var(--pg-positive-text);
+
+  background: color-mix(in oklch, var(--pg-positive) 12%, var(--pg-background));
+}
+
+.starlight-aside--caution {
+  --sl-color-asides-border: var(--pg-warning);
+  --sl-color-asides-text-accent: var(--pg-warning-text);
+
+  background: color-mix(in oklch, var(--pg-warning) 12%, var(--pg-background));
+}
+
+.starlight-aside--danger {
+  --sl-color-asides-border: var(--pg-danger);
+  --sl-color-asides-text-accent: var(--pg-danger-text);
+
+  background: color-mix(in oklch, var(--pg-danger) 12%, var(--pg-background));
+}
+
+.sl-markdown-content :is(code:not(:where(.not-content *)), .expressive-code) {
+  border-radius: calc(var(--pg-radius) - 0.125rem);
+}
+
+.sl-markdown-content table {
+  display: table;
+  inline-size: 100%;
+  overflow: hidden;
+  border: 1px solid var(--pg-border);
+  border-radius: var(--pg-radius);
+  border-spacing: 0;
+  font-size: var(--sl-text-sm);
+  table-layout: auto;
+}
+
+.sl-markdown-content :is(th:first-child, td:first-child) {
+  padding-inline-start: 1rem;
+}
+
+.sl-markdown-content :is(th:last-child, td:last-child) {
+  padding-inline-end: 1rem;
+}
+
+.sl-markdown-content td {
+  overflow-wrap: anywhere;
+}
+
+.sl-markdown-content tbody tr:last-child td {
+  border-block-end: 0;
+}
+
+.sl-markdown-content th {
+  background: var(--pg-muted);
+  color: var(--pg-foreground);
+  font-family: var(--sl-font-mono);
+}
+
+/*
+ * A code block wide enough to scroll is made a focus stop by the code theme, so
+ * it is drawn with the same ring as every other stop rather than left to
+ * whatever the browser draws around a `pre`.
+ */
+:is(a, button, input, select, summary):focus-visible,
+.sl-markdown-content pre[role="region"]:focus-visible {
+  outline: 3px solid var(--pg-accent);
+  outline-offset: 3px;
+}
+
+/*
+ * Below the width where the outline column appears, the theme's right-hand
+ * container holds nothing: its panel is hidden there, and the disclosure that
+ * would otherwise stand in for it is withdrawn (D051). Left rendered it is an
+ * empty, unnamed complementary landmark on every page — an entry in a screen
+ * reader's landmark list that leads nowhere. The width is the theme's own
+ * breakpoint for that column.
+ */
+@media (max-width: 71.9375rem) {
+  .right-sidebar-container {
+    display: none;
+  }
+}
+
+.status-verified,
+.status-supported {
+  border-inline-start-color: var(--pg-positive);
+}
+
+.status-changed,
+.status-pending {
+  border-inline-start-color: var(--pg-warning);
+}
+
+.status-deferred {
+  border-inline-start-color: var(--pg-danger);
+}
+
+@media (max-width: 50rem) {
+  .sl-markdown-content table {
+    display: block;
+    max-inline-size: 100%;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+  }
+
+  .sl-markdown-content :is(th, td) {
+    min-inline-size: 11rem;
+  }
+}
+
+@media (max-width: 30rem) {
+  .site-header-brand {
+    gap: 0.5rem;
+  }
+
+  .site-title::before,
+  .site-title-print-wordmark {
+    inline-size: 6.25rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media print {
+  :root,
+  :root[data-theme="dark"] {
+    color-scheme: light;
+    --pg-background: #fff;
+    --pg-foreground: #000;
+    --pg-muted: #eee;
+    --pg-muted-foreground: #333;
+    --pg-border: #777;
+    --pg-accent: #000;
+    --pg-confirm: #3455b8;
+    --pg-confirm-foreground: #fafafa;
+    --pg-positive-text: #1b5e20;
+    --pg-warning-text: #66491c;
+    --pg-danger-text: #b71c1c;
+    --sl-color-accent-low: #eee;
+    --sl-color-accent: #000;
+    --sl-color-accent-high: #000;
+    --sl-color-bg: #fff;
+    --sl-color-bg-nav: #fff;
+    --sl-color-bg-sidebar: #fff;
+    --sl-color-hairline: #777;
+    --sl-color-hairline-light: #777;
+    --sl-color-text: #000;
+    --sl-color-text-accent: #000;
+    --pg-nav-surface: #fff;
+    --pg-nav-foreground: #000;
+    --pg-nav-muted: #333;
+    --pg-nav-hairline: #777;
+    --pg-nav-main: #333;
+    --pg-nav-control: #eee;
+    /* Only the brand row prints, so the band is one row tall on paper. */
+    --sl-nav-height: 3rem;
+  }
+
+  .sl-link-button.primary,
+  .sl-link-button.primary:hover {
+    border-color: var(--pg-foreground);
+    background: var(--pg-background);
+    color: var(--pg-foreground);
+  }
+
+  body,
+  header.header {
+    background: #fff;
+    color: #000;
+  }
+
+  /*
+   * Printing is light, so reveal the black foreground wordmark. Unlike the
+   * screen mark, it survives the browser's default background suppression.
+   */
+  .site-title::before {
+    display: none;
+  }
+
+  .site-title-print-wordmark {
+    display: block;
+  }
+
+  .sl-markdown-content table {
+    display: table;
+    overflow: visible;
+  }
+
+  .sl-markdown-content :is(th, td) {
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .sl-markdown-content thead {
+    display: table-header-group;
+  }
+
+  .sl-markdown-content tr {
+    break-inside: avoid;
+  }
+}

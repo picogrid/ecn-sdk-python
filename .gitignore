@@ -1,0 +1,23 @@
+.coverage
+.DS_Store
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.venv/
+build/
+dist/
+node_modules/
+.astro/
+.wrangler/
+site-dist/
+reports/generated/
+src/*.egg-info/
+**/__pycache__/
+# Credential-like files stay visible to repository and release scans.
+.worktrees/
+.claude/
+
+# Playwright run output
+test-results/
+playwright-report/
+wheelhouse/

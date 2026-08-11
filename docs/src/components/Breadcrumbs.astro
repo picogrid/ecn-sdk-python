@@ -1,0 +1,81 @@
+---
+/**
+ * The path from the front page of the guide to the page being read, published
+ * with the page, above its title, at every width.
+ *
+ * The trail is read out of the theme's own sidebar for this route, so it names
+ * the page under the heading the sidebar files it under. Only the front page is
+ * a link it can offer: the headings above a page are groupings rather than
+ * pages. It draws itself from the colour it inherits, so it suits the page.
+ */
+import { pageTrail } from './page-trail';
+
+const { entry, sidebar, siteTitleHref } = Astro.locals.starlightRoute;
+const crumbs = pageTrail(sidebar, siteTitleHref, entry.data.title);
+---
+
+<nav class="breadcrumbs" aria-label="Breadcrumb">
+  <ol>
+    {crumbs.map((crumb, index) => {
+      const current = index === crumbs.length - 1;
+      return (
+        <li>
+          {crumb.href && !current
+            ? <a href={crumb.href}>{crumb.label}</a>
+            : <span aria-current={current ? 'page' : undefined}>{crumb.label}</span>}
+        </li>
+      );
+    })}
+  </ol>
+</nav>
+
+<style>
+  /*
+   * The trail keeps to one line and scrolls where it does not fit, so it cannot
+   * change the height of the row it sits in; the fade says there is more of it.
+   */
+  .breadcrumbs {
+    min-inline-size: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    mask-image: linear-gradient(to right, #000 calc(100% - 1.5rem), transparent);
+  }
+
+  .breadcrumbs::-webkit-scrollbar {
+    display: none;
+  }
+
+  ol {
+    display: flex;
+    gap: 0.375rem;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    white-space: nowrap;
+  }
+
+  /* The page being read is the one at full strength; the path to it is quieter. */
+  li:not(:last-child),
+  li::before {
+    color: color-mix(in oklch, currentColor 70%, transparent);
+  }
+
+  li + li::before {
+    margin-inline-end: 0.375rem;
+    content: '/';
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+
+  [aria-current='page'] {
+    font-weight: 600;
+  }
+</style>

@@ -1,0 +1,8 @@
+{
+  "source": "local",
+  "task_id": "synthetic-task-001",
+  "_response_mode": "complete",
+  "payload": {
+    "value": 21
+  }
+}

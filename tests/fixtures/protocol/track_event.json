@@ -1,0 +1,20 @@
+{
+  "id": "10000000-0000-4000-8000-000000000001",
+  "integration_name": "synthetic-vendor",
+  "recorded_at": "2026-01-01T12:00:00Z",
+  "category": "TRACK",
+  "type_": "synthetic-air-track",
+  "name": "Synthetic track",
+  "status": "active",
+  "affiliation": "UNKNOWN",
+  "metadata": {
+    "quality": "synthetic"
+  },
+  "location": {
+    "latitude": 34.0,
+    "longitude": -118.0,
+    "altitude": 1000.0,
+    "recorded_at": "2026-01-01T12:00:00Z",
+    "velocity": [10.0, 2.0, -1.0]
+  }
+}

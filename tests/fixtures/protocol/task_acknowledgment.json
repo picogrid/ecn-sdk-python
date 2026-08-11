@@ -1,0 +1,10 @@
+{
+  "status": "SUCCESS",
+  "source": "local",
+  "task_id": "synthetic-task-002",
+  "payload": {
+    "ack": true,
+    "message": "Task started"
+  },
+  "_response_type": "ack"
+}

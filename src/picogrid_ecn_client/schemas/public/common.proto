@@ -1,0 +1,58 @@
+// Copyright (c) Picogrid, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
+syntax = "proto3";
+
+package picogrid.open.v1;
+
+import "google/protobuf/timestamp.proto";
+
+enum EntityCategory {
+  ENTITY_CATEGORY_UNSPECIFIED = 0;
+  ENTITY_CATEGORY_DEVICE = 1;
+  ENTITY_CATEGORY_DETECTION = 2;
+  ENTITY_CATEGORY_TRACK = 3;
+  ENTITY_CATEGORY_SYSTEM = 4;
+  ENTITY_CATEGORY_SENSOR = 5;
+  ENTITY_CATEGORY_ALERT = 6;
+}
+
+enum EntityStatus {
+  ENTITY_STATUS_UNSPECIFIED = 0;
+  ENTITY_STATUS_ACTIVE = 1;
+  ENTITY_STATUS_INACTIVE = 2;
+  ENTITY_STATUS_UNKNOWN = 3;
+}
+
+enum Affiliation {
+  AFFILIATION_UNSPECIFIED = 0;
+  AFFILIATION_FRIEND = 1;
+  AFFILIATION_HOSTILE = 2;
+  AFFILIATION_NEUTRAL = 3;
+  AFFILIATION_UNKNOWN = 4;
+  AFFILIATION_SUSPECT = 5;
+}
+
+message LocationMessage {
+  double latitude = 1;
+  double longitude = 2;
+  optional float altitude = 3;
+  optional float bearing = 4;
+  optional float accuracy = 5;
+  optional string source = 6;
+  google.protobuf.Timestamp recorded_at = 7;
+  repeated float velocity = 8;
+  repeated float angular_velocity = 9;
+  optional float confidence = 10;
+}
+
+message EntityMessage {
+  bytes id = 1;
+  optional string name = 3;
+  optional string type_name = 4;
+  optional EntityCategory category = 5;
+  optional EntityStatus status = 6;
+  optional Affiliation affiliation = 7;
+  optional bytes parent_id = 8;
+  optional bytes metadata_json = 9;
+}

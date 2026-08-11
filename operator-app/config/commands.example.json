@@ -1,0 +1,56 @@
+{
+  "commands": {
+    "echo": {
+      "label": "Synthetic echo",
+      "description": "Return a bounded synthetic message from the mock task target.",
+      "mode": "complete",
+      "allowed_integrations": [
+        "mock-target"
+      ],
+      "request_schema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "title": "Synthetic echo request",
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Synthetic text; do not enter secrets.",
+            "minLength": 1,
+            "maxLength": 120
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "echo_ack": {
+      "label": "Synthetic echo acknowledgment",
+      "description": "Acknowledge one bounded synthetic message and do not report handler completion.",
+      "mode": "acknowledgment",
+      "allowed_integrations": [
+        "mock-target"
+      ],
+      "request_schema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "title": "Synthetic echo acknowledgment request",
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Synthetic text; do not enter secrets.",
+            "minLength": 1,
+            "maxLength": 120
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      }
+    }
+  }
+}

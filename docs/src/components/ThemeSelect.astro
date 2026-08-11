@@ -1,0 +1,261 @@
+---
+/**
+ * Colour-scheme control published as a named menu rather than a bare select, so
+ * it reads and behaves the same as the one on the Legion API documentation: one
+ * entry per scheme, each with its own icon, and a check on the active choice.
+ *
+ * Starlight's theme provider still owns the preference. It applies the stored
+ * value before first paint and this control only reads and writes that same
+ * key, so a reader's choice survives navigation and every picker on the page
+ * agrees: the header carries one and the mobile menu another.
+ */
+import { Icon } from '@astrojs/starlight/components';
+import SchemeGlyph from './SchemeGlyph.astro';
+
+const schemes = [
+  { value: 'auto', label: 'System' },
+  { value: 'light', label: 'Light' },
+  { value: 'dark', label: 'Dark' },
+] as const;
+---
+
+<picogrid-color-scheme data-scheme="auto">
+  {/*
+    Only the active scheme's glyph is drawn, so the button already states the
+    choice to anyone who can see it; the label states it to everyone else.
+  */}
+  <button type="button" class="scheme-trigger" aria-expanded="false" aria-haspopup="menu" aria-label="Color scheme">
+    {schemes.map((scheme) => (
+      <SchemeGlyph scheme={scheme.value} class={`scheme-glyph scheme-glyph-${scheme.value}`} />
+    ))}
+  </button>
+  <div class="scheme-panel" data-menu-panel hidden>
+    {/* The menu below carries this same name, so it is not announced twice. */}
+    <p class="scheme-heading" aria-hidden="true">Color Scheme</p>
+    <div class="scheme-options" role="menu" aria-label="Color Scheme">
+      {schemes.map((scheme) => (
+        <button
+          type="button"
+          role="menuitemradio"
+          class="scheme-option"
+          aria-checked={scheme.value === 'auto' ? 'true' : 'false'}
+          data-scheme-value={scheme.value}
+        >
+          <SchemeGlyph scheme={scheme.value} class="scheme-option-glyph" />
+          {scheme.label}
+          <Icon name="approve-check" class="scheme-option-check" />
+        </button>
+      ))}
+    </div>
+  </div>
+</picogrid-color-scheme>
+
+{/* Inlined so a stored preference is reflected before the module script runs. */}
+<script is:inline>
+  (() => {
+    const host = document.currentScript.previousElementSibling;
+    let stored = null;
+    try {
+      stored = localStorage.getItem('starlight-theme');
+    } catch {
+      stored = null;
+    }
+    const scheme = stored === 'light' || stored === 'dark' ? stored : 'auto';
+    host.dataset.scheme = scheme;
+    for (const option of host.querySelectorAll('[data-scheme-value]')) {
+      option.setAttribute('aria-checked', String(option.dataset.schemeValue === scheme));
+    }
+    const active = host.querySelector(`[data-scheme-value="${scheme}"]`);
+    if (active) {
+      host
+        .querySelector('.scheme-trigger')
+        .setAttribute('aria-label', `Color scheme: ${active.textContent.trim()}`);
+    }
+  })();
+</script>
+
+<script>
+  import { attachHeaderMenu } from './header-menu';
+
+  type Scheme = 'auto' | 'dark' | 'light';
+
+  const storageKey = 'starlight-theme';
+  let activeScheme: Scheme | null = null;
+  const isScheme = (value: unknown): value is Scheme =>
+    value === 'auto' || value === 'dark' || value === 'light';
+
+  function storedScheme(): Scheme {
+    try {
+      const stored = localStorage.getItem(storageKey);
+      return isScheme(stored) ? stored : 'auto';
+    } catch {
+      return 'auto';
+    }
+  }
+
+  function store(scheme: Scheme): void {
+    try {
+      localStorage.setItem(storageKey, scheme === 'auto' ? '' : scheme);
+    } catch {
+      // A reader who blocks storage still gets the choice for this page.
+    }
+  }
+
+  const systemScheme = (): 'dark' | 'light' =>
+    matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+
+  /** Apply one choice to the document and to every picker on the page. */
+  function apply(scheme: Scheme): void {
+    activeScheme = scheme;
+    document.documentElement.dataset.theme = scheme === 'auto' ? systemScheme() : scheme;
+    for (const picker of document.querySelectorAll<HTMLElement>('picogrid-color-scheme')) {
+      picker.dataset.scheme = scheme;
+      for (const option of picker.querySelectorAll<HTMLElement>('[data-scheme-value]')) {
+        option.setAttribute('aria-checked', String(option.dataset.schemeValue === scheme));
+      }
+      // The label is taken from the option itself, so the name the button
+      // carries and the name the menu offers cannot drift apart.
+      const active = picker.querySelector(`[data-scheme-value="${scheme}"]`);
+      const trigger = picker.querySelector('.scheme-trigger');
+      if (active && trigger) {
+        trigger.setAttribute('aria-label', `Color scheme: ${active.textContent?.trim()}`);
+      }
+    }
+  }
+
+  matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
+    const scheme = activeScheme ?? storedScheme();
+    if (scheme === 'auto') apply('auto');
+  });
+
+  class PicogridColorScheme extends HTMLElement {
+    constructor() {
+      super();
+      const menu = attachHeaderMenu(this);
+      for (const option of this.querySelectorAll<HTMLElement>('[data-scheme-value]')) {
+        option.addEventListener('click', () => {
+          const scheme = option.dataset.schemeValue;
+          if (!isScheme(scheme)) return;
+          store(scheme);
+          apply(scheme);
+          menu.close();
+        });
+      }
+      apply(storedScheme());
+    }
+  }
+
+  customElements.define('picogrid-color-scheme', PicogridColorScheme);
+</script>
+
+<style>
+  picogrid-color-scheme {
+    position: relative;
+    display: block;
+  }
+
+  /*
+   * The control sits on the brand band in the header and on the page surface in
+   * the mobile menu, so it draws itself from the colour it inherits rather than
+   * from either surface's palette.
+   */
+  .scheme-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 2rem;
+    block-size: 2rem;
+    padding: 0;
+    border: 1px solid color-mix(in oklch, currentColor 24%, transparent);
+    border-radius: var(--pg-nav-control-radius, 0.375rem);
+    background: none;
+    color: inherit;
+    font-size: var(--sl-text-base);
+    cursor: pointer;
+  }
+
+  .scheme-trigger:hover {
+    border-color: color-mix(in oklch, currentColor 55%, transparent);
+    background: color-mix(in oklch, currentColor 12%, transparent);
+  }
+
+  /* Only the active scheme's glyph is drawn, so no script rewrites the icon. */
+  .scheme-glyph {
+    display: none;
+  }
+
+  :is([data-scheme='auto']) .scheme-glyph-auto,
+  :is([data-scheme='light']) .scheme-glyph-light,
+  :is([data-scheme='dark']) .scheme-glyph-dark {
+    display: block;
+  }
+
+  /*
+   * The panel is a page surface, not part of the band, so it uses the page
+   * palette and stays readable in either theme.
+   */
+  .scheme-panel {
+    position: absolute;
+    z-index: 1;
+    inset-block-start: calc(100% + 0.5rem);
+    inset-inline-end: 0;
+    min-inline-size: 12rem;
+    padding: 0.5rem;
+    border: 1px solid var(--pg-border);
+    border-radius: 0.75rem;
+    background: var(--pg-background);
+    box-shadow: var(--sl-shadow-lg);
+    color: var(--pg-foreground);
+  }
+
+  .scheme-panel[hidden] {
+    display: none;
+  }
+
+  .scheme-heading {
+    margin: 0;
+    padding: 0.375rem 0.625rem 0.5rem;
+    color: var(--pg-muted-foreground);
+    font-size: var(--sl-text-xs);
+    font-weight: 600;
+  }
+
+  .scheme-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+
+  .scheme-option {
+    display: flex;
+    gap: 0.625rem;
+    align-items: center;
+    padding: 0.5rem 0.625rem;
+    border: 1px solid transparent;
+    border-radius: 0.5rem;
+    background: none;
+    color: inherit;
+    font-family: inherit;
+    font-size: var(--sl-text-sm);
+    text-align: start;
+    cursor: pointer;
+  }
+
+  .scheme-option:hover {
+    background: var(--pg-muted);
+  }
+
+  .scheme-option[aria-checked='true'] {
+    border-color: var(--pg-accent);
+    background: var(--pg-muted);
+  }
+
+  .scheme-option-check {
+    margin-inline-start: auto;
+    opacity: 0;
+  }
+
+  .scheme-option[aria-checked='true'] .scheme-option-check {
+    opacity: 1;
+  }
+</style>

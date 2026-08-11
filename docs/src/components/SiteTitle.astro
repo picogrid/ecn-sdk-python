@@ -1,0 +1,36 @@
+---
+/**
+ * Brand mark and Picogrid's two documentation sets.
+ *
+ * The wordmark keeps its own link home so the brand still behaves as a brand.
+ * Below the flyout breakpoint the pair of sets moves into the mobile flyout,
+ * which the band's stylesheet handles, so only the wordmark stays here.
+ */
+import DocumentationSets from './DocumentationSets.astro';
+
+const base = import.meta.env.BASE_URL;
+
+const { siteTitle, siteTitleHref } = Astro.locals.starlightRoute;
+const printWordmark = `${base}brand/picogrid-wordmark-light.png`;
+---
+
+<a href={siteTitleHref} class="site-title sl-flex">
+  <span class="sr-only" translate="no">{siteTitle}</span>
+  <img
+    class="site-title-print-wordmark"
+    src={printWordmark}
+    alt=""
+    width="1001"
+    height="94"
+    aria-hidden="true"
+  />
+</a>
+<DocumentationSets />
+
+<style>
+  /* The wordmark is the link; it takes the band's own foreground colour. */
+  .site-title {
+    color: var(--sl-color-text-accent);
+    text-decoration: none;
+  }
+</style>

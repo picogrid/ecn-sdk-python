@@ -1,0 +1,125 @@
+name: Container Scan
+
+# Scan-only: builds the operator-app image and scans operating-system, base-layer,
+# and language-package CVEs with Trivy. It does not push, log in to a registry, or
+# sign the image.
+
+on:
+  pull_request:
+    paths:
+      - operator-app/**
+      - pyproject.toml
+      - src/**
+      - uv.lock
+      - .github/workflows/container-scan.yml
+  push:
+    branches:
+      - main
+    paths:
+      - operator-app/**
+      - pyproject.toml
+      - src/**
+      - uv.lock
+      - .github/workflows/container-scan.yml
+  schedule:
+    - cron: "23 7 * * 4"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: container-scan-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: "0.7.20"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Set up Node.js for the embedded operator frontend
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24.19.0"
+          cache: npm
+          cache-dependency-path: operator-app/package-lock.json
+
+      - name: Build matching SDK client and operator wheels
+        run: |
+          uv build --wheel --out-dir operator-app/wheelhouse
+          uv build --wheel --out-dir operator-app/wheelhouse operator-app
+          mapfile -t client_wheels < <(find operator-app/wheelhouse -maxdepth 1 -type f -name 'picogrid_ecn_client-*.whl' -print | sort)
+          mapfile -t operator_wheels < <(find operator-app/wheelhouse -maxdepth 1 -type f -name 'picogrid_ecn_operator_app-*.whl' -print | sort)
+          test "${#client_wheels[@]}" -eq 1
+          test "${#operator_wheels[@]}" -eq 1
+          test "$(find operator-app/wheelhouse -maxdepth 1 -type f -name '*.whl' | wc -l)" -eq 2
+          echo "CLIENT_WHEEL=$(basename "${client_wheels[0]}")" >> "$GITHUB_ENV"
+          echo "OPERATOR_WHEEL=$(basename "${operator_wheels[0]}")" >> "$GITHUB_ENV"
+
+      - name: Build operator-app image
+        run: |
+          docker build \
+            -t ecn-operator-app:scan \
+            --build-arg CLIENT_WHEEL="${CLIENT_WHEEL}" \
+            --build-arg OPERATOR_WHEEL="${OPERATOR_WHEEL}" \
+            operator-app
+
+      - name: Scan image with Trivy (SARIF)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: image
+          image-ref: ecn-operator-app:scan
+          format: sarif
+          output: trivy-results.sarif
+          severity: HIGH,CRITICAL
+          ignore-unfixed: "true"
+          # Report-only: findings upload to code scanning and the merge gate is
+          # enforced by the repository ruleset's code_scanning rule (tool "Trivy"),
+          # consistent with CodeQL, OSV, and zizmor.
+          exit-code: "0"
+
+      - name: Upload Trivy SARIF results
+        uses: github/codeql-action/upload-sarif@5595ccaf912efad79be6eef63a5619ff05969be3 # v4.37.6
+        if: always()
+        with:
+          sarif_file: trivy-results.sarif
+          category: container-image
+
+      - name: Generate SBOM with Trivy
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        if: always()
+        with:
+          scan-type: image
+          image-ref: ecn-operator-app:scan
+          format: cyclonedx
+          output: image-sbom.cdx.json
+          exit-code: "0"
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: container-sbom
+          path: image-sbom.cdx.json
+          retention-days: 14

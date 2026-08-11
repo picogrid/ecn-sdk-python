@@ -1,0 +1,37 @@
+---
+/**
+ * Publish the exact source every page was built from beneath the theme footer.
+ *
+ * The header carries the released version; this line carries the immutable Git
+ * reference behind it, so a reader comparing the hosted guide against the
+ * repository can reach the precise tag or commit rather than a moving branch.
+ */
+import Footer from '@astrojs/starlight/components/Footer.astro';
+import { resolveVersionControl } from '../../site/version-control.mjs';
+
+const repository = 'https://github.com/picogrid/ecn-sdk-python';
+const source = resolveVersionControl({ repository });
+// Rendered from a single string so the published wording stays byte-stable
+// rather than depending on how the template collapses whitespace.
+const summary = `Version ${source.version} \u00b7 ${source.sourceKind} `;
+---
+
+<Footer />
+<p class="documentation-source">{summary}<a href={source.href} title={`Built from ${source.sourceKind} ${source.reference}`}>{source.referenceLabel}</a></p>
+
+<style>
+  .documentation-source {
+    margin-top: 1.5rem;
+    font-size: var(--sl-text-xs);
+    color: var(--sl-color-gray-3);
+  }
+
+  .documentation-source a {
+    color: inherit;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .documentation-source a:hover {
+    color: var(--sl-color-white);
+  }
+</style>

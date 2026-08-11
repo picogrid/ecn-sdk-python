@@ -1,0 +1,76 @@
+services:
+  operator-mock:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        CLIENT_WHEEL: "${CLIENT_WHEEL:?set the exact inspected public-client wheel filename}"
+        OPERATOR_WHEEL: "${OPERATOR_WHEEL:?set the exact inspected operator wheel filename}"
+    env_file: .env
+    environment:
+      OPERATOR_MODE: mock
+      OPERATOR_HTTP_BIND: 0.0.0.0
+      OPERATOR_ALLOW_CONTAINER_BIND: "true"
+    ports:
+      - "127.0.0.1:8080:8080"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=16m
+    security_opt:
+      - no-new-privileges:true
+
+  operator-live:
+    profiles: ["live"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        CLIENT_WHEEL: "${CLIENT_WHEEL:?set the exact inspected public-client wheel filename}"
+        OPERATOR_WHEEL: "${OPERATOR_WHEEL:?set the exact inspected operator wheel filename}"
+    env_file: .env
+    environment:
+      OPERATOR_MODE: live
+      OPERATOR_ECN_AUTH: mtls
+      OPERATOR_HTTP_BIND: 0.0.0.0
+      OPERATOR_ALLOW_CONTAINER_BIND: "true"
+      OPERATOR_ECN_CA_CERT: /run/credentials/ca.crt
+      OPERATOR_ECN_CLIENT_CERT: /run/credentials/client.crt
+      OPERATOR_ECN_CLIENT_KEY: /run/credentials/client.key
+    user: "${OPERATOR_CONTAINER_UID:?set a numeric host UID}:${OPERATOR_CONTAINER_GID:?set a numeric host GID}"
+    volumes:
+      - "${OPERATOR_CA_CERT_HOST:?set an external CA path}:/run/credentials/ca.crt:ro"
+      - "${OPERATOR_CLIENT_CERT_HOST:?set an external certificate path}:/run/credentials/client.crt:ro"
+      - "${OPERATOR_CLIENT_KEY_HOST:?set an external key path}:/run/credentials/client.key:ro"
+    ports:
+      - "127.0.0.1:8080:8080"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=16m
+    security_opt:
+      - no-new-privileges:true
+
+  operator-live-bearer:
+    profiles: ["live-bearer"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        CLIENT_WHEEL: "${CLIENT_WHEEL:?set the exact inspected public-client wheel filename}"
+        OPERATOR_WHEEL: "${OPERATOR_WHEEL:?set the exact inspected operator wheel filename}"
+    env_file: .env
+    environment:
+      OPERATOR_MODE: live
+      OPERATOR_ECN_AUTH: bearer
+      OPERATOR_HTTP_BIND: 0.0.0.0
+      OPERATOR_ALLOW_CONTAINER_BIND: "true"
+      OPERATOR_ECN_CA_CERT: /run/credentials/ca.crt
+    user: "${OPERATOR_CONTAINER_UID:?set a numeric host UID}:${OPERATOR_CONTAINER_GID:?set a numeric host GID}"
+    volumes:
+      - "${OPERATOR_CA_CERT_HOST:?set an external CA path}:/run/credentials/ca.crt:ro"
+    ports:
+      - "127.0.0.1:8080:8080"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=16m
+    security_opt:
+      - no-new-privileges:true

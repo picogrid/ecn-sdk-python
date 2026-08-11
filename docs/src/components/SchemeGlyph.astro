@@ -1,0 +1,50 @@
+---
+/**
+ * One colour scheme's glyph.
+ *
+ * The theme's icon set has no mark for "follow the device", so that one is the
+ * `sun-moon` icon from the public Lucide set, which is what the Legion API
+ * documentation's own control draws; `NOTICE.md` pins the exact source. The sun
+ * and the moon stay with the theme's own icons. It is line art on the same
+ * 24-unit grid, sized from the inherited font size exactly as the theme's icons
+ * are, so the three choices sit together.
+ */
+import { Icon } from '@astrojs/starlight/components';
+
+interface Props {
+  scheme: 'auto' | 'dark' | 'light';
+  class?: string;
+}
+
+const { scheme, class: className } = Astro.props;
+---
+
+{
+  scheme === 'auto' ? (
+    <svg
+      aria-hidden="true"
+      class={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <path d="M12 2v2" />
+      <path d="M14.837 16.385a6 6 0 1 1-7.223-7.222c.624-.147.97.66.715 1.248a4 4 0 0 0 5.26 5.259c.589-.255 1.396.09 1.248.715" />
+      <path d="M16 12a4 4 0 0 0-4-4" />
+      <path d="m19 5-1.256 1.256" />
+      <path d="M20 12h2" />
+    </svg>
+  ) : (
+    <Icon name={scheme === 'light' ? 'sun' : 'moon'} class={className} />
+  )
+}
+
+<style>
+  svg {
+    inline-size: 1em;
+    block-size: 1em;
+  }
+</style>

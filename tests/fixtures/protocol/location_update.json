@@ -1,0 +1,11 @@
+{
+  "location": {
+    "latitude": 36.0,
+    "longitude": -116.0,
+    "altitude": 250.0,
+    "bearing": 180.0,
+    "recorded_at": "2026-01-01T12:00:03Z",
+    "angular_velocity": [0.1, 0.2, 0.3],
+    "confidence": 0.9
+  }
+}

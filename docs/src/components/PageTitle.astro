@@ -1,0 +1,35 @@
+---
+/**
+ * The page's title, with the path that reached it above.
+ *
+ * The trail is published with every page below the front page at every width.
+ * The band names the page being read, which is where a reader is; the trail
+ * says how they arrived, which belongs with the page rather than with the site's
+ * own navigation.
+ *
+ * The theme's own title component is imported directly rather than through the
+ * override indirection, which would resolve back to this one.
+ */
+import PageTitle from '@astrojs/starlight/components/PageTitle.astro';
+import Breadcrumbs from './Breadcrumbs.astro';
+
+const { siteTitleHref } = Astro.locals.starlightRoute;
+const onFrontPage = Astro.url.pathname === siteTitleHref;
+---
+
+{
+  !onFrontPage && (
+    <div class="page-trail">
+      <Breadcrumbs />
+    </div>
+  )
+}
+<PageTitle />
+
+<style>
+  .page-trail {
+    margin-block-start: 1rem;
+    color: var(--sl-color-gray-2);
+    font-size: var(--sl-text-sm);
+  }
+</style>

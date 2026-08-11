@@ -1,0 +1,145 @@
+---
+/**
+ * Two-row navigation band shared with the Legion API documentation.
+ *
+ * The first row is brand and preferences; the second is the released version on
+ * the left, in the position Legion gives its own version selector, and search on
+ * the right.
+ *
+ * Below the flyout breakpoint the rows change hands: the first names the page
+ * being read, beside the menu that opens the guide, and the second is given to
+ * search, which has no room beside them.
+ *
+ * Replacing the whole header is deliberate: the rows, the version menu, and the
+ * page being read are not expressible by overriding a single slot. Everything
+ * inside the rows is still the theme's own component, so search, social links,
+ * and the colour-scheme control keep their behaviour and their translations.
+ */
+import config from 'virtual:starlight/user-config';
+// The rows are filled with the theme's own components except where this guide
+// publishes its own; both are imported directly rather than through the override
+// indirection, which the theme resolves for the components it renders itself.
+import LanguageSelect from '@astrojs/starlight/components/LanguageSelect.astro';
+import Search from '@astrojs/starlight/components/Search.astro';
+import SocialIcons from '@astrojs/starlight/components/SocialIcons.astro';
+import CurrentPage from './CurrentPage.astro';
+import SiteTitle from './SiteTitle.astro';
+import ThemeSelect from './ThemeSelect.astro';
+import VersionSelect from './VersionSelect.astro';
+---
+
+<div class="site-header">
+  <div class="site-header-brand sl-flex">
+    <SiteTitle />
+    <CurrentPage />
+  </div>
+  <div class="site-header-actions sl-flex print:hidden">
+    <div class="sl-flex social-icons">
+      <SocialIcons />
+    </div>
+    <ThemeSelect />
+    <LanguageSelect />
+  </div>
+  <div class="site-header-product print:hidden">
+    <VersionSelect />
+  </div>
+  <div class="site-header-search print:hidden">
+    {config.pagefind && <Search />}
+  </div>
+</div>
+<style>
+  /*
+   * Row heights track Legion’s ReadMe band (51px + 42px desktop) so the two
+   * docs sites share one chrome when a reader navigates between them.
+   */
+  .site-header {
+    display: grid;
+    grid-template-areas:
+      'brand   actions'
+      'product search';
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: var(--pg-nav-row-brand) var(--pg-nav-row-product);
+    column-gap: 1.5rem;
+    row-gap: 0;
+    align-items: center;
+    block-size: 100%;
+  }
+
+  .site-header-brand {
+    grid-area: brand;
+    align-items: center;
+    min-inline-size: 0;
+  }
+
+  .site-header-actions {
+    grid-area: actions;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  .site-header-product {
+    grid-area: product;
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    min-inline-size: 0;
+  }
+
+  .site-header-search {
+    grid-area: search;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    min-inline-size: 0;
+  }
+
+  .social-icons {
+    gap: 1rem;
+    align-items: center;
+  }
+
+  .social-icons:empty {
+    display: none;
+  }
+
+  /*
+   * Below the flyout breakpoint the band is two rows: the page being read and
+   * the controls above, then search, which is a field of its own here rather
+   * than the icon it collapses to beside them. The social links keep to the
+   * flyout, which has room to name them.
+   */
+  @media (max-width: 49.9375rem) {
+    .site-header {
+      grid-template-areas:
+        'brand  actions'
+        'search search';
+      grid-template-columns: minmax(0, 1fr) auto;
+      /* Share the 103px band between control row and search like Legion. */
+      grid-template-rows: 3.1875rem minmax(0, 1fr);
+      column-gap: 0.5rem;
+      row-gap: 0;
+    }
+
+    .site-header-actions {
+      gap: 0.5rem;
+    }
+
+    /* Reclaims the space the row above reserves for the menu button. */
+    .site-header-search {
+      margin-inline-start: calc(-1 * (var(--sl-nav-gap) + var(--sl-menu-button-size)));
+    }
+
+    .social-icons {
+      display: none;
+    }
+  }
+
+  @media (min-width: 50rem) {
+    /* Legion desktop search field is ~150×32 (shell ~160 with trailing pad). */
+    .site-header-search {
+      inline-size: 9.375rem; /* 150px */
+    }
+  }
+</style>

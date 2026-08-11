@@ -1,0 +1,22 @@
+---
+/**
+ * The theme's own page frame, carrying the page-level screen-reader behaviour.
+ *
+ * Nothing about the frame's markup is changed: the theme's component is
+ * rendered with its slots forwarded, and this override exists only to give the
+ * behaviour a home at the level it acts on. The band, the sidebar, and the
+ * content all sit inside this frame, and what the script fixes belongs to none
+ * of them on its own.
+ */
+import Default from '@astrojs/starlight/components/PageFrame.astro';
+---
+
+<Default>
+  <slot name="header" slot="header" />
+  <slot name="sidebar" slot="sidebar" />
+  <slot />
+</Default>
+
+<script>
+  import './screen-reader';
+</script>

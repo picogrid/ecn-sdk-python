@@ -1,0 +1,221 @@
+{
+  "category_rules": [
+    {
+      "extensions": [
+        ".in",
+        ".json",
+        ".jsonc",
+        ".toml",
+        ".txt",
+        ".yaml",
+        ".yml"
+      ],
+      "name": "configuration-and-data",
+      "paths": [],
+      "reason": "Configuration, generated inventories, lock metadata, and data fixtures are covered by the root LICENSE and do not share a safe inline-comment convention."
+    },
+    {
+      "extensions": [
+        ".md"
+      ],
+      "name": "documentation",
+      "paths": [],
+      "reason": "Repository documentation is covered by the root LICENSE without repeated inline notices."
+    },
+    {
+      "extensions": [
+        ".lock"
+      ],
+      "name": "lock-data",
+      "paths": [],
+      "reason": "Generated dependency lock data is covered by the root LICENSE and is not hand-authored source."
+    },
+    {
+      "extensions": [
+        ".typed"
+      ],
+      "name": "package-markers",
+      "paths": [],
+      "reason": "Empty package marker files have no content in which to place a notice and are covered by the root LICENSE."
+    },
+    {
+      "extensions": [],
+      "name": "repository-control-files",
+      "paths": [
+        ".github/CODEOWNERS",
+        ".gitignore",
+        "Makefile",
+        "operator-app/.dockerignore",
+        "operator-app/.env.example",
+        "operator-app/.gitignore",
+        "operator-app/Dockerfile"
+      ],
+      "reason": "Repository control files without a uniform extension or safe notice syntax are covered by the root LICENSE."
+    },
+    {
+      "extensions": [
+        ".astro",
+        ".html"
+      ],
+      "name": "web-markup",
+      "paths": [],
+      "reason": "Web templates and markup are covered by the root LICENSE without injecting visible or framework-specific comments."
+    }
+  ],
+  "exception_categories": [
+    "brand-asset",
+    "generated",
+    "license-text",
+    "third-party-notice"
+  ],
+  "exceptions": [
+    {
+      "category": "license-text",
+      "path": "LICENSE",
+      "reason": "The authoritative unmodified MPL-2.0 text is digest-pinned and cannot carry an added file notice."
+    },
+    {
+      "category": "brand-asset",
+      "path": "docs/site/public/brand/ecn-client-og.png",
+      "reason": "Binary brand asset has no inline notice syntax; it is covered by the root LICENSE like every other file, and MPL-2.0 grants no rights in the Picogrid marks it depicts."
+    },
+    {
+      "category": "brand-asset",
+      "path": "docs/site/public/brand/ecn-client-og.svg",
+      "reason": "Published vector brand asset is kept byte-stable; it is covered by the root LICENSE like every other file, and MPL-2.0 grants no rights in the Picogrid marks it depicts."
+    },
+    {
+      "category": "brand-asset",
+      "path": "docs/site/public/brand/picogrid-app-icon-192.png",
+      "reason": "Binary brand asset has no inline notice syntax; it is covered by the root LICENSE like every other file, and MPL-2.0 grants no rights in the Picogrid marks it depicts."
+    },
+    {
+      "category": "brand-asset",
+      "path": "docs/site/public/brand/picogrid-app-icon-512.png",
+      "reason": "Binary brand asset has no inline notice syntax; it is covered by the root LICENSE like every other file, and MPL-2.0 grants no rights in the Picogrid marks it depicts."
+    },
+    {
+      "category": "brand-asset",
+      "path": "docs/site/public/brand/picogrid-nav-texture.png",
+      "reason": "Binary brand asset has no inline notice syntax; it is covered by the root LICENSE like every other file, and MPL-2.0 grants no rights in the Picogrid marks it depicts."
+    },
+    {
+      "category": "brand-asset",
+      "path": "docs/site/public/brand/picogrid-wordmark-dark.png",
+      "reason": "Binary brand asset has no inline notice syntax; it is covered by the root LICENSE like every other file, and MPL-2.0 grants no rights in the Picogrid marks it depicts."
+    },
+    {
+      "category": "brand-asset",
+      "path": "docs/site/public/brand/picogrid-wordmark-light.png",
+      "reason": "Binary brand asset has no inline notice syntax; it is covered by the root LICENSE like every other file, and MPL-2.0 grants no rights in the Picogrid marks it depicts."
+    },
+    {
+      "category": "third-party-notice",
+      "path": "docs/site/public/licenses/lucide-ISC.txt",
+      "reason": "Verbatim upstream Lucide ISC text, redistributed with the built guide because the guide renders Lucide path data. It opens with the license title rather than the copyright line, so its notice sits outside the leading region the scanner reads, and it cannot carry an added file notice without ceasing to be verbatim."
+    },
+    {
+      "category": "license-text",
+      "path": "operator-app/LICENSE",
+      "reason": "Byte-identical copy of the authoritative unmodified MPL-2.0 text required in the standalone operator application build context; it cannot carry an added file notice and is pinned to the same digest as the root LICENSE."
+    },
+    {
+      "category": "brand-asset",
+      "path": "operator-app/docs/operator-mock-light.png",
+      "reason": "Binary operator screenshot has no inline notice syntax; it is covered by the root LICENSE like every other file."
+    },
+    {
+      "category": "brand-asset",
+      "path": "operator-app/docs/operator-mock-mobile-dark.png",
+      "reason": "Binary operator screenshot has no inline notice syntax; it is covered by the root LICENSE like every other file."
+    },
+    {
+      "category": "brand-asset",
+      "path": "operator-app/docs/operator-mock-mobile-light.png",
+      "reason": "Binary operator screenshot has no inline notice syntax; it is covered by the root LICENSE like every other file."
+    },
+    {
+      "category": "brand-asset",
+      "path": "operator-app/docs/operator-mock.png",
+      "reason": "Binary operator screenshot has no inline notice syntax; it is covered by the root LICENSE like every other file."
+    },
+    {
+      "category": "brand-asset",
+      "path": "operator-app/frontend/public/brand/ecn-client-og.png",
+      "reason": "Binary brand asset has no inline notice syntax; it is covered by the root LICENSE like every other file, and MPL-2.0 grants no rights in the Picogrid marks it depicts."
+    },
+    {
+      "category": "brand-asset",
+      "path": "operator-app/frontend/public/brand/picogrid-app-icon-192.png",
+      "reason": "Binary brand asset has no inline notice syntax; it is covered by the root LICENSE like every other file, and MPL-2.0 grants no rights in the Picogrid marks it depicts."
+    },
+    {
+      "category": "brand-asset",
+      "path": "operator-app/frontend/public/brand/picogrid-app-icon-512.png",
+      "reason": "Binary brand asset has no inline notice syntax; it is covered by the root LICENSE like every other file, and MPL-2.0 grants no rights in the Picogrid marks it depicts."
+    },
+    {
+      "category": "brand-asset",
+      "path": "operator-app/frontend/public/brand/picogrid-wordmark-dark.png",
+      "reason": "Binary brand asset has no inline notice syntax; it is covered by the root LICENSE like every other file, and MPL-2.0 grants no rights in the Picogrid marks it depicts."
+    },
+    {
+      "category": "brand-asset",
+      "path": "operator-app/frontend/public/brand/picogrid-wordmark-light.png",
+      "reason": "Binary brand asset has no inline notice syntax; it is covered by the root LICENSE like every other file, and MPL-2.0 grants no rights in the Picogrid marks it depicts."
+    },
+    {
+      "category": "generated",
+      "path": "src/picogrid_ecn_client/_protocol/generated/common_pb2.py",
+      "reason": "Generated by protoc and marked DO NOT EDIT; the authoritative public schema is covered separately."
+    },
+    {
+      "category": "generated",
+      "path": "src/picogrid_ecn_client/_protocol/generated/entity_pb2.py",
+      "reason": "Generated by protoc and marked DO NOT EDIT; the authoritative public schema is covered separately."
+    }
+  ],
+  "license_expression": "MPL-2.0",
+  "license_text_sha256": "3f3d9e0024b1921b067d6f7f88deb4a60cbe7a78e76c64e3f1d7fc3b779b9d04",
+  "notice_copyright": "Copyright (c) Picogrid, Inc.",
+  "notice_required_extensions": [
+    ".css",
+    ".mjs",
+    ".proto",
+    ".py",
+    ".ts"
+  ],
+  "notice_required_paths": [],
+  "third_party_notices": [
+    {
+      "license": "OFL-1.1",
+      "origin": "@fontsource-variable/chivo-mono@5.3.0, LICENSE",
+      "path": "docs/site/public/fonts/chivo-mono-OFL.txt",
+      "sha256": "7f3169de22ef42f67ffa761b8b0d68f637244aab62b31a3aa1366d6d065a24f9"
+    },
+    {
+      "license": "ISC",
+      "origin": "lucide-icons/lucide@62527757e2607ca3e73eec1e4f24e78cf60eb993, LICENSE",
+      "path": "docs/site/public/licenses/lucide-ISC.txt",
+      "sha256": "b495047bd93a9b06913511076f504daba17d5bbeb3e0650f3bb53a4220329c57"
+    }
+  ],
+  "third_party_scan_exclusions": [
+    {
+      "path": "LICENSE",
+      "reason": "The authoritative MPL-2.0 text contains legal terminology and is validated separately by its pinned digest."
+    },
+    {
+      "path": "docs/package-lock.json",
+      "reason": "The generated npm lock contains dependency license metadata, not source-file license notices."
+    },
+    {
+      "path": "operator-app/package-lock.json",
+      "reason": "The generated npm lock contains dependency license metadata, not source-file license notices."
+    },
+    {
+      "path": "scripts/license-policy.json",
+      "reason": "The registry and notice requirements contain license strings as policy data and are validated structurally."
+    }
+  ]
+}

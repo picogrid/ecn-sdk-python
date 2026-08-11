@@ -1,0 +1,42 @@
+---
+/**
+ * The page being read, named on the band beside the menu button.
+ *
+ * Below the flyout breakpoint the band's first row is given to the page rather
+ * than to the site: a reader who has scrolled away from the title still has it,
+ * and the menu beside it says where else they can go. It is the same name the
+ * sidebar gives the page, so opening the flyout finds the entry that is marked.
+ *
+ * It states where a reader is rather than offering to take them there, which is
+ * why it is not a link.
+ */
+import { pageTrail } from './page-trail';
+
+const { entry, sidebar, siteTitleHref } = Astro.locals.starlightRoute;
+const crumbs = pageTrail(sidebar, siteTitleHref, entry.data.title);
+const label = crumbs[crumbs.length - 1]?.label ?? entry.data.title;
+---
+
+<p class="current-page">{label}</p>
+
+<style>
+  .current-page {
+    margin: 0;
+    min-inline-size: 0;
+    color: inherit;
+    /* Legion names the row's context at 14px; the band's first row reads the
+     * same weight on both sites. */
+    font-size: var(--sl-text-sm);
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Above the flyout breakpoint the page names itself in the content column. */
+  @media (min-width: 50rem) {
+    .current-page {
+      display: none;
+    }
+  }
+</style>

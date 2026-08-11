@@ -1,0 +1,116 @@
+name: Documentation Checks
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: documentation-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  site:
+    name: Documentation links, language, and browser accessibility
+    runs-on: ${{ vars.HEAVY_RUNNER || 'ubuntu-latest' }}
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      PLAYWRIGHT_WORKERS: "4"
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24.19.0"
+          cache: npm
+          cache-dependency-path: docs/package-lock.json
+
+      - name: Install the locked documentation toolchain
+        working-directory: docs
+        run: npm ci
+
+      - name: Check the site build, links, metadata, terminology, and spelling
+        working-directory: docs
+        run: npm run docs:check
+
+      - name: Check the Worker header and cache policy
+        working-directory: docs
+        run: npm run docs:worker:test
+
+      - name: Check the preview identity helpers
+        working-directory: docs
+        run: npm run docs:preview:test
+
+      # The Legion target and version-control identity resolvers fail closed and
+      # run in the build and in both checkers, so their rejection paths are
+      # covered directly rather than only through a built site.
+      - name: Check the published-identity resolvers against fixtures
+        working-directory: docs
+        run: |
+          npm run docs:legion:test
+          npm run docs:version:test
+
+      # Reads wrangler.jsonc and cloudflare/headers.ts, which the release
+      # source snapshot deliberately excludes, so this cannot join docs:check.
+      - name: Check the deploy contract against the built site
+        working-directory: docs
+        run: npm run docs:check:deploy
+
+      # The contract checker has its own fixture suite; running it here keeps a
+      # regression in the checker from passing as a clean site.
+      - name: Check the deploy contract checker against fixtures
+        working-directory: docs
+        run: npm run docs:check:deploy:test
+
+      - name: Check the preview smoke assertions against fixtures
+        working-directory: docs
+        run: |
+          npm run docs:smoke:test
+          npm run docs:smoke:target:test
+
+      # ReadMe → ECN link rewrite logic against local fixtures only (no live docs).
+      - name: Check the ReadMe to ECN crawler against fixtures
+        working-directory: docs
+        run: npm run docs:crawl:readme:test
+
+      - name: Check the public URL compatibility gate against fixtures
+        working-directory: docs
+        run: npm run docs:compat:test
+
+      - name: Check promote identity and over-capture probe fixtures
+        working-directory: docs
+        run: |
+          npm run docs:promote:test
+          npm run docs:probe:readme:test
+
+      # Real Workers Static Assets behaviour (MIME, 404 page, caching) without
+      # Cloudflare credentials, so a candidate is checked before it is uploaded.
+      - name: Smoke the Worker locally over the built site
+        env:
+          WRANGLER_SEND_METRICS: false
+        working-directory: docs
+        run: npm run docs:smoke:local
+
+      - name: Install the locked browser runtime
+        working-directory: docs
+        run: npm run docs:test:browser:install -- --with-deps
+
+      - name: Check keyboard navigation and rendered accessibility
+        working-directory: docs
+        run: npm run docs:test:browser
+
+      # Focused Worker-served journeys (nav, search, 404, samples). Not the full
+      # offline suite; that stays against the static server above.
+      - name: Check delivery journeys against the local Worker
+        working-directory: docs
+        run: npm run docs:test:delivery

@@ -1,0 +1,10 @@
+{
+  "status": "FAILED",
+  "source": "local",
+  "task_id": "synthetic-task-003",
+  "payload": {
+    "retryable": false
+  },
+  "error_message": "synthetic task failed",
+  "_response_type": "full"
+}

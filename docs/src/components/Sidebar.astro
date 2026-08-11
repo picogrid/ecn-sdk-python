@@ -1,0 +1,95 @@
+---
+/**
+ * The guide's sidebar, which is the flyout's contents on a small viewport.
+ *
+ * The theme already opens this pane as a full-height menu below its own mobile
+ * breakpoint, so the flyout a reader gets is the theme's pane rather than a
+ * second drawer competing with it. The tree opens it at every width; what the
+ * band gives up at that width — the released version, the two documentation
+ * sets, and the wordmark — is added below the tree, where it is the site's own
+ * navigation rather than the guide's.
+ *
+ * The theme's own components are imported directly rather than through the
+ * override indirection, which the theme resolves for the components it renders
+ * itself; the ones this guide overrides are still resolved inside them.
+ */
+import MobileMenuFooter from '@astrojs/starlight/components/MobileMenuFooter.astro';
+import SidebarPersister from '@astrojs/starlight/components/SidebarPersister.astro';
+import SidebarSublist from '@astrojs/starlight/components/SidebarSublist.astro';
+import DocumentationSets from './DocumentationSets.astro';
+import VersionSelect from './VersionSelect.astro';
+
+const { sidebar, siteTitle, siteTitleHref } = Astro.locals.starlightRoute;
+---
+
+<div class="mobile-nav">
+  <div class="sidebar-tree">
+    <SidebarPersister>
+      <SidebarSublist sublist={sidebar} />
+    </SidebarPersister>
+  </div>
+  <div class="mobile-nav-site">
+    <VersionSelect />
+    <p class="mobile-nav-heading">Documentation sites</p>
+    <DocumentationSets stacked />
+    <a class="mobile-nav-brand" href={siteTitleHref}>
+      <span class="sr-only" translate="no">{siteTitle}</span>
+    </a>
+  </div>
+</div>
+<div class="md:sl-hidden">
+  <MobileMenuFooter />
+</div>
+
+<style>
+  .mobile-nav,
+  .mobile-nav-site {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .mobile-nav-site {
+    margin-block-start: 0.25rem;
+    padding-block-start: 1rem;
+    border-block-start: 1px solid var(--pg-nav-hairline);
+  }
+
+  .mobile-nav-heading {
+    margin: 0.5rem 0 0;
+    padding-inline: 0.625rem;
+    color: var(--pg-nav-muted);
+    font-size: var(--sl-text-xs);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  /*
+   * The band gives the wordmark up at this width, so the flyout carries the
+   * brand instead, in the place the Legion menu gives it.
+   */
+  .mobile-nav-brand {
+    display: block;
+    margin-block-start: 0.5rem;
+    margin-inline: 0.625rem;
+    inline-size: 10rem;
+    block-size: 0.95rem;
+    background: left center / contain no-repeat var(--pg-wordmark-dark);
+  }
+
+  /* The version control is a menu of its own; here it spans the flyout. */
+  .mobile-nav :global(.version-trigger) {
+    justify-content: space-between;
+    inline-size: 100%;
+    padding-block: 0.5rem;
+    font-size: var(--sl-text-sm);
+  }
+
+  /* Above the breakpoint the band carries all of this, and the tree is alone. */
+  @media (min-width: 50rem) {
+    .mobile-nav-site {
+      display: none;
+    }
+  }
+</style>

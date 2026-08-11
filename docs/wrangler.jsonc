@@ -1,0 +1,32 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "ecn-sdk",
+  "main": "cloudflare/worker.ts",
+  "compatibility_date": "2025-11-11",
+  // The zone routes below are the only way into the deployed Worker. The
+  // bootstrap host is off so the guide is not also served as a second
+  // crawlable origin competing with the canonical site.
+  "workers_dev": false,
+  // Explicit, and load-bearing at cutover. Preview URLs default to whatever
+  // `workers_dev` is, so this line is what keeps the versioned and aliased
+  // previews alive once the bootstrap host is switched off. They stay on
+  // workers.dev, the only subdomain Cloudflare serves them from.
+  "preview_urls": true,
+  // The canonical host is served by the existing documentation product; the
+  // Worker takes over exactly the guide mount. Two exact patterns, never
+  // `/ecn-sdk*`, which would also capture sibling paths the Worker does not
+  // serve. The bare pattern carries the redirect to the trailing-slash form.
+  "routes": [
+    { "pattern": "docs.picogrid.com/ecn-sdk", "zone_name": "picogrid.com" },
+    { "pattern": "docs.picogrid.com/ecn-sdk/*", "zone_name": "picogrid.com" }
+  ],
+  "assets": {
+    "directory": "../site-dist",
+    "binding": "ASSETS",
+    "run_worker_first": true,
+    "not_found_handling": "404-page"
+  },
+  "observability": {
+    "enabled": true
+  }
+}

@@ -1,0 +1,205 @@
+---
+import { resolveVersionControl } from '../../site/version-control.mjs';
+import '@fontsource-variable/chivo-mono/wght.css';
+
+const base = import.meta.env.BASE_URL;
+
+const repository = 'https://github.com/picogrid/ecn-sdk-python';
+const source = resolveVersionControl({ repository });
+const sourceSummary = `Version ${source.version} \u00b7 ${source.sourceKind} `;
+const description = 'The requested Picogrid ECN SDK documentation page could not be found.';
+const brandIcon = `${base}brand/picogrid-app-icon-192.png`;
+const openGraphImage = `${base}brand/ecn-client-og.png`;
+const wordmarkDark = `${base}brand/picogrid-wordmark-dark.png`;
+const wordmarkLight = `${base}brand/picogrid-wordmark-light.png`;
+const observeData = `${base}quickstarts/observe-data/`;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="robots" content="noindex" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#181818" />
+    <meta name="version" content={source.version} />
+    <meta name="source-ref" content={source.reference} />
+    {source.commit && <meta name="source-commit" content={source.commit} />}
+    <meta property="og:title" content="Page not found | Picogrid ECN SDK" />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={openGraphImage} />
+    <link rel="icon" href={brandIcon} type="image/png" />
+    <title>Page not found | Picogrid ECN SDK</title>
+  </head>
+  <body>
+    <main>
+      <a class="brand" href={base} aria-label="Picogrid ECN SDK home">
+        <picture>
+          <source
+            media="(prefers-color-scheme: dark)"
+            srcset={wordmarkDark}
+          />
+          <img
+            src={wordmarkLight}
+            alt="Picogrid"
+            width="256"
+            height="24"
+          />
+        </picture>
+        <span>ECN SDK</span>
+      </a>
+      <p class="eyebrow">Documentation</p>
+      <h1>Page not found</h1>
+      <p class="summary">
+        This route does not exist. Return to the guide or choose the shortest
+        read-only quickstart.
+      </p>
+      <nav aria-label="Recovery links">
+        <a class="primary" href={base}>Return to the guide</a>
+        <a href={observeData}>Observe ECN data</a>
+      </nav>
+      <p class="documentation-source">
+        {sourceSummary}<a
+          href={source.href}
+          title={`Built from ${source.sourceKind} ${source.reference}`}
+        >{source.referenceLabel}</a>
+      </p>
+    </main>
+  </body>
+</html>
+
+<style>
+  :root {
+    color-scheme: light dark;
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+      sans-serif;
+    background: #f8f8f7;
+    color: #181818;
+  }
+
+  body {
+    display: grid;
+    min-block-size: 100vh;
+    margin: 0;
+    place-items: center;
+    background-image:
+      linear-gradient(#d9d9d8 1px, transparent 1px),
+      linear-gradient(90deg, #d9d9d8 1px, transparent 1px);
+    background-size: 3rem 3rem;
+  }
+
+  main {
+    box-sizing: border-box;
+    inline-size: min(38rem, calc(100% - 2rem));
+    padding: clamp(2rem, 8vw, 4rem);
+    border: 1px solid #d0d0cf;
+    border-radius: 0.625rem;
+    background: #f8f8f7;
+    box-shadow: 0 1.5rem 5rem rgb(24 24 24 / 12%);
+  }
+
+  .brand {
+    display: inline-flex;
+    gap: 0.8rem;
+    align-items: center;
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .brand img {
+    display: block;
+    inline-size: 9rem;
+    block-size: auto;
+  }
+
+  .brand span {
+    padding-inline-start: 0.8rem;
+    border-inline-start: 1px solid #d0d0cf;
+    font-family: "Chivo Mono Variable", "SF Mono", ui-monospace, SFMono-Regular,
+      "Cascadia Code", "Source Code Pro", Menlo, Consolas, "DejaVu Sans Mono", monospace;
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+
+  .eyebrow {
+    margin-block: 2.5rem 0;
+    color: #28646d;
+    font-family: "Chivo Mono Variable", "SF Mono", ui-monospace, SFMono-Regular,
+      "Cascadia Code", "Source Code Pro", Menlo, Consolas, "DejaVu Sans Mono", monospace;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    margin-block: 0.4rem 0.8rem;
+    font-family: "Chivo Mono Variable", "SF Mono", ui-monospace, SFMono-Regular,
+      "Cascadia Code", "Source Code Pro", Menlo, Consolas, "DejaVu Sans Mono", monospace;
+    font-size: clamp(2.25rem, 9vw, 4.5rem);
+    letter-spacing: -0.055em;
+    line-height: 0.98;
+  }
+
+  .summary {
+    max-inline-size: 32rem;
+    color: #585857;
+    font-size: 1.05rem;
+    line-height: 1.65;
+  }
+
+  nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-block-start: 1.75rem;
+  }
+
+  nav a {
+    padding: 0.75rem 1rem;
+    border: 1px solid #397e88;
+    border-radius: 0.5rem;
+    color: #28646d;
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  nav a.primary {
+    background: #397e88;
+    color: #fff;
+  }
+
+  a:focus-visible {
+    outline: 3px solid #64c5d2;
+    outline-offset: 3px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root,
+    main {
+      background: #181818;
+      color: #f8f8f7;
+    }
+
+    body {
+      background-image:
+        linear-gradient(#393938 1px, transparent 1px),
+        linear-gradient(90deg, #393938 1px, transparent 1px);
+    }
+
+    main,
+    .brand span {
+      border-color: #494948;
+    }
+
+    .eyebrow,
+    nav a {
+      color: #64c5d2;
+    }
+
+    .summary {
+      color: #b8b8b7;
+    }
+  }
+</style>

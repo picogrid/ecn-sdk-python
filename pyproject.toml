@@ -1,0 +1,126 @@
+[build-system]
+requires = ["setuptools>=83,<84", "wheel>=0.47.0,<1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "picogrid-ecn-client"
+version = "0.1.0"
+description = "Typed Python SDK for connecting authorized sensors, effectors, and operator tools to Picogrid ECNs"
+readme = "README.md"
+requires-python = ">=3.11,<3.15"
+license = "MPL-2.0"
+license-files = ["LICENSE"]
+authors = [{name = "Picogrid"}]
+keywords = [
+  "command-and-control",
+  "ecn",
+  "effector-integration",
+  "mqtt",
+  "mqtt-v5",
+  "operator-integration",
+  "sdk",
+  "sensor-integration",
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Typing :: Typed",
+]
+
+dependencies = [
+  "aiomqtt==2.5.1",
+  "paho-mqtt==2.1.0",
+  "protobuf>=7.35.1,<8",
+  "pydantic>=2.11,<3",
+]
+
+[project.urls]
+Homepage = "https://github.com/picogrid/ecn-sdk-python"
+Source = "https://github.com/picogrid/ecn-sdk-python"
+Issues = "https://github.com/picogrid/ecn-sdk-python/issues"
+Security = "https://github.com/picogrid/ecn-sdk-python/security/policy"
+Support = "https://github.com/picogrid/ecn-sdk-python/blob/main/SUPPORT.md"
+Changelog = "https://github.com/picogrid/ecn-sdk-python/blob/main/CHANGELOG.md"
+
+[project.scripts]
+picogrid-ecn = "picogrid_ecn_client._cli:main"
+picogrid-mock-ecn = "picogrid_ecn_client.testing.mock_ecn:main"
+
+[dependency-groups]
+dev = [
+  "build>=1.2,<2",
+  "cyclonedx-bom>=7.3.1,<8",
+  "griffe>=2.1.0,<3",
+  "mypy>=1.17,<2",
+  "packaging>=25,<27",
+  "pip-audit>=2.10.1,<3",
+  "pytest>=9.0.3,<10",
+  "pytest-asyncio>=1.1,<2",
+  "pytest-cov>=7.1.0,<8",
+  "ruff>=0.12,<1",
+  "types-protobuf>=7.34.1.20260518,<8",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["picogrid_ecn_client*"]
+
+[tool.setuptools.package-data]
+picogrid_ecn_client = ["py.typed", "schemas/public/*.proto"]
+
+[tool.pytest.ini_options]
+addopts = "--strict-config --strict-markers"
+asyncio_mode = "strict"
+asyncio_default_fixture_loop_scope = "function"
+markers = [
+  "contract: reusable public protocol contract tests",
+  "differential: optional comparison with an installed private SDK",
+  "e2e: full offline workflow tests",
+  "integration: opt-in tests against an authorized ECN",
+  "performance: conservative public-client performance guardrails",
+]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+branch = true
+source = ["picogrid_ecn_client"]
+# A release test copies the package into a temporary site-packages layout to
+# prove installed-root source normalization; that copy is not the measured tree.
+omit = ["*/site-packages/picogrid_ecn_client/*"]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
+skip_covered = true
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+plugins = ["pydantic.mypy"]
+packages = ["picogrid_ecn_client"]
+mypy_path = "src"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["src", "tests", "examples", "scripts"]
+# Generated reference goldens must stay byte-identical to generator output.
+extend-exclude = ["tests/release/fixtures/api_reference"]
+
+[tool.ruff.lint]
+select = ["ASYNC", "B", "C4", "E", "F", "I", "RUF", "SIM", "UP"]
+ignore = ["ASYNC109", "E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101"]
+
+[tool.ruff.format]
+quote-style = "double"

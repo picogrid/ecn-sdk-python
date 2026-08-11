@@ -1,0 +1,203 @@
+---
+/**
+ * Version menu, in the position the Legion API documentation gives its own
+ * version selector.
+ *
+ * It names the release a reader is looking at and links it to the exact source
+ * that produced the page, so the guide's version is a first-class navigation
+ * control rather than a note in the corner. Only released versions appear: the
+ * repository publishes one today, and tagged releases join the list as they are
+ * cut, which is why the control is a menu rather than a label.
+ *
+ * What changed between releases is the same question asked of the same control,
+ * so the changelog is published here rather than as a destination of its own.
+ */
+import { Icon } from '@astrojs/starlight/components';
+import { resolveVersionControl } from '../../site/version-control.mjs';
+
+const base = import.meta.env.BASE_URL;
+const repository = 'https://github.com/picogrid/ecn-sdk-python';
+const source = resolveVersionControl({ repository });
+const releases = [
+  {
+    versionLabel: source.versionLabel,
+    href: source.href,
+    note: `${source.sourceKind} ${source.referenceLabel}`,
+    title: `Built from ${source.sourceKind} ${source.reference}`,
+    current: true,
+  },
+];
+---
+
+<picogrid-version-menu>
+  {/*
+    The label names what the control is for as well as where it stands: read on
+    its own, the released version is a string rather than a choice to be made.
+  */}
+  <button
+    type="button"
+    class="version-trigger"
+    aria-expanded="false"
+    aria-haspopup="menu"
+    aria-label={`Version ${source.versionLabel}`}
+  >
+    {source.versionLabel}
+    <Icon name="down-caret" class="version-caret" />
+  </button>
+  <div class="version-panel" data-menu-panel hidden>
+    {/* The menu below carries this same name, so it is not announced twice. */}
+    <p class="version-heading" aria-hidden="true">Version</p>
+    <div class="version-options" role="menu" aria-label="Version">
+      {releases.map((release) => (
+        <a
+          role="menuitem"
+          class="version-option"
+          href={release.href}
+          title={release.title}
+          aria-current={release.current ? 'true' : undefined}
+          ><Icon name="approve-check" class="version-check" />{release.versionLabel}<span class="version-note">{release.note}</span></a
+        >
+      ))}
+      {/*
+        What changed is the same question asked of the same control, so it is an
+        item of this menu rather than a link stranded beside it: Tab closes a
+        menu, so anything a reader is meant to reach has to be inside one.
+      */}
+      <a role="menuitem" class="version-changelog" href={`${base}changelog/`}>
+        <Icon name="list-format" class="version-changelog-glyph" />Changelog
+      </a>
+    </div>
+  </div>
+</picogrid-version-menu>
+
+<script>
+  import { attachHeaderMenu } from './header-menu';
+
+  class PicogridVersionMenu extends HTMLElement {
+    constructor() {
+      super();
+      attachHeaderMenu(this);
+    }
+  }
+
+  customElements.define('picogrid-version-menu', PicogridVersionMenu);
+</script>
+
+<style>
+  picogrid-version-menu {
+    position: relative;
+    display: block;
+  }
+
+  /* Drawn from the colour it inherits so it suits the band and the mobile menu. */
+  .version-trigger {
+    display: flex;
+    gap: 0.375rem;
+    align-items: center;
+    padding: 0.3125rem 0.625rem;
+    border: 1px solid color-mix(in oklch, currentColor 24%, transparent);
+    border-radius: 0.5rem;
+    background: none;
+    color: inherit;
+    font-family: var(--sl-font-mono);
+    font-size: var(--sl-text-xs);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .version-trigger:hover {
+    border-color: color-mix(in oklch, currentColor 55%, transparent);
+    background: color-mix(in oklch, currentColor 12%, transparent);
+  }
+
+  .version-caret {
+    font-size: 1rem;
+  }
+
+  .version-panel {
+    position: absolute;
+    z-index: 1;
+    inset-block-start: calc(100% + 0.5rem);
+    inset-inline-start: 0;
+    min-inline-size: 15rem;
+    padding: 0.5rem;
+    border: 1px solid var(--pg-border);
+    border-radius: 0.75rem;
+    background: var(--pg-background);
+    box-shadow: var(--sl-shadow-lg);
+    color: var(--pg-foreground);
+  }
+
+  .version-panel[hidden] {
+    display: none;
+  }
+
+  .version-heading {
+    margin: 0;
+    padding: 0.375rem 0.625rem 0.5rem;
+    color: var(--pg-muted-foreground);
+    font-size: var(--sl-text-xs);
+    font-weight: 600;
+  }
+
+  .version-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+
+  .version-option {
+    display: flex;
+    gap: 0.625rem;
+    align-items: center;
+    padding: 0.5rem 0.625rem;
+    border: 1px solid transparent;
+    border-radius: 0.5rem;
+    color: inherit;
+    font-size: var(--sl-text-sm);
+    font-variant-numeric: tabular-nums;
+    text-decoration: none;
+  }
+
+  .version-option:hover {
+    background: var(--pg-muted);
+  }
+
+  .version-option[aria-current] {
+    border-color: var(--pg-accent);
+    background: var(--pg-muted);
+  }
+
+  /* What changed, below the release it changed into. */
+  .version-changelog {
+    display: flex;
+    gap: 0.625rem;
+    align-items: center;
+    margin-block-start: 0.5rem;
+    padding: 0.5rem 0.625rem;
+    border-block-start: 1px solid var(--pg-border);
+    border-radius: 0 0 0.5rem 0.5rem;
+    color: inherit;
+    font-size: var(--sl-text-sm);
+    text-decoration: none;
+  }
+
+  .version-changelog:hover {
+    background: var(--pg-muted);
+  }
+
+  .version-changelog-glyph {
+    opacity: 0.75;
+  }
+
+  /* Mixed from the panel's foreground so it holds contrast on the marked row. */
+  .version-note {
+    margin-inline-start: auto;
+    color: color-mix(in oklch, var(--pg-foreground) 78%, transparent);
+    font-family: var(--sl-font-mono);
+    font-size: var(--sl-text-xs);
+    white-space: nowrap;
+  }
+</style>

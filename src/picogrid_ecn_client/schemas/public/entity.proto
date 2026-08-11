@@ -1,0 +1,19 @@
+// Copyright (c) Picogrid, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
+syntax = "proto3";
+
+package picogrid.open.v1;
+
+import "google/protobuf/timestamp.proto";
+import "picogrid_ecn_client/schemas/public/common.proto";
+
+message EntityEventMessage {
+  google.protobuf.Timestamp recorded_at = 1;
+  EntityMessage entity = 2;
+  LocationMessage location = 3;
+}
+
+message EntityLocationMessage {
+  LocationMessage location = 2;
+}

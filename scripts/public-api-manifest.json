@@ -1,0 +1,1276 @@
+{
+  "manifest_note": "Reviewed public Python API inventory and generated-reference contract. Hand-maintained; consumed by scripts/generate_api_reference.py, the documentation gates, and release verification. Changing this file changes the supported public surface and requires senior public-boundary review (FDE-694).",
+  "manifest_version": 1,
+  "package": "picogrid_ecn_client",
+  "distribution": "picogrid-ecn-client",
+  "supported_import_paths": [
+    "picogrid_ecn_client",
+    "picogrid_ecn_client.testing",
+    "picogrid_ecn_client.workflows"
+  ],
+  "reference_route_prefix": "reference/python",
+  "source_link": {
+    "template": "https://github.com/picogrid/ecn-sdk-python/blob/v{project_version}/{repository_path}",
+    "project_version_source": "scripts/release-policy.json:project_version",
+    "note": "Deterministic: pinned to the documented release tag derived from the committed project version. No commit SHA, timestamp, or checkout path may appear in generated output."
+  },
+  "page_contract": {
+    "one_page_per_symbol": true,
+    "method_representation": "Approved members render as sections on the owning symbol page with stable heading anchors derived from the member name.",
+    "route_rule": "Routes are stored explicitly below. Slugs are lowercase kebab-case with acronym runs kept together (ECNClient -> ecn-client); the stored value is authoritative, not the algorithm.",
+    "ordering": "Group order and in-group symbol order are exactly the order in this manifest. Generated group index pages and inventory reports must preserve both; the sidebar lists groups only, in manifest order, and does not list symbols.",
+    "alias_representation": "Type aliases and callback contracts render their aliased form plus human-authored prose from their docstring; bare `Callable` internals are never presented as the supported contract.",
+    "pydantic_representation": "Model pages combine static signature extraction with allowlisted schema extraction from the public package import only. All public model fields are approved for rendering; inherited pydantic framework members (model_config, model_fields, model_dump, validators, etc.) are suppressed.",
+    "enum_representation": "Enum pages render every member name and value in definition order.",
+    "async_representation": "Async methods render with the `async` keyword; async context managers and async iterators state their `async with` / `async for` behavior explicitly.",
+    "generated_banner": "Every generated page carries a do-not-edit banner naming the regeneration command and links back to curated workflow and security guidance."
+  },
+  "version_attribute": {
+    "name": "__version__",
+    "documented_on": "reference/python",
+    "note": "Accounts for the __version__ entry in __all__; rendered on the reference index page, not as a standalone page."
+  },
+  "groups": [
+    {
+      "id": "client",
+      "title": "Client & lifecycle",
+      "route": "reference/python/client",
+      "related_guides": [
+        "concepts/lifecycle",
+        "getting-started/preflight",
+        "how-to/cleanup"
+      ],
+      "related_examples": [
+        "examples/preflight.py"
+      ]
+    },
+    {
+      "id": "clock",
+      "title": "Clock diagnostics",
+      "route": "reference/python/clock",
+      "related_guides": [
+        "how-to/check-clock",
+        "how-to/troubleshooting"
+      ],
+      "related_examples": [
+        "examples/check_clock.py"
+      ]
+    },
+    {
+      "id": "configuration",
+      "title": "Configuration & authentication",
+      "route": "reference/python/configuration",
+      "related_guides": [
+        "getting-started/configuration",
+        "getting-started/authentication",
+        "security/credentials"
+      ],
+      "related_examples": [
+        "examples/preflight.py"
+      ]
+    },
+    {
+      "id": "entities",
+      "title": "Entities",
+      "route": "reference/python/entities",
+      "related_guides": [
+        "concepts/entities",
+        "quickstarts/sensor-publisher",
+        "how-to/pli-entities",
+        "how-to/tracks-detections"
+      ],
+      "related_examples": [
+        "examples/publish_entity.py",
+        "examples/watch_detections.py",
+        "examples/watch_tracks.py"
+      ]
+    },
+    {
+      "id": "locations",
+      "title": "Locations",
+      "route": "reference/python/locations",
+      "related_guides": [
+        "concepts/locations",
+        "how-to/observe-location",
+        "how-to/pli-entities"
+      ],
+      "related_examples": [
+        "examples/publish_location.py",
+        "examples/get_ecn_location.py"
+      ]
+    },
+    {
+      "id": "tasks",
+      "title": "Tasks",
+      "route": "reference/python/tasks",
+      "related_guides": [
+        "concepts/tasks",
+        "how-to/receive-local-tasks",
+        "how-to/dispatch-local-tasks",
+        "quickstarts/effector-handler"
+      ],
+      "related_examples": [
+        "examples/receive_task.py",
+        "examples/dispatch_task.py",
+        "examples/receive_mesh_task.py",
+        "examples/dispatch_mesh_task.py"
+      ]
+    },
+    {
+      "id": "streams",
+      "title": "Event streams",
+      "route": "reference/python/streams",
+      "related_guides": [
+        "quickstarts/observe-data",
+        "how-to/observe-mesh-data"
+      ],
+      "related_examples": [
+        "examples/watch_tracks.py",
+        "examples/observe_mesh_data.py"
+      ]
+    },
+    {
+      "id": "diagnostics",
+      "title": "Diagnostics & preflight",
+      "route": "reference/python/diagnostics",
+      "related_guides": [
+        "getting-started/preflight",
+        "how-to/troubleshooting"
+      ],
+      "related_examples": [
+        "examples/preflight.py"
+      ]
+    },
+    {
+      "id": "protobuf",
+      "title": "Protobuf helpers",
+      "route": "reference/python/protobuf",
+      "related_guides": [
+        "how-to/protobuf-decode",
+        "reference/wire-formats"
+      ],
+      "related_examples": [
+        "examples/decode_public_protobuf.py"
+      ]
+    },
+    {
+      "id": "exceptions",
+      "title": "Exceptions",
+      "route": "reference/python/exceptions",
+      "related_guides": [
+        "reference/exceptions",
+        "how-to/troubleshooting"
+      ],
+      "related_examples": [
+        "examples/preflight.py"
+      ]
+    },
+    {
+      "id": "testing",
+      "title": "Offline testing",
+      "route": "reference/python/testing",
+      "related_guides": [
+        "getting-started/mock-setup"
+      ],
+      "related_examples": [
+        "examples/preflight.py"
+      ]
+    },
+    {
+      "id": "workflows",
+      "title": "Reusable workflows",
+      "route": "reference/python/workflows",
+      "related_guides": [
+        "shipped-tooling"
+      ],
+      "related_examples": [
+        "examples/preflight.py",
+        "examples/publish_entity.py",
+        "examples/watch_tracks.py",
+        "examples/dispatch_task.py"
+      ]
+    }
+  ],
+  "symbols": [
+    {
+      "name": "ECNClient",
+      "kind": "class",
+      "module": "picogrid_ecn_client.client",
+      "group": "client",
+      "route": "reference/python/client/ecn-client",
+      "async_context_manager": true,
+      "members": [
+        "__init__",
+        "config",
+        "entities",
+        "locations",
+        "tasks",
+        "clock",
+        "is_ready",
+        "status",
+        "wait_until_ready",
+        "connection_events",
+        "notify_credentials_changed",
+        "request_retry",
+        "start",
+        "preflight",
+        "close",
+        "__aenter__",
+        "__aexit__"
+      ]
+    },
+    {
+      "name": "Clock",
+      "kind": "class",
+      "module": "picogrid_ecn_client.interfaces.clock",
+      "group": "clock",
+      "route": "reference/python/clock/clock",
+      "members": [
+        "measure",
+        "require_within"
+      ]
+    },
+    {
+      "name": "ClockReport",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.models.clock",
+      "group": "clock",
+      "route": "reference/python/clock/clock-report"
+    },
+    {
+      "name": "ClockEndpoint",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.models.clock",
+      "group": "clock",
+      "route": "reference/python/clock/clock-endpoint"
+    },
+    {
+      "name": "ClockLeapState",
+      "kind": "enum",
+      "module": "picogrid_ecn_client.models.clock",
+      "group": "clock",
+      "route": "reference/python/clock/clock-leap-state"
+    },
+    {
+      "name": "ECNConfig",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.config",
+      "group": "configuration",
+      "route": "reference/python/configuration/ecn-config"
+    },
+    {
+      "name": "ReconnectPolicy",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.config",
+      "group": "configuration",
+      "route": "reference/python/configuration/reconnect-policy"
+    },
+    {
+      "name": "ReviewedContainerNetwork",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.config",
+      "group": "configuration",
+      "route": "reference/python/configuration/reviewed-container-network"
+    },
+    {
+      "name": "load_config",
+      "kind": "function",
+      "module": "picogrid_ecn_client.config",
+      "group": "configuration",
+      "route": "reference/python/configuration/load-config"
+    },
+    {
+      "name": "AuthConfig",
+      "kind": "type-alias",
+      "module": "picogrid_ecn_client.auth",
+      "group": "configuration",
+      "route": "reference/python/configuration/auth-config"
+    },
+    {
+      "name": "BearerTokenAuth",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.auth",
+      "group": "configuration",
+      "route": "reference/python/configuration/bearer-token-auth"
+    },
+    {
+      "name": "MTLSAuth",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.auth",
+      "group": "configuration",
+      "route": "reference/python/configuration/mtls-auth"
+    },
+    {
+      "name": "NoAuth",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.auth",
+      "group": "configuration",
+      "route": "reference/python/configuration/no-auth"
+    },
+    {
+      "name": "CertificateMaterial",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.auth",
+      "group": "configuration",
+      "route": "reference/python/configuration/certificate-material"
+    },
+    {
+      "name": "PrivateKeyMaterial",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.auth",
+      "group": "configuration",
+      "route": "reference/python/configuration/private-key-material"
+    },
+    {
+      "name": "TLSConfig",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.auth",
+      "group": "configuration",
+      "route": "reference/python/configuration/tls-config"
+    },
+    {
+      "name": "TokenProvider",
+      "kind": "callback-alias",
+      "module": "picogrid_ecn_client.auth",
+      "group": "configuration",
+      "route": "reference/python/configuration/token-provider"
+    },
+    {
+      "name": "CredentialsProvider",
+      "kind": "callback-alias",
+      "module": "picogrid_ecn_client.auth",
+      "group": "configuration",
+      "route": "reference/python/configuration/credentials-provider"
+    },
+    {
+      "name": "WireFormat",
+      "kind": "enum",
+      "module": "picogrid_ecn_client.models.common",
+      "group": "configuration",
+      "route": "reference/python/configuration/wire-format"
+    },
+    {
+      "name": "Entities",
+      "kind": "class",
+      "module": "picogrid_ecn_client.interfaces.entities",
+      "group": "entities",
+      "route": "reference/python/entities/entities",
+      "members": [
+        "watch",
+        "publish"
+      ]
+    },
+    {
+      "name": "Entity",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.models.entity",
+      "group": "entities",
+      "route": "reference/python/entities/entity",
+      "members": [
+        "identity"
+      ]
+    },
+    {
+      "name": "EntityIdentity",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.models.entity",
+      "group": "entities",
+      "route": "reference/python/entities/entity-identity"
+    },
+    {
+      "name": "EntityEvent",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.models.entity",
+      "group": "entities",
+      "route": "reference/python/entities/entity-event"
+    },
+    {
+      "name": "EntityMetadata",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.models.entity",
+      "group": "entities",
+      "route": "reference/python/entities/entity-metadata"
+    },
+    {
+      "name": "DisplayMetadata",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.models.entity",
+      "group": "entities",
+      "route": "reference/python/entities/display-metadata"
+    },
+    {
+      "name": "EntityCategory",
+      "kind": "enum",
+      "module": "picogrid_ecn_client.models.common",
+      "group": "entities",
+      "route": "reference/python/entities/entity-category"
+    },
+    {
+      "name": "EntityStatus",
+      "kind": "enum",
+      "module": "picogrid_ecn_client.models.common",
+      "group": "entities",
+      "route": "reference/python/entities/entity-status"
+    },
+    {
+      "name": "Affiliation",
+      "kind": "enum",
+      "module": "picogrid_ecn_client.models.common",
+      "group": "entities",
+      "route": "reference/python/entities/affiliation"
+    },
+    {
+      "name": "Locations",
+      "kind": "class",
+      "module": "picogrid_ecn_client.interfaces.locations",
+      "group": "locations",
+      "route": "reference/python/locations/locations",
+      "members": [
+        "watch",
+        "last_observed",
+        "wait_for_update",
+        "wait_for_terminal_geolocation",
+        "publish"
+      ]
+    },
+    {
+      "name": "Location",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.models.location",
+      "group": "locations",
+      "route": "reference/python/locations/location",
+      "members": [
+        "to_geodetic",
+        "to_ecef",
+        "to_ecef_velocity"
+      ]
+    },
+    {
+      "name": "LocationEvent",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.models.location",
+      "group": "locations",
+      "route": "reference/python/locations/location-event"
+    },
+    {
+      "name": "Velocity",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.models.location",
+      "group": "locations",
+      "route": "reference/python/locations/velocity"
+    },
+    {
+      "name": "AngularVelocity",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.models.location",
+      "group": "locations",
+      "route": "reference/python/locations/angular-velocity"
+    },
+    {
+      "name": "GeodeticPosition",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.models.location",
+      "group": "locations",
+      "route": "reference/python/locations/geodetic-position",
+      "members": [
+        "to_ecef",
+        "to_ecef_velocity",
+        "to_ned_velocity"
+      ]
+    },
+    {
+      "name": "ECEFPosition",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.models.location",
+      "group": "locations",
+      "route": "reference/python/locations/ecef-position",
+      "members": [
+        "to_geodetic"
+      ]
+    },
+    {
+      "name": "ECEFVelocity",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.models.location",
+      "group": "locations",
+      "route": "reference/python/locations/ecef-velocity"
+    },
+    {
+      "name": "Tasks",
+      "kind": "class",
+      "module": "picogrid_ecn_client.interfaces.tasks",
+      "group": "tasks",
+      "route": "reference/python/tasks/tasks",
+      "members": [
+        "register",
+        "unregister",
+        "send"
+      ]
+    },
+    {
+      "name": "TaskHandler",
+      "kind": "callback-alias",
+      "module": "picogrid_ecn_client.interfaces.tasks",
+      "group": "tasks",
+      "route": "reference/python/tasks/task-handler"
+    },
+    {
+      "name": "RequestTaskHandler",
+      "kind": "protocol",
+      "module": "picogrid_ecn_client.interfaces.tasks",
+      "group": "tasks",
+      "route": "reference/python/tasks/request-task-handler",
+      "members": [
+        "__call__"
+      ]
+    },
+    {
+      "name": "ContextTaskHandler",
+      "kind": "protocol",
+      "module": "picogrid_ecn_client.interfaces.tasks",
+      "group": "tasks",
+      "route": "reference/python/tasks/context-task-handler",
+      "members": [
+        "__call__"
+      ]
+    },
+    {
+      "name": "TaskDispatchResult",
+      "kind": "type-alias",
+      "module": "picogrid_ecn_client.interfaces.tasks",
+      "group": "tasks",
+      "route": "reference/python/tasks/task-dispatch-result"
+    },
+    {
+      "name": "TaskRequestContext",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.models.task",
+      "group": "tasks",
+      "route": "reference/python/tasks/task-request-context"
+    },
+    {
+      "name": "TaskAcknowledgement",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.models.task",
+      "group": "tasks",
+      "route": "reference/python/tasks/task-acknowledgement"
+    },
+    {
+      "name": "TaskResult",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.models.task",
+      "group": "tasks",
+      "route": "reference/python/tasks/task-result",
+      "generic_parameters": [
+        "ResultT"
+      ]
+    },
+    {
+      "name": "TaskRegistration",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.models.task",
+      "group": "tasks",
+      "route": "reference/python/tasks/task-registration"
+    },
+    {
+      "name": "DispatchReceipt",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.models.diagnostics",
+      "group": "tasks",
+      "route": "reference/python/tasks/dispatch-receipt"
+    },
+    {
+      "name": "TaskMode",
+      "kind": "enum",
+      "module": "picogrid_ecn_client.models.common",
+      "group": "tasks",
+      "route": "reference/python/tasks/task-mode"
+    },
+    {
+      "name": "TaskStatus",
+      "kind": "enum",
+      "module": "picogrid_ecn_client.models.common",
+      "group": "tasks",
+      "route": "reference/python/tasks/task-status"
+    },
+    {
+      "name": "EventStream",
+      "kind": "class",
+      "module": "picogrid_ecn_client.streams",
+      "group": "streams",
+      "route": "reference/python/streams/event-stream",
+      "generic_parameters": [
+        "EventT"
+      ],
+      "async_iterator": true,
+      "members": [
+        "buffer_size",
+        "delivery_policy",
+        "dropped_count",
+        "decode_error_count",
+        "closed",
+        "__aiter__",
+        "__anext__",
+        "aclose"
+      ]
+    },
+    {
+      "name": "DeliveryPolicy",
+      "kind": "enum",
+      "module": "picogrid_ecn_client.models.common",
+      "group": "streams",
+      "route": "reference/python/streams/delivery-policy"
+    },
+    {
+      "name": "ConnectionStatus",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.models.diagnostics",
+      "group": "diagnostics",
+      "route": "reference/python/diagnostics/connection-status"
+    },
+    {
+      "name": "ClientState",
+      "kind": "enum",
+      "module": "picogrid_ecn_client.models.common",
+      "group": "diagnostics",
+      "route": "reference/python/diagnostics/client-state"
+    },
+    {
+      "name": "ConnectionFailureCode",
+      "kind": "enum",
+      "module": "picogrid_ecn_client.models.common",
+      "group": "diagnostics",
+      "route": "reference/python/diagnostics/connection-failure-code"
+    },
+    {
+      "name": "ConnectionFailureOperation",
+      "kind": "enum",
+      "module": "picogrid_ecn_client.models.common",
+      "group": "diagnostics",
+      "route": "reference/python/diagnostics/connection-failure-operation"
+    },
+    {
+      "name": "ConnectionRetryState",
+      "kind": "enum",
+      "module": "picogrid_ecn_client.models.common",
+      "group": "diagnostics",
+      "route": "reference/python/diagnostics/connection-retry-state"
+    },
+    {
+      "name": "DeliveryPhase",
+      "kind": "enum",
+      "module": "picogrid_ecn_client.models.common",
+      "group": "diagnostics",
+      "route": "reference/python/diagnostics/delivery-phase"
+    },
+    {
+      "name": "PreflightReport",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.models.diagnostics",
+      "group": "diagnostics",
+      "route": "reference/python/diagnostics/preflight-report"
+    },
+    {
+      "name": "PreflightCheck",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.models.diagnostics",
+      "group": "diagnostics",
+      "route": "reference/python/diagnostics/preflight-check"
+    },
+    {
+      "name": "PreflightCheckName",
+      "kind": "enum",
+      "module": "picogrid_ecn_client.models.common",
+      "group": "diagnostics",
+      "route": "reference/python/diagnostics/preflight-check-name"
+    },
+    {
+      "name": "CheckStatus",
+      "kind": "enum",
+      "module": "picogrid_ecn_client.models.common",
+      "group": "diagnostics",
+      "route": "reference/python/diagnostics/check-status"
+    },
+    {
+      "name": "SubscriptionProbe",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.models.diagnostics",
+      "group": "diagnostics",
+      "route": "reference/python/diagnostics/subscription-probe"
+    },
+    {
+      "name": "SubscriptionProbeKind",
+      "kind": "enum",
+      "module": "picogrid_ecn_client.models.diagnostics",
+      "group": "diagnostics",
+      "route": "reference/python/diagnostics/subscription-probe-kind"
+    },
+    {
+      "name": "PublicationReceipt",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.models.diagnostics",
+      "group": "diagnostics",
+      "route": "reference/python/diagnostics/publication-receipt"
+    },
+    {
+      "name": "PublicationKind",
+      "kind": "enum",
+      "module": "picogrid_ecn_client.models.common",
+      "group": "diagnostics",
+      "route": "reference/python/diagnostics/publication-kind"
+    },
+    {
+      "name": "decode_entity_event_protobuf",
+      "kind": "function",
+      "module": "picogrid_ecn_client.protobuf",
+      "group": "protobuf",
+      "route": "reference/python/protobuf/decode-entity-event-protobuf"
+    },
+    {
+      "name": "decode_entity_location_protobuf",
+      "kind": "function",
+      "module": "picogrid_ecn_client.protobuf",
+      "group": "protobuf",
+      "route": "reference/python/protobuf/decode-entity-location-protobuf"
+    },
+    {
+      "name": "ECNClientError",
+      "kind": "exception",
+      "module": "picogrid_ecn_client.exceptions",
+      "group": "exceptions",
+      "route": "reference/python/exceptions/ecn-client-error",
+      "members": [
+        "__init__",
+        "message",
+        "code",
+        "operation",
+        "status_code",
+        "details",
+        "default_code"
+      ]
+    },
+    {
+      "name": "ConfigurationError",
+      "kind": "exception",
+      "module": "picogrid_ecn_client.exceptions",
+      "group": "exceptions",
+      "route": "reference/python/exceptions/configuration-error"
+    },
+    {
+      "name": "AuthenticationError",
+      "kind": "exception",
+      "module": "picogrid_ecn_client.exceptions",
+      "group": "exceptions",
+      "route": "reference/python/exceptions/authentication-error"
+    },
+    {
+      "name": "AuthorizationError",
+      "kind": "exception",
+      "module": "picogrid_ecn_client.exceptions",
+      "group": "exceptions",
+      "route": "reference/python/exceptions/authorization-error"
+    },
+    {
+      "name": "ConnectionError",
+      "kind": "exception",
+      "module": "picogrid_ecn_client.exceptions",
+      "group": "exceptions",
+      "route": "reference/python/exceptions/connection-error"
+    },
+    {
+      "name": "TransportBoundaryError",
+      "kind": "exception",
+      "module": "picogrid_ecn_client.exceptions",
+      "group": "exceptions",
+      "route": "reference/python/exceptions/transport-boundary-error"
+    },
+    {
+      "name": "ProtocolError",
+      "kind": "exception",
+      "module": "picogrid_ecn_client.exceptions",
+      "group": "exceptions",
+      "route": "reference/python/exceptions/protocol-error"
+    },
+    {
+      "name": "ValidationError",
+      "kind": "exception",
+      "module": "picogrid_ecn_client.exceptions",
+      "group": "exceptions",
+      "route": "reference/python/exceptions/validation-error"
+    },
+    {
+      "name": "TimeoutError",
+      "kind": "exception",
+      "module": "picogrid_ecn_client.exceptions",
+      "group": "exceptions",
+      "route": "reference/python/exceptions/timeout-error"
+    },
+    {
+      "name": "DeliveryError",
+      "kind": "exception",
+      "module": "picogrid_ecn_client.exceptions",
+      "group": "exceptions",
+      "route": "reference/python/exceptions/delivery-error",
+      "members": [
+        "__init__",
+        "delivery_phase",
+        "task_id",
+        "operation_id"
+      ]
+    },
+    {
+      "name": "OutcomeUnknownError",
+      "kind": "exception",
+      "module": "picogrid_ecn_client.exceptions",
+      "group": "exceptions",
+      "route": "reference/python/exceptions/outcome-unknown-error",
+      "members": [
+        "__init__"
+      ]
+    },
+    {
+      "name": "NotReadyError",
+      "kind": "exception",
+      "module": "picogrid_ecn_client.exceptions",
+      "group": "exceptions",
+      "route": "reference/python/exceptions/not-ready-error"
+    },
+    {
+      "name": "ResourceLimitError",
+      "kind": "exception",
+      "module": "picogrid_ecn_client.exceptions",
+      "group": "exceptions",
+      "route": "reference/python/exceptions/resource-limit-error"
+    },
+    {
+      "name": "ClockError",
+      "kind": "exception",
+      "module": "picogrid_ecn_client.exceptions",
+      "group": "exceptions",
+      "route": "reference/python/exceptions/clock-error"
+    },
+    {
+      "name": "ClockProtocolError",
+      "kind": "exception",
+      "module": "picogrid_ecn_client.exceptions",
+      "group": "exceptions",
+      "route": "reference/python/exceptions/clock-protocol-error"
+    },
+    {
+      "name": "ClockToleranceError",
+      "kind": "exception",
+      "module": "picogrid_ecn_client.exceptions",
+      "group": "exceptions",
+      "route": "reference/python/exceptions/clock-tolerance-error",
+      "members": [
+        "__init__",
+        "report"
+      ]
+    }
+  ],
+  "testing_symbols": [
+    {
+      "name": "MockECN",
+      "kind": "class",
+      "module": "picogrid_ecn_client.testing.mock_ecn",
+      "group": "testing",
+      "route": "reference/python/testing/mock-ecn",
+      "async_context_manager": true,
+      "members": [
+        "__init__",
+        "events",
+        "scenario",
+        "host",
+        "mqtt_port",
+        "is_running",
+        "active_connection_count",
+        "active_task_count",
+        "entity_state",
+        "location_state",
+        "start",
+        "close",
+        "client_config",
+        "set_delay",
+        "drop_next_messages",
+        "malform_next_messages",
+        "set_authorization_failure",
+        "drop_next_connections",
+        "reject_next_authentications",
+        "deny_next_acknowledgements",
+        "return_next_acknowledgement_reason",
+        "malform_next_protocol_responses",
+        "disconnect_next_publications",
+        "disconnect_before_publish",
+        "reset_scenario",
+        "disconnect_clients"
+      ]
+    },
+    {
+      "name": "MockEvents",
+      "kind": "class",
+      "module": "picogrid_ecn_client.testing.mock_ecn",
+      "group": "testing",
+      "route": "reference/python/testing/mock-events",
+      "members": [
+        "mqtt_connected",
+        "mqtt_disconnected",
+        "message_received",
+        "message_forwarded",
+        "message_dropped",
+        "malformed_message_sent",
+        "authentication_failed",
+        "authorization_denied",
+        "forced_disconnect",
+        "connection_dropped",
+        "acknowledgement_denied",
+        "acknowledgement_reason_returned",
+        "malformed_protocol_response",
+        "publication_disconnected_before_send",
+        "publication_disconnected_qos0_before_completion",
+        "publication_disconnected_before_puback",
+        "publication_disconnected_after_puback",
+        "reset"
+      ]
+    },
+    {
+      "name": "MockScenario",
+      "kind": "class",
+      "module": "picogrid_ecn_client.testing.mock_ecn",
+      "group": "testing",
+      "route": "reference/python/testing/mock-scenario",
+      "members": [
+        "delays",
+        "drop_messages_remaining",
+        "malformed_messages_remaining",
+        "denied_operations",
+        "connect_drops_remaining",
+        "authentication_rejections_remaining",
+        "reset"
+      ]
+    },
+    {
+      "name": "FULL_ACCESS_TOKEN",
+      "kind": "constant",
+      "module": "picogrid_ecn_client.testing.mock_ecn",
+      "group": "testing",
+      "route": "reference/python/testing/synthetic-tokens"
+    },
+    {
+      "name": "READ_ONLY_TOKEN",
+      "kind": "constant",
+      "module": "picogrid_ecn_client.testing.mock_ecn",
+      "group": "testing",
+      "route": "reference/python/testing/synthetic-tokens"
+    },
+    {
+      "name": "NO_ACCESS_TOKEN",
+      "kind": "constant",
+      "module": "picogrid_ecn_client.testing.mock_ecn",
+      "group": "testing",
+      "route": "reference/python/testing/synthetic-tokens"
+    }
+  ],
+  "workflow_symbols": [
+    {
+      "name": "CheckClockResult",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.workflows.diagnostics",
+      "group": "workflows",
+      "route": "reference/python/workflows/check-clock-result"
+    },
+    {
+      "name": "ConvertLocationToECEFResult",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.workflows.geodesy",
+      "group": "workflows",
+      "route": "reference/python/workflows/convert-location-to-ecef-result"
+    },
+    {
+      "name": "DecodePublicProtobufResult",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.workflows.protobuf",
+      "group": "workflows",
+      "route": "reference/python/workflows/decode-public-protobuf-result"
+    },
+    {
+      "name": "DispatchTaskResult",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.workflows.tasks",
+      "group": "workflows",
+      "route": "reference/python/workflows/dispatch-task-result"
+    },
+    {
+      "name": "ECNLocationResult",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.workflows.observe",
+      "group": "workflows",
+      "route": "reference/python/workflows/ecn-location-result"
+    },
+    {
+      "name": "EchoRequest",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.workflows.tasks",
+      "group": "workflows",
+      "route": "reference/python/workflows/echo-request",
+      "related_examples": [
+        "examples/preflight.py",
+        "examples/publish_entity.py",
+        "examples/watch_tracks.py",
+        "examples/dispatch_task.py",
+        "examples/dispatch_mesh_task.py"
+      ]
+    },
+    {
+      "name": "EchoResult",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.workflows.tasks",
+      "group": "workflows",
+      "route": "reference/python/workflows/echo-result",
+      "related_examples": [
+        "examples/preflight.py",
+        "examples/publish_entity.py",
+        "examples/watch_tracks.py",
+        "examples/dispatch_task.py",
+        "examples/dispatch_mesh_task.py"
+      ]
+    },
+    {
+      "name": "MeshObservationResult",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.workflows.observe",
+      "group": "workflows",
+      "route": "reference/python/workflows/mesh-observation-result"
+    },
+    {
+      "name": "PreflightResult",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.workflows.diagnostics",
+      "group": "workflows",
+      "route": "reference/python/workflows/preflight-result"
+    },
+    {
+      "name": "PublishEntityResult",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.workflows.publish",
+      "group": "workflows",
+      "route": "reference/python/workflows/publish-entity-result"
+    },
+    {
+      "name": "PublishLocationResult",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.workflows.publish",
+      "group": "workflows",
+      "route": "reference/python/workflows/publish-location-result"
+    },
+    {
+      "name": "ReceiveMeshTaskResult",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.workflows.tasks",
+      "group": "workflows",
+      "route": "reference/python/workflows/receive-mesh-task-result"
+    },
+    {
+      "name": "ReceiveTaskResult",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.workflows.tasks",
+      "group": "workflows",
+      "route": "reference/python/workflows/receive-task-result"
+    },
+    {
+      "name": "WatchEntitiesResult",
+      "kind": "pydantic-model",
+      "module": "picogrid_ecn_client.workflows.observe",
+      "group": "workflows",
+      "route": "reference/python/workflows/watch-entities-result"
+    },
+    {
+      "name": "check_clock",
+      "kind": "function",
+      "module": "picogrid_ecn_client.workflows.diagnostics",
+      "group": "workflows",
+      "route": "reference/python/workflows/check-clock"
+    },
+    {
+      "name": "convert_location_to_ecef",
+      "kind": "function",
+      "module": "picogrid_ecn_client.workflows.geodesy",
+      "group": "workflows",
+      "route": "reference/python/workflows/convert-location-to-ecef"
+    },
+    {
+      "name": "decode_public_protobuf",
+      "kind": "function",
+      "module": "picogrid_ecn_client.workflows.protobuf",
+      "group": "workflows",
+      "route": "reference/python/workflows/decode-public-protobuf"
+    },
+    {
+      "name": "dispatch_mesh_task",
+      "kind": "function",
+      "module": "picogrid_ecn_client.workflows.tasks",
+      "group": "workflows",
+      "route": "reference/python/workflows/dispatch-mesh-task"
+    },
+    {
+      "name": "dispatch_task",
+      "kind": "function",
+      "module": "picogrid_ecn_client.workflows.tasks",
+      "group": "workflows",
+      "route": "reference/python/workflows/dispatch-task"
+    },
+    {
+      "name": "get_ecn_location",
+      "kind": "function",
+      "module": "picogrid_ecn_client.workflows.observe",
+      "group": "workflows",
+      "route": "reference/python/workflows/get-ecn-location"
+    },
+    {
+      "name": "observe_mesh_data",
+      "kind": "function",
+      "module": "picogrid_ecn_client.workflows.observe",
+      "group": "workflows",
+      "route": "reference/python/workflows/observe-mesh-data"
+    },
+    {
+      "name": "preflight",
+      "kind": "function",
+      "module": "picogrid_ecn_client.workflows.diagnostics",
+      "group": "workflows",
+      "route": "reference/python/workflows/preflight"
+    },
+    {
+      "name": "publish_entity",
+      "kind": "function",
+      "module": "picogrid_ecn_client.workflows.publish",
+      "group": "workflows",
+      "route": "reference/python/workflows/publish-entity"
+    },
+    {
+      "name": "publish_location",
+      "kind": "function",
+      "module": "picogrid_ecn_client.workflows.publish",
+      "group": "workflows",
+      "route": "reference/python/workflows/publish-location"
+    },
+    {
+      "name": "receive_mesh_task",
+      "kind": "function",
+      "module": "picogrid_ecn_client.workflows.tasks",
+      "group": "workflows",
+      "route": "reference/python/workflows/receive-mesh-task"
+    },
+    {
+      "name": "receive_task",
+      "kind": "function",
+      "module": "picogrid_ecn_client.workflows.tasks",
+      "group": "workflows",
+      "route": "reference/python/workflows/receive-task"
+    },
+    {
+      "name": "watch_detections",
+      "kind": "function",
+      "module": "picogrid_ecn_client.workflows.observe",
+      "group": "workflows",
+      "route": "reference/python/workflows/watch-detections"
+    },
+    {
+      "name": "watch_tracks",
+      "kind": "function",
+      "module": "picogrid_ecn_client.workflows.observe",
+      "group": "workflows",
+      "route": "reference/python/workflows/watch-tracks"
+    }
+  ],
+  "excluded": {
+    "modules": [
+      "picogrid_ecn_client._cli",
+      "picogrid_ecn_client._entity_locations",
+      "picogrid_ecn_client._geodesy",
+      "picogrid_ecn_client._legion_auth",
+      "picogrid_ecn_client._network",
+      "picogrid_ecn_client._preflight",
+      "picogrid_ecn_client._profiles",
+      "picogrid_ecn_client._protocol",
+      "picogrid_ecn_client._protocol.generated",
+      "picogrid_ecn_client._redaction",
+      "picogrid_ecn_client._services",
+      "picogrid_ecn_client._transport",
+      "picogrid_ecn_client.models._base",
+      "picogrid_ecn_client.testing._mqtt",
+      "picogrid_ecn_client.workflows._retention"
+    ],
+    "members": {
+      "MockECN": {
+        "names": [
+          "mqtt_authenticate",
+          "mqtt_can_subscribe",
+          "mqtt_can_publish",
+          "mqtt_published",
+          "mqtt_connected",
+          "mqtt_disconnected",
+          "mqtt_forwarded",
+          "mqtt_acknowledgement_response",
+          "mqtt_drop_connect",
+          "mqtt_publication_disconnect",
+          "mqtt_publication_disconnected",
+          "mqtt_qos0_publication_disconnect"
+        ],
+        "reason": "Broker-integration callbacks exchanged with the private testing._mqtt broker; they accept private BrokerIdentity values and are not a supported consumer surface."
+      },
+      "MockScenario": {
+        "names": [
+          "publication_disconnects",
+          "response_faults"
+        ],
+        "reason": "Raw fault queues use private broker-only value types; callers configure them through the supported MockECN fault-control methods."
+      },
+      "mock_ecn_module": {
+        "names": [
+          "main"
+        ],
+        "reason": "CLI entry point documented as the `picogrid-mock-ecn` command, not a supported Python import."
+      },
+      "Clock": {
+        "names": [
+          "__init__"
+        ],
+        "reason": "Constructor is internal: the object is obtained from the client or stream API, never constructed directly, so the page documents no constructor table."
+      },
+      "Entities": {
+        "names": [
+          "__init__"
+        ],
+        "reason": "Constructor is internal: the object is obtained from the client or stream API, never constructed directly, so the page documents no constructor table."
+      },
+      "Locations": {
+        "names": [
+          "__init__"
+        ],
+        "reason": "Constructor is internal: the object is obtained from the client or stream API, never constructed directly, so the page documents no constructor table."
+      },
+      "Tasks": {
+        "names": [
+          "__init__"
+        ],
+        "reason": "Constructor is internal: the object is obtained from the client or stream API, never constructed directly, so the page documents no constructor table."
+      },
+      "EventStream": {
+        "names": [
+          "__init__"
+        ],
+        "reason": "Constructor is internal: the object is obtained from the client or stream API, never constructed directly, so the page documents no constructor table."
+      }
+    },
+    "surfaces": [
+      "Private modules and any name beginning with an underscore",
+      "Transport objects, topic builders, raw MQTT topics, and generic publish/subscribe access",
+      "Generated protobuf classes (picogrid_ecn_client._protocol.generated) and .proto schema internals",
+      "Internal mock broker machinery outside the allowlisted picogrid_ecn_client.testing exports",
+      "REST, cloud, or Legion runtime behavior",
+      "Server-wide search or authoritative platform state",
+      "Command discovery, routing administration, broker administration, and retry orchestration",
+      "Correlation helpers and protocol compatibility internals"
+    ]
+  }
+}

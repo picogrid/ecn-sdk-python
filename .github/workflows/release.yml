@@ -1,0 +1,506 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: release-main
+  cancel-in-progress: false
+
+env:
+  PYTHONDONTWRITEBYTECODE: "1"
+  UV_VERSION: "0.7.20"
+
+jobs:
+  # Release Please authors version-bump pull requests, so it may only run in the
+  # private engineering upstream. Public main accepts byte-preserving export merges
+  # exclusively; a bump commit authored there would break the export equivalence
+  # barrier described in PUBLIC_DISTRIBUTION.md.
+  release-please:
+    name: Prepare or create a draft release
+    if: >-
+      vars.RELEASE_AUTOMATION_ENABLED == 'true' &&
+      github.repository != 'picogrid/ecn-sdk-python'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    outputs:
+      body: ${{ steps.release.outputs.body }}
+      html_url: ${{ steps.release.outputs.html_url }}
+      release_created: ${{ steps.release.outputs.release_created }}
+      sha: ${{ steps.release.outputs.sha }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - name: Update the release PR or create a draft release
+        id: release
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          config-file: .github/release-please-config.json
+          manifest-file: .github/.release-please-manifest.json
+          target-branch: main
+
+  # Every downstream job consumes this job's outputs, never Release Please's
+  # directly. In the private upstream it passes the Release Please outputs through
+  # unchanged. In the public distribution repository, where Release Please is
+  # deliberately disabled, it derives the same identity from the merged and
+  # equivalence-verified tree: the version is read from pyproject.toml, the tag is
+  # that version prefixed with "v", and a draft release is created only when the
+  # tag does not exist yet. A merge that does not change the version resolves to an
+  # existing tag and the pipeline stops without output.
+  resolve-release:
+    name: Resolve the release candidate identity
+    if: >-
+      !cancelled() &&
+      vars.RELEASE_AUTOMATION_ENABLED == 'true' &&
+      (needs.release-please.result == 'success' || needs.release-please.result == 'skipped')
+    needs: release-please
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    outputs:
+      body: ${{ steps.passthrough.outputs.body || steps.derive.outputs.body }}
+      html_url: ${{ steps.passthrough.outputs.html_url || steps.derive.outputs.html_url }}
+      release_created: ${{ steps.passthrough.outputs.release_created || steps.derive.outputs.release_created }}
+      sha: ${{ steps.passthrough.outputs.sha || steps.derive.outputs.sha }}
+      tag_name: ${{ steps.passthrough.outputs.tag_name || steps.derive.outputs.tag_name }}
+      version: ${{ steps.passthrough.outputs.version || steps.derive.outputs.version }}
+    steps:
+      - name: Pass through the private Release Please outputs
+        id: passthrough
+        if: github.repository != 'picogrid/ecn-sdk-python'
+        env:
+          RELEASE_BODY: ${{ needs.release-please.outputs.body }}
+          RELEASE_HTML_URL: ${{ needs.release-please.outputs.html_url }}
+          RELEASE_CREATED: ${{ needs.release-please.outputs.release_created }}
+          RELEASE_SHA: ${{ needs.release-please.outputs.sha }}
+          RELEASE_TAG_NAME: ${{ needs.release-please.outputs.tag_name }}
+          RELEASE_VERSION: ${{ needs.release-please.outputs.version }}
+        run: |
+          {
+            echo "body<<PASSTHROUGH_EOF"
+            echo "$RELEASE_BODY"
+            echo "PASSTHROUGH_EOF"
+            echo "html_url=$RELEASE_HTML_URL"
+            echo "release_created=$RELEASE_CREATED"
+            echo "sha=$RELEASE_SHA"
+            echo "tag_name=$RELEASE_TAG_NAME"
+            echo "version=$RELEASE_VERSION"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Check out the merged public commit
+        if: github.repository == 'picogrid/ecn-sdk-python'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+
+      - name: Pin the Python runtime for the version derivation
+        if: github.repository == 'picogrid/ecn-sdk-python'
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Derive the release identity from the verified tree
+        id: derive
+        if: github.repository == 'picogrid/ecn-sdk-python'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="$(python3 -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')"
+          test -n "$version"
+          echo "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-?(a|b|rc)[0-9]+)?$'
+          tag="v${version}"
+          # Only an HTTP 404 means the tag is absent. Any other failure (403,
+          # rate limit, 5xx) must fail the job rather than fall through to
+          # release creation, so the check stays fail-closed.
+          if ref_json="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${tag}" 2> tag-check.err)"; then
+            tag_sha="$(printf '%s' "$ref_json" | jq -r '.object.sha')"
+            # An annotated tag ref points at a tag object; dereference it to
+            # the commit before comparing against the merged commit.
+            if [ "$(printf '%s' "$ref_json" | jq -r '.object.type')" = "tag" ]; then
+              tag_sha="$(gh api "repos/${GITHUB_REPOSITORY}/git/tags/${tag_sha}" --jq '.object.sha')"
+            fi
+            # The tag exists. A missing release means an earlier run created
+            # the ref but failed before the draft; recover by creating the
+            # draft on this exact ref. An unpublished draft means an earlier
+            # run failed before handing off its identity; resume it. Either
+            # recovery requires the tag to be bound to this exact merged
+            # commit. A published release means there is nothing to do for
+            # this merge, and any other lookup failure is an unknown state
+            # that fails the job.
+            if release_response="$(
+              gh api --include \
+                "repos/${GITHUB_REPOSITORY}/releases/tags/${tag}" \
+                --jq '.draft' \
+                2> release-check.err
+            )"; then
+              is_draft="$(printf '%s\n' "$release_response" | sed -n '$p')"
+              if [ "$is_draft" = "true" ]; then
+                test "$tag_sha" = "$GITHUB_SHA" || {
+                  echo "draft tag ${tag} targets ${tag_sha}, not ${GITHUB_SHA}; refusing to resume"
+                  exit 1
+                }
+                echo "tag ${tag} carries an unpublished draft; resuming it"
+                html_url="$(gh release view "$tag" --json url --jq '.url')"
+                release_created=true
+              elif [ "$is_draft" = "false" ]; then
+                echo "tag ${tag} already exists; nothing to release for this merge"
+                echo "release_created=false" >> "$GITHUB_OUTPUT"
+                exit 0
+              else
+                echo "release lookup returned an invalid draft state"
+                exit 1
+              fi
+            else
+              release_http_status="$(
+                printf '%s\n' "$release_response" |
+                  sed -n 's/^HTTP\/[^ ]* \([0-9][0-9][0-9]\).*/\1/p' |
+                  sed -n '$p'
+              )"
+              test "$release_http_status" = "404" || {
+                cat release-check.err
+                exit 1
+              }
+              test "$tag_sha" = "$GITHUB_SHA" || {
+                echo "tag ${tag} targets ${tag_sha}, not ${GITHUB_SHA}; refusing to create a release for it"
+                exit 1
+              }
+              echo "tag ${tag} exists without a release; creating the draft on it"
+              html_url="$(gh release create "$tag" \
+                --verify-tag \
+                --draft \
+                --title "$tag" \
+                --notes "See CHANGELOG.md at this tag for the release history.")"
+              release_created=true
+            fi
+          else
+            grep -q "HTTP 404" tag-check.err || { cat tag-check.err; exit 1; }
+            # Create the tag ref explicitly at the merged commit before the
+            # release. A concurrent writer claiming the tag makes this call
+            # fail instead of silently retargeting the release, and
+            # --verify-tag pins the release to the ref just created.
+            gh api "repos/${GITHUB_REPOSITORY}/git/refs" \
+              -f ref="refs/tags/${tag}" \
+              -f sha="$GITHUB_SHA" > /dev/null
+            html_url="$(gh release create "$tag" \
+              --verify-tag \
+              --draft \
+              --title "$tag" \
+              --notes "See CHANGELOG.md at this tag for the release history.")"
+            release_created=true
+          fi
+          test -n "$html_url"
+          {
+            echo "body="
+            echo "html_url=$html_url"
+            echo "release_created=$release_created"
+            echo "sha=$GITHUB_SHA"
+            echo "tag_name=$tag"
+            echo "version=$version"
+          } >> "$GITHUB_OUTPUT"
+
+  build-candidate:
+    name: Build and verify the release candidate once
+    if: needs.resolve-release.outputs.release_created == 'true'
+    needs: resolve-release
+    runs-on: ${{ vars.HEAVY_RUNNER || 'ubuntu-latest' }}
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    env:
+      PLAYWRIGHT_WORKERS: "4"
+      VERIFY_RELEASE_JOBS: "4"
+      LEGION_DOCS_URL: ${{ vars.LEGION_DOCS_URL }}
+      LEGION_DOCS_VERSION: ${{ vars.LEGION_DOCS_VERSION }}
+      RELEASE_TAG: ${{ needs.resolve-release.outputs.tag_name }}
+    steps:
+      - name: Check out the exact released commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ needs.resolve-release.outputs.sha }}
+
+      - name: Make Python 3.14 available to the advertised-runtime gate
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Make Python 3.13 available to the advertised-runtime gate
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+
+      - name: Make Python 3.12 available to the advertised-runtime gate
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Select Python 3.11 for the canonical verifier
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Set up Node.js for documentation and operator-app gates
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24.19.0"
+          cache: npm
+          cache-dependency-path: |
+            docs/package-lock.json
+            operator-app/package-lock.json
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Bind reproducible output to the released commit
+        run: echo "SOURCE_DATE_EPOCH=$(git show -s --format=%ct HEAD)" >> "$GITHUB_ENV"
+
+      - name: Build, inspect, install, and test the exact candidate
+        run: make verify-release
+
+      - name: Upload the verified bytes without rebuilding
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-candidate-${{ needs.resolve-release.outputs.tag_name }}
+          path: |
+            dist/
+            reports/generated/
+            site-dist/
+          if-no-files-found: error
+          include-hidden-files: true
+          compression-level: 0
+          retention-days: 14
+
+  publication-reachability:
+    name: Require anonymous publication reachability
+    if: >-
+      needs.resolve-release.outputs.release_created == 'true' &&
+      vars.RELEASE_PROMOTION_ENABLED == 'true' &&
+      github.repository == 'picogrid/ecn-sdk-python'
+    needs:
+      - resolve-release
+      - build-candidate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Check out the exact released commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ needs.resolve-release.outputs.sha }}
+
+      - name: Set up the pinned documentation runtime
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24.19.0"
+
+      - name: Download the already verified candidate and site
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release-candidate-${{ needs.resolve-release.outputs.tag_name }}
+          path: candidate
+
+      - name: Bind the retained site to the released commit
+        env:
+          EXPECTED_SHA: ${{ needs.resolve-release.outputs.sha }}
+        run: |
+          test "$(jq -r '.materials.git_commit' candidate/reports/generated/provenance.json)" = "$EXPECTED_SHA"
+          test "$(jq -r '.materials.git_worktree_dirty' candidate/reports/generated/provenance.json)" = "false"
+          test -f candidate/site-dist/ecn-sdk/index.html
+
+      - name: Require anonymous repository and guide reachability
+        env:
+          DOCS_GIT_COMMIT: ${{ needs.resolve-release.outputs.sha }}
+          DOCS_GIT_TAG: ${{ needs.resolve-release.outputs.tag_name }}
+          LEGION_DOCS_URL: ${{ vars.LEGION_DOCS_URL }}
+          LEGION_DOCS_VERSION: ${{ vars.LEGION_DOCS_VERSION }}
+        run: node docs/site/check-external-links.mjs --require-public candidate/site-dist
+
+  promote-release:
+    name: Attest, sign, and publish the exact candidate
+    if: >-
+      needs.resolve-release.outputs.release_created == 'true' &&
+      vars.RELEASE_PROMOTION_ENABLED == 'true' &&
+      github.repository == 'picogrid/ecn-sdk-python'
+    needs:
+      - resolve-release
+      - build-candidate
+      - publication-reachability
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      attestations: write
+      contents: write
+      id-token: write
+    environment:
+      name: github-release
+      url: ${{ needs.resolve-release.outputs.html_url }}
+    steps:
+      - name: Download the already verified candidate
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release-candidate-${{ needs.resolve-release.outputs.tag_name }}
+          path: candidate
+
+      - name: Recheck candidate identity and checksums
+        env:
+          EXPECTED_SHA: ${{ needs.resolve-release.outputs.sha }}
+        run: |
+          mapfile -t client_wheels < <(find candidate/dist -maxdepth 1 -type f -name 'picogrid_ecn_client-*.whl' -print | sort)
+          mapfile -t operator_wheels < <(find candidate/dist -maxdepth 1 -type f -name 'picogrid_ecn_operator_app-*.whl' -print | sort)
+          mapfile -t client_sdists < <(find candidate/dist -maxdepth 1 -type f -name 'picogrid_ecn_client-*.tar.gz' -print | sort)
+          test "${#client_wheels[@]}" -eq 1
+          test "${#operator_wheels[@]}" -eq 1
+          test "${#client_sdists[@]}" -eq 1
+          test "$(find candidate/dist -mindepth 1 -maxdepth 1 | wc -l)" -eq 3
+          test "$(find candidate/dist -maxdepth 1 -type f | wc -l)" -eq 3
+          test "$(wc -l < candidate/reports/generated/checksums.sha256)" -eq 3
+          diff -u \
+            <(find candidate/dist -maxdepth 1 -type f -printf '%f\n' | sort) \
+            <(awk '{print $2}' candidate/reports/generated/checksums.sha256 | sort)
+          test -f candidate/reports/generated/sbom.cdx.json
+          test ! -L candidate/reports/generated/sbom.cdx.json
+          test -f candidate/reports/generated/operator-sbom.cdx.json
+          test ! -L candidate/reports/generated/operator-sbom.cdx.json
+          test -f candidate/reports/generated/operator-frontend-sbom.cdx.json
+          test ! -L candidate/reports/generated/operator-frontend-sbom.cdx.json
+          test "$(jq -r '.materials.git_commit' candidate/reports/generated/provenance.json)" = "$EXPECTED_SHA"
+          test "$(jq -r '.materials.git_worktree_dirty' candidate/reports/generated/provenance.json)" = "false"
+          (cd candidate/dist && sha256sum --check ../reports/generated/checksums.sha256)
+
+      - name: Create GitHub build provenance attestations
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-checksums: candidate/reports/generated/checksums.sha256
+
+      - name: Attest the CycloneDX SBOM for the client wheel
+        uses: actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e # v4.1.0
+        with:
+          subject-path: candidate/dist/picogrid_ecn_client-*.whl
+          sbom-path: candidate/reports/generated/sbom.cdx.json
+
+      - name: Attest the CycloneDX SBOM for the operator wheel
+        uses: actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e # v4.1.0
+        with:
+          subject-path: candidate/dist/picogrid_ecn_operator_app-*.whl
+          sbom-path: candidate/reports/generated/operator-sbom.cdx.json
+
+      - name: Attest the embedded-frontend CycloneDX SBOM for the operator wheel
+        uses: actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e # v4.1.0
+        with:
+          subject-path: candidate/dist/picogrid_ecn_operator_app-*.whl
+          sbom-path: candidate/reports/generated/operator-frontend-sbom.cdx.json
+
+      - name: Attest the CycloneDX SBOM for the source distribution
+        uses: actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e # v4.1.0
+        with:
+          subject-path: candidate/dist/*.tar.gz
+          sbom-path: candidate/reports/generated/sbom.cdx.json
+
+      - name: Sign the three exact distributions with Sigstore
+        uses: sigstore/gh-action-sigstore-python@790bc6befb9d733738f18d8f895854b453640ec9 # v3.5.0
+        with:
+          inputs: >-
+            candidate/dist/picogrid_ecn_client-*.whl
+            candidate/dist/picogrid_ecn_operator_app-*.whl
+            candidate/dist/picogrid_ecn_client-*.tar.gz
+          release-signing-artifacts: false
+
+      - name: Require the unpublished draft created by this workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.resolve-release.outputs.tag_name }}
+        run: |
+          test "$(find candidate/dist -maxdepth 1 -type f -name '*.sigstore.json' | wc -l)" -eq 3
+          test -f candidate/dist/picogrid_ecn_client-*.whl.sigstore.json
+          test -f candidate/dist/picogrid_ecn_operator_app-*.whl.sigstore.json
+          test -f candidate/dist/picogrid_ecn_client-*.tar.gz.sigstore.json
+          test "$(gh release view "$RELEASE_TAG" --json isDraft --jq '.isDraft')" = "true"
+
+      - name: Attach exact artifacts, signatures, and sanitized evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.resolve-release.outputs.tag_name }}
+        run: >-
+          gh release upload "$RELEASE_TAG"
+          candidate/dist/picogrid_ecn_client-*.whl
+          candidate/dist/picogrid_ecn_operator_app-*.whl
+          candidate/dist/picogrid_ecn_client-*.tar.gz
+          candidate/dist/picogrid_ecn_client-*.whl.sigstore.json
+          candidate/dist/picogrid_ecn_operator_app-*.whl.sigstore.json
+          candidate/dist/picogrid_ecn_client-*.tar.gz.sigstore.json
+          candidate/reports/generated/*
+
+      - name: Publish the fully populated GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.resolve-release.outputs.tag_name }}
+        run: gh release edit "$RELEASE_TAG" --draft=false
+
+  publish-pypi:
+    name: Publish the exact client artifacts to PyPI with OIDC
+    if: >-
+      needs.resolve-release.outputs.release_created == 'true' &&
+      vars.RELEASE_PROMOTION_ENABLED == 'true' &&
+      vars.PYPI_PUBLISH_ENABLED == 'true' &&
+      github.repository == 'picogrid/ecn-sdk-python'
+    needs:
+      - resolve-release
+      - build-candidate
+      - promote-release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      id-token: write
+    environment:
+      name: pypi
+    steps:
+      - name: Download the same verified candidate
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release-candidate-${{ needs.resolve-release.outputs.tag_name }}
+          path: candidate
+
+      - name: Recheck exact distribution checksums and stage PyPI subjects
+        run: |
+          mapfile -t client_wheels < <(find candidate/dist -maxdepth 1 -type f -name 'picogrid_ecn_client-*.whl' -print | sort)
+          mapfile -t operator_wheels < <(find candidate/dist -maxdepth 1 -type f -name 'picogrid_ecn_operator_app-*.whl' -print | sort)
+          mapfile -t client_sdists < <(find candidate/dist -maxdepth 1 -type f -name 'picogrid_ecn_client-*.tar.gz' -print | sort)
+          test "${#client_wheels[@]}" -eq 1
+          test "${#operator_wheels[@]}" -eq 1
+          test "${#client_sdists[@]}" -eq 1
+          test "$(find candidate/dist -mindepth 1 -maxdepth 1 | wc -l)" -eq 3
+          test "$(find candidate/dist -maxdepth 1 -type f | wc -l)" -eq 3
+          test "$(wc -l < candidate/reports/generated/checksums.sha256)" -eq 3
+          diff -u \
+            <(find candidate/dist -maxdepth 1 -type f -printf '%f\n' | sort) \
+            <(awk '{print $2}' candidate/reports/generated/checksums.sha256 | sort)
+          (cd candidate/dist && sha256sum --check ../reports/generated/checksums.sha256)
+          mkdir pypi-candidate
+          cp -- "${client_wheels[0]}" "${client_sdists[0]}" pypi-candidate/
+          test "$(find pypi-candidate -mindepth 1 -maxdepth 1 | wc -l)" -eq 2
+          test "$(find pypi-candidate -maxdepth 1 -type f | wc -l)" -eq 2
+          cmp -- "${client_wheels[0]}" "pypi-candidate/$(basename "${client_wheels[0]}")"
+          cmp -- "${client_sdists[0]}" "pypi-candidate/$(basename "${client_sdists[0]}")"
+
+      - name: Publish only the client artifacts without rebuilding or static credentials
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
+        with:
+          packages-dir: pypi-candidate/
