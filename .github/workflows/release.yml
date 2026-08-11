@@ -219,7 +219,7 @@ jobs:
       contents: read
     env:
       PLAYWRIGHT_WORKERS: "4"
-      VERIFY_RELEASE_JOBS: "4"
+      VERIFY_RELEASE_JOBS: ${{ vars.HEAVY_RUNNER && '4' || '1' }}
       LEGION_DOCS_URL: ${{ vars.LEGION_DOCS_URL }}
       LEGION_DOCS_VERSION: ${{ vars.LEGION_DOCS_VERSION }}
       RELEASE_TAG: ${{ needs.resolve-release.outputs.tag_name }}
