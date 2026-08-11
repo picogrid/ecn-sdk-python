@@ -524,6 +524,13 @@ def _reset_generated_reports(policy: dict[str, Any]) -> None:
     expected_directory = reports_parent / "generated"
     if REPORT_DIRECTORY.absolute() != expected_directory.absolute():
         raise VerificationError("refusing to clear an unexpected report directory")
+    if not reports_parent.exists():
+        if reports_parent.is_symlink() or reports_parent.resolve() != repository / "reports":
+            raise VerificationError("refusing to create an unsafe report parent directory")
+        try:
+            reports_parent.mkdir()
+        except OSError as exc:
+            raise VerificationError("refusing to create an unsafe report parent directory") from exc
     if (
         reports_parent.is_symlink()
         or not reports_parent.is_dir()

@@ -35,7 +35,7 @@ credentials, contact your Picogrid Deployments or Engineering contact.
 
 ## Connect read-only first
 
-After [installing the supplied wheel](getting-started/installation.md), configure
+After [installing the SDK](getting-started/installation.md), configure
 [authentication and verified TLS](getting-started/authentication.md), use the explicit
 reviewed-container-network boundary documented there, or start with the
 [loopback mock](getting-started/mock-setup.md). Then create and validate a named

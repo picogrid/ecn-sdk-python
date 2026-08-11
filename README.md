@@ -41,19 +41,17 @@ or use the local mock to exercise the SDK without an ECN.
 ## Install
 
 The Python distribution is named `picogrid-ecn-client` and supports Python 3.11,
-3.12, 3.13, and 3.14. It is currently distributed as a Python wheel rather than
-through PyPI. Install the wheel provided with your ECN deployment or integration
-package into a virtual environment:
+3.12, 3.13, and 3.14. Install the public PyPI release in a virtual environment:
 
 ```console
 python -m venv .venv-ecn-sdk
 . .venv-ecn-sdk/bin/activate
-python -m pip install ./picogrid_ecn_client-0.1.0-py3-none-any.whl # x-release-please-version
+python -m pip install picogrid-ecn-client==0.1.0 # x-release-please-version
 python -c "import picogrid_ecn_client; print(picogrid_ecn_client.__version__)"
 ```
 
 See [Installation](https://docs.picogrid.com/ecn-sdk/getting-started/installation/)
-for offline wheelhouse and platform guidance.
+for verified local wheel, offline wheelhouse, and platform guidance.
 
 ## Connect to an ECN
 

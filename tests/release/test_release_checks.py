@@ -1178,6 +1178,24 @@ def test_make_verify_release_selects_isolated_python_311() -> None:
 
 
 @pytest.mark.parametrize(
+    "target",
+    ("check-public-export", "public-export", "dry-run-cutover"),
+)
+def test_public_export_make_targets_install_packaging_dependency(target: str) -> None:
+    repository = Path(__file__).parents[2]
+
+    result = subprocess.run(
+        ["make", "--dry-run", target, "UV=uv"],
+        cwd=repository,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    assert "--no-project --with packaging==26.3 python -m scripts.public_export" in result.stdout
+
+
+@pytest.mark.parametrize(
     "payload, expected",
     [
         (_PRIVATE_IMPORT_CANARY, "private SDK reference"),
@@ -2468,6 +2486,24 @@ def test_preexisting_generated_reports_are_inspected_before_reset(
 
     assert sensitive.read_bytes() == _PRIVATE_KEY_CANARY
     assert _PRIVATE_KEY_CANARY.decode().strip() not in str(raised.value)
+
+
+def test_generated_report_reset_creates_missing_safe_parent(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    policy = load_policy(POLICY_PATH)
+    repository = tmp_path / "repository"
+    repository.mkdir()
+    reports = repository / "reports"
+    generated = reports / "generated"
+    monkeypatch.setattr(release_workflow, "REPOSITORY", repository)
+    monkeypatch.setattr(release_workflow, "REPORT_DIRECTORY", generated)
+
+    release_workflow._reset_generated_reports(policy)
+
+    assert reports.is_dir()
+    assert generated.is_dir()
+    assert not tuple(generated.iterdir())
 
 
 def test_generated_report_reset_rejects_symlinked_parent_without_deleting_target(
