@@ -6,9 +6,9 @@
 from __future__ import annotations
 
 import argparse
-import importlib
 import gzip
 import hashlib
+import importlib
 import json
 import os
 import re
