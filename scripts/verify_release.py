@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import gzip
 import hashlib
+import importlib
 import json
 import os
 import re
@@ -524,6 +525,13 @@ def _reset_generated_reports(policy: dict[str, Any]) -> None:
     expected_directory = reports_parent / "generated"
     if REPORT_DIRECTORY.absolute() != expected_directory.absolute():
         raise VerificationError("refusing to clear an unexpected report directory")
+    if not reports_parent.exists():
+        if reports_parent.is_symlink() or reports_parent.resolve() != repository / "reports":
+            raise VerificationError("refusing to create an unsafe report parent directory")
+        try:
+            reports_parent.mkdir()
+        except OSError as exc:
+            raise VerificationError("refusing to create an unsafe report parent directory") from exc
     if (
         reports_parent.is_symlink()
         or not reports_parent.is_dir()
@@ -4134,11 +4142,10 @@ def verify_release(source_date_epoch: int) -> None:
             return build_inputs
 
         def public_export_stage() -> Any:
-            from scripts.public_export import (
-                PublicExportError,
-                git_tracked_paths,
-                verify_public_export,
-            )
+            public_export = importlib.import_module("scripts.public_export")
+            PublicExportError = public_export.PublicExportError
+            git_tracked_paths = public_export.git_tracked_paths
+            verify_public_export = public_export.verify_public_export
 
             tracked = git_tracked_paths(REPOSITORY)
             try:

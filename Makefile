@@ -43,13 +43,13 @@ version-sync:
 	PYTHONDONTWRITEBYTECODE=1 $(UV) run --frozen python -m scripts.version_sync
 
 check-public-export:
-	PYTHONDONTWRITEBYTECODE=1 $(UV) run --python 3.11 --no-project python -m scripts.public_export --verify
+	PYTHONDONTWRITEBYTECODE=1 $(UV) run --python 3.11 --no-project --with packaging==26.3 python -m scripts.public_export --verify
 
 public-export:
-	PYTHONDONTWRITEBYTECODE=1 $(UV) run --python 3.11 --no-project python -m scripts.public_export --out "$(PUBLIC_EXPORT_DIR)" --record "$(PUBLIC_EXPORT_RECORD)" --clean
+	PYTHONDONTWRITEBYTECODE=1 $(UV) run --python 3.11 --no-project --with packaging==26.3 python -m scripts.public_export --out "$(PUBLIC_EXPORT_DIR)" --record "$(PUBLIC_EXPORT_RECORD)" --clean
 
 dry-run-cutover:
-	PYTHONDONTWRITEBYTECODE=1 $(UV) run --python 3.11 --no-project python -m scripts.public_export --dry-run-cutover
+	PYTHONDONTWRITEBYTECODE=1 $(UV) run --python 3.11 --no-project --with packaging==26.3 python -m scripts.public_export --dry-run-cutover
 
 wheelhouse:
 	PYTHONDONTWRITEBYTECODE=1 $(UV) run --python 3.11 --no-project --with pip python -m scripts.build_wheelhouse
