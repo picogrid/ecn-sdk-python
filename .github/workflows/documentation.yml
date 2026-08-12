@@ -16,7 +16,7 @@ concurrency:
 jobs:
   site:
     name: Documentation links, language, and browser accessibility
-    runs-on: ${{ vars.HEAVY_RUNNER || 'ubuntu-latest' }}
+    runs-on: ${{ github.ref == 'refs/heads/main' && vars.HEAVY_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 20
     permissions:
       contents: read
