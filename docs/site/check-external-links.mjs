@@ -315,15 +315,15 @@ for (const link of publicExternalLinks) {
 }
 
 if (requirePublicReachability) {
-  const repositoryPublicLinks = repositoryLinks.filter(
-    (link) => !new URL(link).pathname.startsWith(`${repositoryPrefix}/edit/`),
-  );
-  for (const link of repositoryPublicLinks) {
-    await reachable(link, { origin: repositoryOrigin, pathPrefix: repositoryPrefix });
-  }
-  for (const link of projectUrls) {
-    await reachable(link, { origin: repositoryOrigin, pathPrefix: repositoryPrefix });
-  }
+  // Repository-link structure and file existence were already checked against
+  // this exact checkout above. One anonymous request for the release tag proves
+  // both that the repository is public and that its immutable source identity
+  // is available without turning hundreds of rendered source links into a
+  // GitHub availability/load test.
+  await reachable(`${repositoryOrigin}${repositoryPrefix}/tree/${releaseTag}`, {
+    origin: repositoryOrigin,
+    pathPrefix: repositoryPrefix,
+  });
   await reachable(documentationCanonicalBase, {
     origin: documentationOrigin,
     pathPrefix: documentationBasePath,
