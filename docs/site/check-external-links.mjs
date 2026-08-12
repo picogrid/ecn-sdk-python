@@ -316,10 +316,11 @@ for (const link of publicExternalLinks) {
 
 if (requirePublicReachability) {
   // Repository-link structure and file existence were already checked against
-  // this exact checkout above. One anonymous request proves the repository
-  // origin is public without turning hundreds of rendered source links into a
+  // this exact checkout above. One anonymous request for the release tag proves
+  // both that the repository is public and that its immutable source identity
+  // is available without turning hundreds of rendered source links into a
   // GitHub availability/load test.
-  await reachable(`${repositoryOrigin}${repositoryPrefix}`, {
+  await reachable(`${repositoryOrigin}${repositoryPrefix}/tree/${releaseTag}`, {
     origin: repositoryOrigin,
     pathPrefix: repositoryPrefix,
   });
