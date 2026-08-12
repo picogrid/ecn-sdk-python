@@ -127,7 +127,7 @@ def test_release_workflow_promotes_and_replaces_draft_assets_by_release_id() -> 
     policy = json.loads(
         (REPOSITORY / "scripts" / "release-policy.json").read_text(encoding="utf-8")
     )
-    assert "uploads.github.com" in policy["approved_public_hostnames"]
+    assert "uploads.github.com" in set(policy["approved_public_hostnames"])
 
 
 def test_heavy_runner_is_limited_to_trusted_main_jobs() -> None:
