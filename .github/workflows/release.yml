@@ -53,9 +53,9 @@ jobs:
   # unchanged. In the public distribution repository, where Release Please is
   # deliberately disabled, it derives the same identity from the merged and
   # equivalence-verified tree: the version is read from pyproject.toml, the tag is
-  # that version prefixed with "v", and a draft release is created only when the
-  # tag does not exist yet. A merge that does not change the version resolves to an
-  # existing tag and the pipeline stops without output.
+  # that version prefixed with "v", and release state is resolved by immutable tag
+  # and numeric release ID. A merged tree that resolves to an already published
+  # release stops without rebuilding or publishing.
   resolve-release:
     name: Resolve the release candidate identity
     if: >-
@@ -68,18 +68,17 @@ jobs:
     permissions:
       contents: write
     outputs:
-      body: ${{ steps.passthrough.outputs.body || steps.derive.outputs.body }}
-      html_url: ${{ steps.passthrough.outputs.html_url || steps.derive.outputs.html_url }}
-      release_created: ${{ steps.passthrough.outputs.release_created || steps.derive.outputs.release_created }}
-      sha: ${{ steps.passthrough.outputs.sha || steps.derive.outputs.sha }}
-      tag_name: ${{ steps.passthrough.outputs.tag_name || steps.derive.outputs.tag_name }}
-      version: ${{ steps.passthrough.outputs.version || steps.derive.outputs.version }}
+      html_url: ${{ steps.resolved.outputs.html_url }}
+      release_created: ${{ steps.resolved.outputs.release_created }}
+      release_id: ${{ steps.resolved.outputs.release_id }}
+      sha: ${{ steps.resolved.outputs.sha }}
+      tag_name: ${{ steps.resolved.outputs.tag_name }}
+      version: ${{ steps.resolved.outputs.version }}
     steps:
       - name: Pass through the private Release Please outputs
         id: passthrough
         if: github.repository != 'picogrid/ecn-sdk-python'
         env:
-          RELEASE_BODY: ${{ needs.release-please.outputs.body }}
           RELEASE_HTML_URL: ${{ needs.release-please.outputs.html_url }}
           RELEASE_CREATED: ${{ needs.release-please.outputs.release_created }}
           RELEASE_SHA: ${{ needs.release-please.outputs.sha }}
@@ -87,9 +86,6 @@ jobs:
           RELEASE_VERSION: ${{ needs.release-please.outputs.version }}
         run: |
           {
-            echo "body<<PASSTHROUGH_EOF"
-            echo "$RELEASE_BODY"
-            echo "PASSTHROUGH_EOF"
             echo "html_url=$RELEASE_HTML_URL"
             echo "release_created=$RELEASE_CREATED"
             echo "sha=$RELEASE_SHA"
@@ -120,106 +116,168 @@ jobs:
           test -n "$version"
           echo "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-?(a|b|rc)[0-9]+)?$'
           tag="v${version}"
+          tag_sha=
+
           # Only an HTTP 404 means the tag is absent. Any other failure (403,
           # rate limit, 5xx) must fail the job rather than fall through to
           # release creation, so the check stays fail-closed.
           if ref_json="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${tag}" 2> tag-check.err)"; then
             tag_sha="$(printf '%s' "$ref_json" | jq -r '.object.sha')"
-            # An annotated tag ref points at a tag object; dereference it to
-            # the commit before comparing against the merged commit.
             if [ "$(printf '%s' "$ref_json" | jq -r '.object.type')" = "tag" ]; then
               tag_sha="$(gh api "repos/${GITHUB_REPOSITORY}/git/tags/${tag_sha}" --jq '.object.sha')"
             fi
-            # The tag exists. A missing release means an earlier run created
-            # the ref but failed before the draft; recover by creating the
-            # draft on this exact ref. An unpublished draft means an earlier
-            # run failed before handing off its identity; resume it. Either
-            # recovery requires the tag to be bound to this exact merged
-            # commit. A published release means there is nothing to do for
-            # this merge, and any other lookup failure is an unknown state
-            # that fails the job.
-            if release_response="$(
-              gh api --include \
-                "repos/${GITHUB_REPOSITORY}/releases/tags/${tag}" \
-                --jq '.draft' \
-                2> release-check.err
-            )"; then
-              is_draft="$(printf '%s\n' "$release_response" | sed -n '$p')"
-              if [ "$is_draft" = "true" ]; then
-                test "$tag_sha" = "$GITHUB_SHA" || {
-                  echo "draft tag ${tag} targets ${tag_sha}, not ${GITHUB_SHA}; refusing to resume"
-                  exit 1
-                }
-                echo "tag ${tag} carries an unpublished draft; resuming it"
-                html_url="$(gh release view "$tag" --json url --jq '.url')"
-                release_created=true
-              elif [ "$is_draft" = "false" ]; then
-                echo "tag ${tag} already exists; nothing to release for this merge"
-                echo "release_created=false" >> "$GITHUB_OUTPUT"
-                exit 0
-              else
-                echo "release lookup returned an invalid draft state"
+
+            # A recovery workflow may be newer than the immutable release tag,
+            # but it may never release an unrelated or future commit.
+            comparison="$(
+              gh api \
+                "repos/${GITHUB_REPOSITORY}/compare/${tag_sha}...${GITHUB_SHA}" \
+                --jq '.status'
+            )"
+            case "$comparison" in
+              ahead|identical) ;;
+              *)
+                echo "tag ${tag} at ${tag_sha} is not an ancestor of ${GITHUB_SHA}"
                 exit 1
-              fi
-            else
-              release_http_status="$(
-                printf '%s\n' "$release_response" |
-                  sed -n 's/^HTTP\/[^ ]* \([0-9][0-9][0-9]\).*/\1/p' |
-                  sed -n '$p'
-              )"
-              test "$release_http_status" = "404" || {
-                cat release-check.err
-                exit 1
-              }
-              test "$tag_sha" = "$GITHUB_SHA" || {
-                echo "tag ${tag} targets ${tag_sha}, not ${GITHUB_SHA}; refusing to create a release for it"
-                exit 1
-              }
-              echo "tag ${tag} exists without a release; creating the draft on it"
-              html_url="$(gh release create "$tag" \
-                --verify-tag \
-                --draft \
-                --title "$tag" \
-                --notes "See CHANGELOG.md at this tag for the release history.")"
-              release_created=true
-            fi
+                ;;
+            esac
           else
             grep -q "HTTP 404" tag-check.err || { cat tag-check.err; exit 1; }
-            # Create the tag ref explicitly at the merged commit before the
-            # release. A concurrent writer claiming the tag makes this call
-            # fail instead of silently retargeting the release, and
-            # --verify-tag pins the release to the ref just created.
-            gh api "repos/${GITHUB_REPOSITORY}/git/refs" \
-              -f ref="refs/tags/${tag}" \
-              -f sha="$GITHUB_SHA" > /dev/null
-            html_url="$(gh release create "$tag" \
-              --verify-tag \
-              --draft \
-              --title "$tag" \
-              --notes "See CHANGELOG.md at this tag for the release history.")"
-            release_created=true
           fi
+
+          # The release-by-tag endpoint excludes drafts. List all releases so a
+          # retry resumes exactly one draft instead of creating another one.
+          gh api \
+            --paginate \
+            --slurp \
+            "repos/${GITHUB_REPOSITORY}/releases?per_page=100" |
+            jq 'add' > releases.json
+          python3 scripts/release_resolution.py \
+            --tag "$tag" \
+            --current-sha "$GITHUB_SHA" \
+            --tag-sha "$tag_sha" \
+            --releases-json releases.json > resolution.json
+
+          action="$(jq -r '.action' resolution.json)"
+          html_url="$(jq -r '.html_url' resolution.json)"
+          release_created="$(jq -r '.release_created' resolution.json)"
+          release_id="$(jq -r '.release_id // empty' resolution.json)"
+          release_sha="$(jq -r '.release_sha' resolution.json)"
+          case "$action" in
+            create-tag-and-draft|create-draft)
+              if [ "$action" = "create-tag-and-draft" ]; then
+                gh api "repos/${GITHUB_REPOSITORY}/git/refs" \
+                  -f ref="refs/tags/${tag}" \
+                  -f sha="$release_sha" > /dev/null
+              fi
+              release_json="$(
+                gh api \
+                  --method POST \
+                  "repos/${GITHUB_REPOSITORY}/releases" \
+                  -f tag_name="$tag" \
+                  -f target_commitish="$release_sha" \
+                  -f name="$tag" \
+                  -f body="See CHANGELOG.md at this tag for the release history." \
+                  -F draft=true
+              )"
+              release_id="$(printf '%s' "$release_json" | jq -r '.id')"
+              html_url="$(printf '%s' "$release_json" | jq -r '.html_url')"
+              ;;
+            resume)
+              echo "tag ${tag} carries one unpublished draft; resuming release ${release_id}"
+              ;;
+            published)
+              echo "tag ${tag} is already published; nothing to release"
+              ;;
+            *)
+              echo "release resolver returned unsupported action: ${action}"
+              exit 1
+              ;;
+          esac
+
           test -n "$html_url"
+          echo "$release_id" | grep -Eq '^[1-9][0-9]*$'
           {
-            echo "body="
             echo "html_url=$html_url"
             echo "release_created=$release_created"
-            echo "sha=$GITHUB_SHA"
+            echo "release_id=$release_id"
+            echo "sha=$release_sha"
             echo "tag_name=$tag"
+            echo "version=$version"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Normalize the release candidate outputs
+        id: resolved
+        env:
+          DERIVED_HTML_URL: ${{ steps.derive.outputs.html_url }}
+          DERIVED_RELEASE_CREATED: ${{ steps.derive.outputs.release_created }}
+          DERIVED_RELEASE_ID: ${{ steps.derive.outputs.release_id }}
+          DERIVED_SHA: ${{ steps.derive.outputs.sha }}
+          DERIVED_TAG_NAME: ${{ steps.derive.outputs.tag_name }}
+          DERIVED_VERSION: ${{ steps.derive.outputs.version }}
+          PASSTHROUGH_HTML_URL: ${{ steps.passthrough.outputs.html_url }}
+          PASSTHROUGH_RELEASE_CREATED: ${{ steps.passthrough.outputs.release_created }}
+          PASSTHROUGH_SHA: ${{ steps.passthrough.outputs.sha }}
+          PASSTHROUGH_TAG_NAME: ${{ steps.passthrough.outputs.tag_name }}
+          PASSTHROUGH_VERSION: ${{ steps.passthrough.outputs.version }}
+        run: |
+          if [ "$GITHUB_REPOSITORY" = "picogrid/ecn-sdk-python" ]; then
+            html_url="$DERIVED_HTML_URL"
+            release_created="$DERIVED_RELEASE_CREATED"
+            release_id="$DERIVED_RELEASE_ID"
+            sha="$DERIVED_SHA"
+            tag_name="$DERIVED_TAG_NAME"
+            version="$DERIVED_VERSION"
+          else
+            html_url="$PASSTHROUGH_HTML_URL"
+            release_created="$PASSTHROUGH_RELEASE_CREATED"
+            release_id=
+            sha="$PASSTHROUGH_SHA"
+            tag_name="$PASSTHROUGH_TAG_NAME"
+            version="$PASSTHROUGH_VERSION"
+          fi
+          case "$release_created" in
+            true)
+              test -n "$html_url"
+              test -n "$sha"
+              test -n "$tag_name"
+              test -n "$version"
+              if [ "$GITHUB_REPOSITORY" = "picogrid/ecn-sdk-python" ]; then
+                echo "$release_id" | grep -Eq '^[1-9][0-9]*$'
+              fi
+              ;;
+            false|'') ;;
+            *)
+              echo "invalid release_created output: ${release_created}"
+              exit 1
+              ;;
+          esac
+          {
+            echo "html_url=$html_url"
+            echo "release_created=${release_created:-false}"
+            echo "release_id=$release_id"
+            echo "sha=$sha"
+            echo "tag_name=$tag_name"
             echo "version=$version"
           } >> "$GITHUB_OUTPUT"
 
   build-candidate:
     name: Build and verify the release candidate once
-    if: needs.resolve-release.outputs.release_created == 'true'
+    # release-please is always skipped on the public distribution repository,
+    # and that skip propagates transitively down the needs graph. !cancelled()
+    # overrides the propagated skip so this job is evaluated on its own merits.
+    if: >-
+      !cancelled() &&
+      needs.resolve-release.result == 'success' &&
+      fromJSON(needs.resolve-release.outputs.release_created || 'false')
     needs: resolve-release
-    runs-on: ${{ vars.HEAVY_RUNNER || 'ubuntu-latest' }}
+    runs-on: ${{ github.ref == 'refs/heads/main' && vars.HEAVY_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 90
     permissions:
       contents: read
     env:
-      PLAYWRIGHT_WORKERS: "4"
-      VERIFY_RELEASE_JOBS: ${{ vars.HEAVY_RUNNER && '4' || '1' }}
+      PLAYWRIGHT_WORKERS: ${{ github.ref == 'refs/heads/main' && vars.HEAVY_RUNNER && '4' || '1' }}
+      VERIFY_RELEASE_JOBS: ${{ github.ref == 'refs/heads/main' && vars.HEAVY_RUNNER && '4' || '1' }}
       LEGION_DOCS_URL: ${{ vars.LEGION_DOCS_URL }}
       LEGION_DOCS_VERSION: ${{ vars.LEGION_DOCS_VERSION }}
       RELEASE_TAG: ${{ needs.resolve-release.outputs.tag_name }}
@@ -289,7 +347,10 @@ jobs:
   publication-reachability:
     name: Require anonymous publication reachability
     if: >-
-      needs.resolve-release.outputs.release_created == 'true' &&
+      !cancelled() &&
+      needs.resolve-release.result == 'success' &&
+      needs.build-candidate.result == 'success' &&
+      fromJSON(needs.resolve-release.outputs.release_created || 'false') &&
       vars.RELEASE_PROMOTION_ENABLED == 'true' &&
       github.repository == 'picogrid/ecn-sdk-python'
     needs:
@@ -336,7 +397,11 @@ jobs:
   promote-release:
     name: Attest, sign, and publish the exact candidate
     if: >-
-      needs.resolve-release.outputs.release_created == 'true' &&
+      !cancelled() &&
+      needs.resolve-release.result == 'success' &&
+      needs.build-candidate.result == 'success' &&
+      needs.publication-reachability.result == 'success' &&
+      fromJSON(needs.resolve-release.outputs.release_created || 'false') &&
       vars.RELEASE_PROMOTION_ENABLED == 'true' &&
       github.repository == 'picogrid/ecn-sdk-python'
     needs:
@@ -423,41 +488,114 @@ jobs:
             candidate/dist/picogrid_ecn_client-*.tar.gz
           release-signing-artifacts: false
 
-      - name: Require the unpublished draft created by this workflow
+      - name: Require the resolved unpublished draft
         env:
           GH_TOKEN: ${{ github.token }}
+          RELEASE_ID: ${{ needs.resolve-release.outputs.release_id }}
           RELEASE_TAG: ${{ needs.resolve-release.outputs.tag_name }}
         run: |
           test "$(find candidate/dist -maxdepth 1 -type f -name '*.sigstore.json' | wc -l)" -eq 3
           test -f candidate/dist/picogrid_ecn_client-*.whl.sigstore.json
           test -f candidate/dist/picogrid_ecn_operator_app-*.whl.sigstore.json
           test -f candidate/dist/picogrid_ecn_client-*.tar.gz.sigstore.json
-          test "$(gh release view "$RELEASE_TAG" --json isDraft --jq '.isDraft')" = "true"
+          echo "$RELEASE_ID" | grep -Eq '^[1-9][0-9]*$'
+          release_json="$(gh api "repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}")"
+          test "$(printf '%s' "$release_json" | jq -r '.draft')" = "true"
+          test "$(printf '%s' "$release_json" | jq -r '.tag_name')" = "$RELEASE_TAG"
 
-      - name: Attach exact artifacts, signatures, and sanitized evidence
+      - name: Replace exact draft assets without retaining stale files
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ needs.resolve-release.outputs.tag_name }}
-        run: >-
-          gh release upload "$RELEASE_TAG"
-          candidate/dist/picogrid_ecn_client-*.whl
-          candidate/dist/picogrid_ecn_operator_app-*.whl
-          candidate/dist/picogrid_ecn_client-*.tar.gz
-          candidate/dist/picogrid_ecn_client-*.whl.sigstore.json
-          candidate/dist/picogrid_ecn_operator_app-*.whl.sigstore.json
-          candidate/dist/picogrid_ecn_client-*.tar.gz.sigstore.json
-          candidate/reports/generated/*
+          RELEASE_ID: ${{ needs.resolve-release.outputs.release_id }}
+        run: |
+          mapfile -d '' -t upload_files < <(
+            find candidate/dist candidate/reports/generated \
+              -mindepth 1 -maxdepth 1 -type f -print0 |
+              sort -z
+          )
+          test "${#upload_files[@]}" -gt 6
+          test "$(
+            find candidate/dist candidate/reports/generated \
+              -mindepth 1 -maxdepth 1 -type l |
+              wc -l
+          )" -eq 0
+
+          declare -A expected_assets=()
+          for path in "${upload_files[@]}"; do
+            name="${path##*/}"
+            if [[ -n "${expected_assets[$name]+present}" ]]; then
+              echo "duplicate candidate asset name: ${name}"
+              exit 1
+            fi
+            expected_assets["$name"]="$path"
+          done
+
+          gh api "repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}" > draft.json
+          asset_count="$(jq '.assets | length' draft.json)"
+          for ((index = 0; index < asset_count; index++)); do
+            asset_id="$(jq -r --argjson index "$index" '.assets[$index].id' draft.json)"
+            asset_name="$(jq -r --argjson index "$index" '.assets[$index].name' draft.json)"
+            if [[ -z "${expected_assets[$asset_name]+present}" ]]; then
+              echo "unexpected existing draft asset: ${asset_name}"
+              exit 1
+            fi
+            gh api \
+              --method DELETE \
+              "repos/${GITHUB_REPOSITORY}/releases/assets/${asset_id}"
+          done
+
+          for name in "${!expected_assets[@]}"; do
+            path="${expected_assets[$name]}"
+            encoded_name="$(
+              python3 -c \
+                'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' \
+                "$name"
+            )"
+            curl \
+              --fail-with-body \
+              --silent \
+              --show-error \
+              --request POST \
+              --header "Accept: application/vnd.github+json" \
+              --header "Authorization: Bearer ${GH_TOKEN}" \
+              --header "X-GitHub-Api-Version: 2022-11-28" \
+              --header "Content-Type: application/octet-stream" \
+              --data-binary "@${path}" \
+              --output uploaded.json \
+              "https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}/assets?name=${encoded_name}"
+            test "$(jq -r '.name' uploaded.json)" = "$name"
+          done
+
+          printf '%s\n' "${!expected_assets[@]}" | sort > expected-assets.txt
+          gh api \
+            "repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}" \
+            --jq '.assets[].name' |
+            sort > uploaded-assets.txt
+          diff -u expected-assets.txt uploaded-assets.txt
 
       - name: Publish the fully populated GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
+          RELEASE_ID: ${{ needs.resolve-release.outputs.release_id }}
           RELEASE_TAG: ${{ needs.resolve-release.outputs.tag_name }}
-        run: gh release edit "$RELEASE_TAG" --draft=false
+        run: |
+          published="$(
+            gh api \
+              --method PATCH \
+              "repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}" \
+              -F draft=false
+          )"
+          test "$(printf '%s' "$published" | jq -r '.draft')" = "false"
+          test "$(printf '%s' "$published" | jq -r '.tag_name')" = "$RELEASE_TAG"
 
   publish-pypi:
     name: Publish the exact client artifacts to PyPI with OIDC
     if: >-
-      needs.resolve-release.outputs.release_created == 'true' &&
+      !cancelled() &&
+      needs.resolve-release.result == 'success' &&
+      needs.build-candidate.result == 'success' &&
+      needs.promote-release.result == 'success' &&
+      fromJSON(needs.resolve-release.outputs.release_created || 'false') &&
       vars.RELEASE_PROMOTION_ENABLED == 'true' &&
       vars.PYPI_PUBLISH_ENABLED == 'true' &&
       github.repository == 'picogrid/ecn-sdk-python'

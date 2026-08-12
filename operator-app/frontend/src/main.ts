@@ -34,6 +34,8 @@ type Theme = 'light' | 'dark';
 
 const themeStorageKey = 'picogrid-ecn-operator-theme';
 const viewIdentityStorageKey = 'picogrid-ecn-operator-view-id';
+const viewGenerationStorageKey = 'picogrid-ecn-operator-view-generation';
+const viewRetirementStorageKey = 'picogrid-ecn-operator-view-retirement';
 const duplicateViewCloseCode = 1013;
 const duplicateViewCloseReason = 'operator view identity is already in use';
 const duplicateViewRetryLimit = 3;
@@ -58,23 +60,61 @@ const canonicalUuidPattern =
 interface InitialViewIdentity {
   id: string;
   persistent: boolean;
+  generation: string | null;
+  retirementPending: boolean;
 }
 
 function initialViewIdentity(): InitialViewIdentity {
   const generated = window.crypto.randomUUID();
   try {
-    const stored = window.sessionStorage.getItem(viewIdentityStorageKey);
-    if (stored === null) {
+    const storedId = window.sessionStorage.getItem(viewIdentityStorageKey);
+    if (storedId === null || !canonicalUuidPattern.test(storedId)) {
       window.sessionStorage.setItem(viewIdentityStorageKey, generated);
-      return { id: generated, persistent: true };
+      window.sessionStorage.removeItem(viewGenerationStorageKey);
+      window.sessionStorage.removeItem(viewRetirementStorageKey);
+      return {
+        id: generated,
+        generation: null,
+        retirementPending: false,
+        persistent: true,
+      };
     }
-    if (!canonicalUuidPattern.test(stored)) {
-      window.sessionStorage.setItem(viewIdentityStorageKey, generated);
-      return { id: generated, persistent: true };
+    const storedGeneration = window.sessionStorage.getItem(viewGenerationStorageKey);
+    const retirementGeneration = window.sessionStorage.getItem(viewRetirementStorageKey);
+    if (
+      storedGeneration !== null &&
+      canonicalUuidPattern.test(storedGeneration) &&
+      retirementGeneration !== null &&
+      canonicalUuidPattern.test(retirementGeneration) &&
+      retirementGeneration.toLowerCase() === storedGeneration.toLowerCase()
+    ) {
+      window.sessionStorage.setItem(
+        viewRetirementStorageKey,
+        storedGeneration.toLowerCase(),
+      );
+      return {
+        id: storedId.toLowerCase(),
+        generation: storedGeneration.toLowerCase(),
+        retirementPending: true,
+        persistent: true,
+      };
     }
-    return { id: stored.toLowerCase(), persistent: true };
+    window.sessionStorage.setItem(viewIdentityStorageKey, generated);
+    window.sessionStorage.removeItem(viewGenerationStorageKey);
+    window.sessionStorage.removeItem(viewRetirementStorageKey);
+    return {
+      id: generated,
+      generation: null,
+      retirementPending: false,
+      persistent: true,
+    };
   } catch {
-    return { id: generated, persistent: false };
+    return {
+      id: generated,
+      generation: null,
+      retirementPending: false,
+      persistent: false,
+    };
   }
 }
 
@@ -170,7 +210,12 @@ let deferredStrandedPreparation: {
 let socket: WebSocket | null = null;
 let recoverySocket: WebSocket | null = null;
 let activeViewId = initialBrowserView.id;
-let activeViewGeneration = window.crypto.randomUUID();
+let activeViewGeneration =
+  initialBrowserView.generation ?? window.crypto.randomUUID();
+let activeViewAcceptedByDocument = false;
+let retirementRequired = initialBrowserView.retirementPending;
+let postRetirementConflict = false;
+let acknowledgedRetirementGeneration: string | null = null;
 let viewIdentityPersistent = initialBrowserView.persistent;
 let viewGeneration = 0;
 let preparationGeneration = 0;
@@ -411,10 +456,10 @@ function setReviewState(status: PreparationStatus): void {
   if (review) review.status = status;
   confirmDialog.dataset.state = status;
   const reviewIsActive = status === 'review';
-  reconnectViewButton.disabled = status !== 'review';
+  reconnectViewButton.disabled = status !== 'review' || postRetirementConflict;
   cancelConfirmButton.disabled = !reviewIsActive;
   confirmButton.disabled = !reviewIsActive || !confirmCheck.checked || !preparedTaskIsEligible();
-  recoverViewButton.disabled = status !== 'stranded';
+  recoverViewButton.disabled = status !== 'stranded' || postRetirementConflict;
   confirmInvalidation.textContent =
     status === 'invalidating'
       ? 'Task confirmation or prepared-task invalidation is still in progress…'
@@ -1057,7 +1102,63 @@ function render(): void {
   );
 }
 
+function forgetPersistedViewIdentity(): void {
+  viewIdentityPersistent = false;
+  for (const key of [
+    viewIdentityStorageKey,
+    viewGenerationStorageKey,
+    viewRetirementStorageKey,
+  ]) {
+    try {
+      window.sessionStorage.removeItem(key);
+    } catch {
+      // The current document remains fail-closed even when storage cannot be cleared.
+    }
+  }
+}
+
+function acceptViewGeneration(generation: string): void {
+  activeViewGeneration = generation;
+  activeViewAcceptedByDocument = true;
+  retirementRequired = false;
+  acknowledgedRetirementGeneration = null;
+  postRetirementConflict = false;
+  if (!viewIdentityPersistent) return;
+  try {
+    window.sessionStorage.setItem(viewGenerationStorageKey, generation);
+    window.sessionStorage.removeItem(viewRetirementStorageKey);
+  } catch {
+    forgetPersistedViewIdentity();
+  }
+}
+
+function preserveAcceptedViewForRetirement(): void {
+  if (!activeViewAcceptedByDocument || !viewIdentityPersistent) return;
+  retirementRequired = true;
+  try {
+    window.sessionStorage.setItem(viewRetirementStorageKey, activeViewGeneration);
+  } catch {
+    forgetPersistedViewIdentity();
+  }
+}
+
+function acknowledgeViewRetirement(generation: string): void {
+  if (activeViewGeneration !== generation) return;
+  acknowledgedRetirementGeneration = generation;
+  activeViewAcceptedByDocument = false;
+  retirementRequired = false;
+  if (!viewIdentityPersistent) return;
+  try {
+    if (window.sessionStorage.getItem(viewRetirementStorageKey) === generation) {
+      window.sessionStorage.removeItem(viewRetirementStorageKey);
+    }
+  } catch {
+    viewIdentityPersistent = false;
+  }
+}
+
 async function connectState(retireCurrentView = false): Promise<void> {
+  if (postRetirementConflict) return;
   if (connectionTransition) return connectionTransition;
   const transition = connectStateOnce(retireCurrentView);
   connectionTransition = transition;
@@ -1153,12 +1254,33 @@ function restoreStrandedRecovery(): void {
 }
 
 function reportDuplicateViewConflict(retirementAcknowledged: boolean): void {
-  armTasking.checked = false;
+  postRetirementConflict = retirementAcknowledged;
   browserConnection = 'duplicate';
   taskOutcome.textContent = retirementAcknowledged
     ? 'A successor view was refused after backend retirement was acknowledged. No further connection was attempted; reload before tasking.'
     : 'This operator view identity remains active after bounded retries. Close the other tab or reload before reconnecting; tasking remains disabled.';
   render();
+  if (postRetirementConflict) {
+    reconnectViewButton.disabled = true;
+    recoverViewButton.disabled = true;
+  }
+}
+
+function rotateContestedViewIdentity(): void {
+  activeViewId = window.crypto.randomUUID();
+  activeViewGeneration = window.crypto.randomUUID();
+  activeViewAcceptedByDocument = false;
+  retirementRequired = false;
+  acknowledgedRetirementGeneration = null;
+  postRetirementConflict = false;
+  if (!viewIdentityPersistent) return;
+  try {
+    window.sessionStorage.setItem(viewIdentityStorageKey, activeViewId);
+    window.sessionStorage.removeItem(viewGenerationStorageKey);
+    window.sessionStorage.removeItem(viewRetirementStorageKey);
+  } catch {
+    forgetPersistedViewIdentity();
+  }
 }
 
 async function connectStateOnce(retireCurrentView: boolean): Promise<void> {
@@ -1200,6 +1322,7 @@ async function connectStateOnce(retireCurrentView: boolean): Promise<void> {
     render();
     try {
       await retireBrowserView(activeViewId, retiringGeneration);
+      acknowledgeViewRetirement(retiringGeneration);
     } catch {
       if (!pageActive) return;
       const previous = socket;
@@ -1232,12 +1355,16 @@ async function connectStateOnce(retireCurrentView: boolean): Promise<void> {
   );
   browserConnection = 'connecting';
   render();
-  const retryLimit = retireCurrentView ? 0 : duplicateViewRetryLimit;
+  const retirementAcknowledged =
+    retireCurrentView || acknowledgedRetirementGeneration !== null;
+  const retryLimit = retirementAcknowledged ? 0 : duplicateViewRetryLimit;
   for (let duplicateRetries = 0; duplicateRetries <= retryLimit; duplicateRetries += 1) {
-    activeViewGeneration = window.crypto.randomUUID();
+    const candidateGeneration = window.crypto.randomUUID();
     let outcome: StateSocketOutcome;
     try {
-      outcome = await bindStateSocket(stateWebSocket(activeViewId, activeViewGeneration));
+      outcome = await bindStateSocket(stateWebSocket(activeViewId, candidateGeneration), {
+        onAccepted: () => acceptViewGeneration(candidateGeneration),
+      });
     } catch {
       browserConnection = 'disconnected';
       render();
@@ -1255,7 +1382,7 @@ async function connectStateOnce(retireCurrentView: boolean): Promise<void> {
       return;
     }
     if (duplicateRetries === retryLimit) {
-      reportDuplicateViewConflict(retireCurrentView);
+      reportDuplicateViewConflict(retirementAcknowledged);
       return;
     }
     browserConnection = 'connecting';
@@ -1278,12 +1405,15 @@ async function recoverStrandedViewOnce(
     return;
   }
   const retiringGeneration = activeViewGeneration;
-  try {
-    await retireBrowserView(retirementViewId, retiringGeneration);
-  } catch {
-    if (!pageActive) return;
-    restoreStrandedRecovery();
-    return;
+  if (acknowledgedRetirementGeneration !== retiringGeneration) {
+    try {
+      await retireBrowserView(retirementViewId, retiringGeneration);
+      acknowledgeViewRetirement(retiringGeneration);
+    } catch {
+      if (!pageActive) return;
+      restoreStrandedRecovery();
+      return;
+    }
   }
   if (!pageActive) return;
   if (
@@ -1295,13 +1425,14 @@ async function recoverStrandedViewOnce(
     restoreStrandedRecovery();
     return;
   }
-  activeViewGeneration = window.crypto.randomUUID();
+  const candidateGeneration = window.crypto.randomUUID();
   try {
-    const candidate = stateWebSocket(activeViewId, activeViewGeneration);
+    const candidate = stateWebSocket(activeViewId, candidateGeneration);
     recoverySocket = candidate;
     const outcome = await bindStateSocket(candidate, {
       preserveStrandedBeforeAcceptance: true,
       onAccepted: () => {
+        acceptViewGeneration(candidateGeneration);
         if (review === strandedReview) review = null;
         if (
           deferredStrandedPreparation?.viewId === retirementViewId &&
@@ -1323,10 +1454,14 @@ async function recoverStrandedViewOnce(
       outcome.code === duplicateViewCloseCode &&
       outcome.reason === duplicateViewCloseReason
     ) {
+      postRetirementConflict = true;
+      browserConnection = 'duplicate';
       taskOutcome.textContent = strandedOutcomeMessage(
-        'A successor view was refused after backend retirement was acknowledged.',
+        'A successor view was refused after backend retirement was acknowledged. Reload before attempting another recovery.',
       );
       render();
+      reconnectViewButton.disabled = true;
+      recoverViewButton.disabled = true;
     }
   } catch {
     recoverySocket = null;
@@ -1336,7 +1471,14 @@ async function recoverStrandedViewOnce(
 
 function recoverStrandedView(): void {
   const strandedReview = review;
-  if (!strandedReview || strandedReview.status !== 'stranded' || connectionTransition) return;
+  if (
+    !strandedReview ||
+    strandedReview.status !== 'stranded' ||
+    connectionTransition ||
+    postRetirementConflict
+  ) {
+    return;
+  }
   setReviewState('invalidating');
   armTasking.checked = false;
   browserConnection = 'connecting';
@@ -1545,7 +1687,15 @@ confirmDialog.addEventListener('cancel', (event) => {
   void discardPreparationFromBrowser();
 });
 reconnectViewButton.addEventListener('click', () => {
-  void connectState(true);
+  if (
+    browserConnection === 'duplicate' &&
+    !activeViewAcceptedByDocument &&
+    !retirementRequired &&
+    !postRetirementConflict
+  ) {
+    rotateContestedViewIdentity();
+  }
+  void connectState(activeViewAcceptedByDocument || retirementRequired);
 });
 recoverViewButton.addEventListener('click', () => {
   recoverStrandedView();
@@ -1583,6 +1733,7 @@ window.addEventListener('pagehide', (event) => {
   browserConnection = 'reconnect';
   closeStateSocketForBrowserTransition();
   abandonPreparationWithView(null);
+  preserveAcceptedViewForRetirement();
   if (!event.persisted) {
     basemap?.removeFrom(map);
     basemap = null;
@@ -1594,8 +1745,7 @@ window.addEventListener('pageshow', (event) => {
   pageActive = true;
   viewGeneration += 1;
   browserConnection = navigator.onLine ? 'reconnect' : 'offline';
-  render();
-  if (navigator.onLine) void connectState(true);
+  if (navigator.onLine) void connectState(activeViewAcceptedByDocument || retirementRequired);
 });
 
 setInterval(render, 1_000);
@@ -1606,8 +1756,7 @@ async function start(): Promise<void> {
     modeLabel.textContent = `${configuration.mode.toUpperCase()} · ${configuration.integrations.join(', ')} · max ${configuration.maximum_entities}`;
     configureBasemap(configuration);
     configureFilters(configuration);
-    render();
-    void connectState();
+    void connectState(retirementRequired);
   } catch (error) {
     setConnection('startup failed', false);
     const item = document.createElement('li');

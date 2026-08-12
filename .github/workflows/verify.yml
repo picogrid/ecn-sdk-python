@@ -133,13 +133,13 @@ jobs:
   exact-release-gate:
     name: Exact release artifact
     needs: python-tests
-    runs-on: ${{ vars.HEAVY_RUNNER || 'ubuntu-latest' }}
+    runs-on: ${{ github.ref == 'refs/heads/main' && vars.HEAVY_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 90
     permissions:
       contents: read
     env:
       PLAYWRIGHT_WORKERS: "4"
-      VERIFY_RELEASE_JOBS: ${{ vars.HEAVY_RUNNER && '4' || '1' }}
+      VERIFY_RELEASE_JOBS: ${{ github.ref == 'refs/heads/main' && vars.HEAVY_RUNNER && '4' || '1' }}
       LEGION_DOCS_URL: ${{ vars.LEGION_DOCS_URL }}
       LEGION_DOCS_VERSION: ${{ vars.LEGION_DOCS_VERSION }}
     steps:
