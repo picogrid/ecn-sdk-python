@@ -22,6 +22,7 @@ import sys
 import tarfile
 import tempfile
 import time
+import uuid
 import zipfile
 import zlib
 from collections.abc import Callable, Mapping, Sequence
@@ -2244,6 +2245,11 @@ def _sanitize_sbom(
         metadata.pop("timestamp", None)
     remove_external_locations(value)
 
+    identity = uuid.uuid5(
+        uuid.NAMESPACE_URL,
+        json.dumps(value, sort_keys=True, separators=(",", ":")),
+    )
+    value["serialNumber"] = f"urn:uuid:{identity}"
     serialized = json.dumps(value, indent=2, sort_keys=True) + "\n"
     if "file://" in serialized or str(REPOSITORY) in serialized:
         raise VerificationError("CycloneDX SBOM contains a local filesystem reference")
