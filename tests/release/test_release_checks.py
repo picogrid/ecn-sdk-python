@@ -2875,6 +2875,75 @@ def test_sbom_sanitizer_removes_local_archive_reference(tmp_path: Path) -> None:
     assert "file://" not in sbom.read_text(encoding="utf-8")
 
 
+def test_sbom_sanitizer_derives_a_stable_identity_from_sanitized_content(
+    tmp_path: Path,
+) -> None:
+    sbom = tmp_path / "sbom.cdx.json"
+
+    def write_sbom(*, serial_number: str, timestamp: str) -> None:
+        sbom.write_text(
+            json.dumps(
+                {
+                    "bomFormat": "CycloneDX",
+                    "components": [{"name": "picogrid-ecn-client", "type": "library"}],
+                    "metadata": {"timestamp": timestamp},
+                    "serialNumber": serial_number,
+                    "specVersion": "1.6",
+                    "version": 1,
+                }
+            ),
+            encoding="utf-8",
+        )
+
+    write_sbom(
+        serial_number="urn:uuid:00000000-0000-4000-8000-000000000001",
+        timestamp="2026-08-12T00:00:00Z",
+    )
+    release_workflow._sanitize_sbom(sbom)
+    first = json.loads(sbom.read_text(encoding="utf-8"))
+
+    assert re.fullmatch(
+        r"urn:uuid:[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}",
+        first["serialNumber"],
+    )
+
+    write_sbom(
+        serial_number="urn:uuid:00000000-0000-4000-8000-000000000002",
+        timestamp="2026-08-12T01:00:00Z",
+    )
+    release_workflow._sanitize_sbom(sbom)
+    second = json.loads(sbom.read_text(encoding="utf-8"))
+
+    assert second["serialNumber"] == first["serialNumber"]
+
+
+def test_sbom_sanitizer_identity_changes_with_component_inventory(tmp_path: Path) -> None:
+    serial_numbers: list[str] = []
+    for component_name in ("picogrid-ecn-client", "picogrid-ecn-operator-app"):
+        sbom = tmp_path / f"{component_name}.cdx.json"
+        sbom.write_text(
+            json.dumps(
+                {
+                    "bomFormat": "CycloneDX",
+                    "components": [{"name": component_name, "type": "library"}],
+                    "specVersion": "1.6",
+                    "version": 1,
+                }
+            ),
+            encoding="utf-8",
+        )
+        release_workflow._sanitize_sbom(
+            sbom,
+            allowed_local_projects=(
+                "picogrid-ecn-client",
+                "picogrid-ecn-operator-app",
+            ),
+        )
+        serial_numbers.append(json.loads(sbom.read_text(encoding="utf-8"))["serialNumber"])
+
+    assert len(set(serial_numbers)) == 2
+
+
 def test_sbom_sanitizer_rejects_local_dependency_reference(tmp_path: Path) -> None:
     sbom = tmp_path / "sbom.cdx.json"
     sbom.write_text(
