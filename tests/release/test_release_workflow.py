@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -127,7 +128,48 @@ def test_release_workflow_promotes_and_replaces_draft_assets_by_release_id() -> 
     policy = json.loads(
         (REPOSITORY / "scripts" / "release-policy.json").read_text(encoding="utf-8")
     )
-    assert "uploads.github.com" in set(policy["approved_public_hostnames"])
+    assert any(host == "uploads.github.com" for host in policy["approved_public_hostnames"])
+
+
+def _job_block(workflow: str, job: str) -> str:
+    # Slice a single job's YAML block, from its two-space-indented header to the
+    # next top-level job header, so conditions are checked against that job alone
+    # rather than the whole file.
+    marker = f"\n  {job}:\n"
+    start = workflow.index(marker) + len(marker)
+    rest = workflow[start:]
+    nxt = re.search(r"\n  \S", rest)
+    return rest[: nxt.start()] if nxt else rest
+
+
+def test_downstream_jobs_survive_the_skipped_release_please() -> None:
+    # release-please is always skipped on the public distribution repository,
+    # and GitHub Actions propagates that skip transitively through the needs
+    # graph. Every job downstream of resolve-release must override the skip with
+    # !cancelled() or the entire publish pipeline silently skips and no
+    # artifacts are ever attached. Assertions are bound to each job's own block
+    # so one job cannot lose a condition while another supplies the same text.
+    workflow = (REPOSITORY / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
+
+    # resolve-release plus every job downstream of it carries the !cancelled()
+    # override that defeats the propagated skip.
+    for job in (
+        "resolve-release",
+        "build-candidate",
+        "publication-reachability",
+        "promote-release",
+        "publish-pypi",
+    ):
+        assert "!cancelled() &&" in _job_block(workflow, job), job
+
+    # the four consumers of resolve-release also gate on it actually succeeding.
+    for job in (
+        "build-candidate",
+        "publication-reachability",
+        "promote-release",
+        "publish-pypi",
+    ):
+        assert "needs.resolve-release.result == 'success'" in _job_block(workflow, job), job
 
 
 def test_heavy_runner_is_limited_to_trusted_main_jobs() -> None:

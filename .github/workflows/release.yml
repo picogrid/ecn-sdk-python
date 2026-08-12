@@ -263,7 +263,13 @@ jobs:
 
   build-candidate:
     name: Build and verify the release candidate once
-    if: fromJSON(needs.resolve-release.outputs.release_created || 'false')
+    # release-please is always skipped on the public distribution repository,
+    # and that skip propagates transitively down the needs graph. !cancelled()
+    # overrides the propagated skip so this job is evaluated on its own merits.
+    if: >-
+      !cancelled() &&
+      needs.resolve-release.result == 'success' &&
+      fromJSON(needs.resolve-release.outputs.release_created || 'false')
     needs: resolve-release
     runs-on: ${{ github.ref == 'refs/heads/main' && vars.HEAVY_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 90
@@ -341,6 +347,9 @@ jobs:
   publication-reachability:
     name: Require anonymous publication reachability
     if: >-
+      !cancelled() &&
+      needs.resolve-release.result == 'success' &&
+      needs.build-candidate.result == 'success' &&
       fromJSON(needs.resolve-release.outputs.release_created || 'false') &&
       vars.RELEASE_PROMOTION_ENABLED == 'true' &&
       github.repository == 'picogrid/ecn-sdk-python'
@@ -388,6 +397,10 @@ jobs:
   promote-release:
     name: Attest, sign, and publish the exact candidate
     if: >-
+      !cancelled() &&
+      needs.resolve-release.result == 'success' &&
+      needs.build-candidate.result == 'success' &&
+      needs.publication-reachability.result == 'success' &&
       fromJSON(needs.resolve-release.outputs.release_created || 'false') &&
       vars.RELEASE_PROMOTION_ENABLED == 'true' &&
       github.repository == 'picogrid/ecn-sdk-python'
@@ -578,6 +591,10 @@ jobs:
   publish-pypi:
     name: Publish the exact client artifacts to PyPI with OIDC
     if: >-
+      !cancelled() &&
+      needs.resolve-release.result == 'success' &&
+      needs.build-candidate.result == 'success' &&
+      needs.promote-release.result == 'success' &&
       fromJSON(needs.resolve-release.outputs.release_created || 'false') &&
       vars.RELEASE_PROMOTION_ENABLED == 'true' &&
       vars.PYPI_PUBLISH_ENABLED == 'true' &&

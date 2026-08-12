@@ -431,6 +431,56 @@ test('fails closed on an unclassified preparation 5xx response', async ({ page }
 });
 
 test('offers reconnect recovery only after confirmation is stranded', async ({ page }) => {
+  const [configurationResponse, stateResponse] = await Promise.all([
+    page.request.get('http://127.0.0.1:8080/api/config'),
+    page.request.get('http://127.0.0.1:8080/api/state'),
+  ]);
+  const configuration = await configurationResponse.json();
+  const state = await stateResponse.json();
+  await page.route('**/api/config', async (route) => {
+    await route.fulfill({ json: configuration });
+  });
+  await page.route('**/api/state', async (route) => {
+    await route.fulfill({ json: state });
+  });
+  let socketAttempts = 0;
+  await page.routeWebSocket('**/ws/state?view_id=*', (webSocket) => {
+    socketAttempts += 1;
+    if (socketAttempts === 1) {
+      setTimeout(() => webSocket.send(JSON.stringify(state)), 50);
+      return;
+    }
+    if (socketAttempts === 2) {
+      void webSocket.close({
+        code: 1011,
+        reason: 'synthetic successor failure',
+      });
+      return;
+    }
+    void webSocket.close({
+      code: 1013,
+      reason: 'operator view identity is already in use',
+    });
+  });
+  await page.route('**/api/tasks/prepare', async (route) => {
+    await route.fulfill({
+      json: {
+        preparation_token: 'synthetic-stranded-preparation',
+        expires_at: new Date(Date.now() + 60_000).toISOString(),
+        target_key: 'mock-target/00000000-0000-4000-8000-000000000201',
+        target_label: 'Synthetic task target',
+        command: 'echo',
+        mode: 'complete',
+        payload: { message: 'stranded confirmation' },
+        warning: 'Review before sending.',
+      },
+    });
+  });
+  let retirementAttempts = 0;
+  await page.route('**/api/view/retire', async (route) => {
+    retirementAttempts += 1;
+    await route.fulfill({ json: { retired: true } });
+  });
   await page.goto('/');
   await expect(page.getByTestId('connection-state')).toContainText('ready', {
     timeout: 10_000,
@@ -457,6 +507,134 @@ test('offers reconnect recovery only after confirmation is stranded', async ({ p
   );
   await expect(dialog).toBeVisible();
   await expect(recover).toBeEnabled();
+
+  await recover.click();
+  await expect.poll(() => socketAttempts).toBe(2);
+  await expect(recover).toBeEnabled();
+  expect(retirementAttempts).toBe(1);
+
+  await recover.click();
+  await expect.poll(() => socketAttempts).toBe(3);
+  await expect(page.getByTestId('connection-state')).toContainText(
+    'view identity conflict',
+  );
+  await expect(recover).toBeDisabled();
+  expect(retirementAttempts).toBe(1);
+  await recover.dispatchEvent('click');
+  await expect.poll(() => socketAttempts).toBe(3);
+});
+
+test('canonicalizes and clears a restored retirement marker after acknowledgement', async ({
+  page,
+}) => {
+  const viewId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+  const generation = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+  await page.addInitScript(
+    ({ storedViewId, storedGeneration }) => {
+      window.sessionStorage.setItem('picogrid-ecn-operator-view-id', storedViewId);
+      window.sessionStorage.setItem(
+        'picogrid-ecn-operator-view-generation',
+        storedGeneration.toUpperCase(),
+      );
+      window.sessionStorage.setItem(
+        'picogrid-ecn-operator-view-retirement',
+        storedGeneration.toUpperCase(),
+      );
+    },
+    { storedViewId: viewId, storedGeneration: generation },
+  );
+  let markRetirementStarted!: () => void;
+  let releaseRetirement!: () => void;
+  const retirementStarted = new Promise<void>((resolve) => {
+    markRetirementStarted = resolve;
+  });
+  const retirementRelease = new Promise<void>((resolve) => {
+    releaseRetirement = resolve;
+  });
+  await page.route('**/api/view/retire', async (route) => {
+    markRetirementStarted();
+    await retirementRelease;
+    await route.fulfill({ json: { retired: true } });
+  });
+
+  await page.goto('/');
+  await retirementStarted;
+  expect(
+    await page.evaluate(() =>
+      window.sessionStorage.getItem('picogrid-ecn-operator-view-retirement'),
+    ),
+  ).toBe(generation);
+  releaseRetirement();
+  await expect(page.getByTestId('connection-state')).toContainText('ready');
+  expect(
+    await page.evaluate(() =>
+      window.sessionStorage.getItem('picogrid-ecn-operator-view-retirement'),
+    ),
+  ).toBeNull();
+});
+
+test('removes a persisted identity when retirement intent cannot be stored', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await expect(page.getByTestId('connection-state')).toContainText('ready', {
+    timeout: 10_000,
+  });
+  const storedBefore = await page.evaluate(() => ({
+    id: window.sessionStorage.getItem('picogrid-ecn-operator-view-id'),
+    generation: window.sessionStorage.getItem('picogrid-ecn-operator-view-generation'),
+  }));
+  expect(storedBefore.id).not.toBeNull();
+  expect(storedBefore.generation).not.toBeNull();
+
+  const storedAfter = await page.evaluate(() => {
+    const originalSetItem = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (key: string, value: string): void {
+      if (key === 'picogrid-ecn-operator-view-retirement') {
+        throw new DOMException('synthetic quota exceeded', 'QuotaExceededError');
+      }
+      originalSetItem.call(this, key, value);
+    };
+    window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: false }));
+    return {
+      id: window.sessionStorage.getItem('picogrid-ecn-operator-view-id'),
+      generation: window.sessionStorage.getItem(
+        'picogrid-ecn-operator-view-generation',
+      ),
+    };
+  });
+
+  expect(storedAfter).toEqual({ id: null, generation: null });
+});
+
+test('removes a persisted identity when an accepted generation cannot be stored', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    const originalSetItem = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (key: string, value: string): void {
+      if (key === 'picogrid-ecn-operator-view-generation') {
+        throw new DOMException('synthetic quota exceeded', 'QuotaExceededError');
+      }
+      originalSetItem.call(this, key, value);
+    };
+  });
+  await page.goto('/');
+  await expect(page.getByTestId('connection-state')).toContainText('ready', {
+    timeout: 10_000,
+  });
+  expect(
+    await page.evaluate(() => ({
+      id: window.sessionStorage.getItem('picogrid-ecn-operator-view-id'),
+      generation: window.sessionStorage.getItem(
+        'picogrid-ecn-operator-view-generation',
+      ),
+      retirement: window.sessionStorage.getItem(
+        'picogrid-ecn-operator-view-retirement',
+      ),
+    })),
+  ).toEqual({ id: null, generation: null, retirement: null });
+  await expect(page.locator('#arm-tasking')).toBeDisabled();
 });
 
 test('repairs a malformed stored view identity without disabling tasking', async ({ page }) => {
@@ -781,10 +959,20 @@ test('retires the exact prior view before a synthetic persisted-page restoration
   await expect(page.locator('.leaflet-container')).toHaveCount(1);
   await expect.poll(() => socketUrls.length).toBe(1);
   const priorSocket = new URL(socketUrls[0]!);
+  expect(
+    await page.evaluate(() =>
+      window.sessionStorage.getItem('picogrid-ecn-operator-view-retirement'),
+    ),
+  ).toBeNull();
 
   await page.evaluate(() => {
     window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true }));
   });
+  expect(
+    await page.evaluate(() =>
+      window.sessionStorage.getItem('picogrid-ecn-operator-view-retirement'),
+    ),
+  ).toBe(priorSocket.searchParams.get('view_generation'));
   await expect(page.getByTestId('connection-state')).not.toContainText('ready');
   observeRestore = true;
   await page.evaluate(() => {
@@ -803,6 +991,254 @@ test('retires the exact prior view before a synthetic persisted-page restoration
   await expect(page.getByTestId('connection-state')).toContainText('ready', {
     timeout: 10_000,
   });
+  expect(
+    await page.evaluate(() =>
+      window.sessionStorage.getItem('picogrid-ecn-operator-view-retirement'),
+    ),
+  ).toBeNull();
+});
+
+test('retires the persisted accepted generation before a full-page reload successor', async ({
+  page,
+}) => {
+  const socketUrls: string[] = [];
+  const reloadOrder: string[] = [];
+  let observeReload = false;
+  let retirementHeaders: Record<string, string> | null = null;
+  page.on('websocket', (webSocket) => {
+    socketUrls.push(webSocket.url());
+    if (observeReload) reloadOrder.push('successor socket');
+  });
+  await page.route('**/api/view/retire', async (route) => {
+    retirementHeaders = route.request().headers();
+    reloadOrder.push('prior view retirement');
+    await route.continue();
+  });
+
+  await page.goto('/');
+  await expect(page.getByTestId('connection-state')).toContainText('ready', {
+    timeout: 10_000,
+  });
+  await expect.poll(() => socketUrls.length).toBe(1);
+  const priorSocket = new URL(socketUrls[0]!);
+
+  observeReload = true;
+  await page.reload();
+
+  await expect.poll(() => reloadOrder.slice(0, 2)).toEqual([
+    'prior view retirement',
+    'successor socket',
+  ]);
+  expect(retirementHeaders).toMatchObject({
+    'x-operator-view': priorSocket.searchParams.get('view_id'),
+    'x-operator-view-generation': priorSocket.searchParams.get('view_generation'),
+  });
+  await expect(page.getByTestId('connection-state')).toContainText('ready', {
+    timeout: 10_000,
+  });
+});
+
+test('retries from the last accepted generation after a successor socket fails', async ({
+  page,
+}) => {
+  const snapshot = await (await page.request.get('/api/state')).json();
+  const socketUrls: string[] = [];
+  const retirementGenerations: string[] = [];
+  let initialAcceptedGeneration: string | null = null;
+  let socketAttempts = 0;
+  await page.routeWebSocket('**/ws/state?view_id=*', (webSocket) => {
+    socketUrls.push(webSocket.url());
+    socketAttempts += 1;
+    if (socketAttempts === 2) {
+      void webSocket.close({ code: 1011, reason: 'synthetic successor failure' });
+      return;
+    }
+    webSocket.send(JSON.stringify(snapshot));
+  });
+  await page.route('**/api/view/retire', async (route) => {
+    const generation = route.request().headers()['x-operator-view-generation'];
+    if (generation) retirementGenerations.push(generation);
+    if (generation !== initialAcceptedGeneration) {
+      await route.fulfill({
+        status: 409,
+        json: { detail: 'operator browser view generation is not active' },
+      });
+      return;
+    }
+    await route.fulfill({ json: { retired: true } });
+  });
+
+  await page.goto('/');
+  await expect(page.getByTestId('connection-state')).toContainText('ready', {
+    timeout: 10_000,
+  });
+  await expect.poll(() => socketUrls.length).toBe(1);
+  initialAcceptedGeneration = new URL(socketUrls[0]!).searchParams.get('view_generation');
+
+  await page.getByRole('button', { name: 'Reconnect view' }).click();
+  await expect.poll(() => socketAttempts).toBe(2);
+  await expect(page.getByRole('button', { name: 'Reconnect view' })).toBeEnabled();
+  await page.getByRole('button', { name: 'Reconnect view' }).click();
+
+  await expect(page.getByTestId('connection-state')).toContainText('ready', {
+    timeout: 10_000,
+  });
+  expect(retirementGenerations).toEqual([initialAcceptedGeneration]);
+  expect(socketAttempts).toBe(3);
+});
+
+test('keeps retirement acknowledgement terminal across later reconnect attempts', async ({
+  page,
+}) => {
+  const snapshot = await (await page.request.get('/api/state')).json();
+  let socketAttempts = 0;
+  let retirementAttempts = 0;
+  await page.routeWebSocket('**/ws/state?view_id=*', (webSocket) => {
+    socketAttempts += 1;
+    if (socketAttempts === 1) {
+      webSocket.send(JSON.stringify(snapshot));
+      return;
+    }
+    if (socketAttempts === 2) {
+      void webSocket.close({ code: 1011, reason: 'synthetic successor failure' });
+      return;
+    }
+    void webSocket.close({
+      code: 1013,
+      reason: 'operator view identity is already in use',
+    });
+  });
+  await page.route('**/api/view/retire', async (route) => {
+    retirementAttempts += 1;
+    await route.fulfill({ json: { retired: true } });
+  });
+
+  await page.goto('/');
+  await expect(page.getByTestId('connection-state')).toContainText('ready');
+  const reconnect = page.getByRole('button', { name: 'Reconnect view' });
+  await reconnect.click();
+  await expect.poll(() => socketAttempts).toBe(2);
+  await expect(reconnect).toBeEnabled();
+  await reconnect.click();
+  await expect(page.getByTestId('connection-state')).toContainText(
+    'view identity conflict',
+  );
+  await expect(reconnect).toBeDisabled();
+  expect(retirementAttempts).toBe(1);
+  expect(socketAttempts).toBe(3);
+});
+
+test('keeps restored retirement mandatory after a failed acknowledgement', async ({
+  page,
+}) => {
+  const viewId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+  const generation = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+  await page.addInitScript(
+    ({ storedViewId, storedGeneration }) => {
+      window.sessionStorage.setItem('picogrid-ecn-operator-view-id', storedViewId);
+      window.sessionStorage.setItem(
+        'picogrid-ecn-operator-view-generation',
+        storedGeneration,
+      );
+      window.sessionStorage.setItem(
+        'picogrid-ecn-operator-view-retirement',
+        storedGeneration,
+      );
+    },
+    { storedViewId: viewId, storedGeneration: generation },
+  );
+  let retirementAttempts = 0;
+  const socketUrls: string[] = [];
+  page.on('websocket', (webSocket) => socketUrls.push(webSocket.url()));
+  await page.route('**/api/view/retire', async (route) => {
+    retirementAttempts += 1;
+    if (retirementAttempts === 1) {
+      await route.fulfill({
+        status: 409,
+        json: { detail: 'synthetic retirement still pending' },
+      });
+      return;
+    }
+    await route.fulfill({ json: { retired: true } });
+  });
+
+  await page.goto('/');
+  await expect(page.getByTestId('connection-state')).toContainText('reconnect');
+  expect(retirementAttempts).toBe(1);
+  expect(socketUrls).toEqual([]);
+
+  await page.getByRole('button', { name: 'Reconnect view' }).click();
+  await expect(page.getByTestId('connection-state')).toContainText('ready', {
+    timeout: 10_000,
+  });
+  expect(retirementAttempts).toBe(2);
+  expect(socketUrls).toHaveLength(1);
+});
+
+test('blocks retries after a post-retirement duplicate refusal', async ({ page }) => {
+  const snapshot = await (await page.request.get('/api/state')).json();
+  let socketAttempts = 0;
+  await page.routeWebSocket('**/ws/state?view_id=*', (webSocket) => {
+    socketAttempts += 1;
+    if (socketAttempts === 1) {
+      webSocket.send(JSON.stringify(snapshot));
+      return;
+    }
+    void webSocket.close({
+      code: 1013,
+      reason: 'operator view identity is already in use',
+    });
+  });
+  let retirementAttempts = 0;
+  await page.route('**/api/view/retire', async (route) => {
+    retirementAttempts += 1;
+    await route.fulfill({ json: { retired: true } });
+  });
+
+  await page.goto('/');
+  await expect(page.getByTestId('connection-state')).toContainText('ready');
+  const reconnect = page.getByRole('button', { name: 'Reconnect view' });
+  await reconnect.click();
+  await expect(page.getByTestId('connection-state')).toContainText(
+    'view identity conflict',
+  );
+  await expect(reconnect).toBeDisabled();
+  expect(retirementAttempts).toBe(1);
+  expect(socketAttempts).toBe(2);
+});
+
+test('rotates a cloned identity before its initial socket opens', async ({
+  context,
+  page,
+}) => {
+  const retirementGenerations: string[] = [];
+  await context.route('**/api/view/retire', async (route) => {
+    const generation = route.request().headers()['x-operator-view-generation'];
+    if (generation) retirementGenerations.push(generation);
+    await route.fulfill({ json: { retired: true } });
+  });
+
+  await page.goto('/');
+  await expect(page.getByTestId('connection-state')).toContainText('ready', {
+    timeout: 10_000,
+  });
+  const originalViewId = await page.evaluate(() =>
+    window.sessionStorage.getItem('picogrid-ecn-operator-view-id'),
+  );
+  const popup = page.waitForEvent('popup');
+  await page.evaluate(() => {
+    void window.open(window.location.href, '_blank');
+  });
+  const clone = await popup;
+  await expect(clone.getByTestId('connection-state')).toContainText('ready', {
+    timeout: 10_000,
+  });
+  expect(
+    await clone.evaluate(() =>
+      window.sessionStorage.getItem('picogrid-ecn-operator-view-id'),
+    ),
+  ).not.toBe(originalViewId);
+  expect(retirementGenerations).toEqual([]);
 });
 
 
