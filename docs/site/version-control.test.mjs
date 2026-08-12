@@ -59,8 +59,11 @@ test('injected identity', async (t) => {
       environment: { DOCS_GIT_COMMIT: injectedCommit },
     });
     assert.equal(withoutTag.commit, injectedCommit);
+    assert.equal(withoutTag.reference, injectedCommit);
     assert.equal(withoutTag.tag, '');
-    assert.equal(withoutTag.sourceKind, 'commit');
+    assert.equal(withoutTag.href, `${repository}/tree/main`);
+    assert.equal(withoutTag.referenceLabel, 'main');
+    assert.equal(withoutTag.sourceKind, 'branch');
 
     const withTag = await resolveVersionControl({
       root,
@@ -72,6 +75,9 @@ test('injected identity', async (t) => {
     assert.equal(withTag.commit, injectedCommit);
     assert.equal(withTag.tag, `v${version}`);
     assert.equal(withTag.referenceLabel, `v${version}`);
+    assert.equal(withTag.reference, injectedCommit);
+    assert.equal(withTag.href, `${repository}/tree/v${version}`);
+    assert.equal(withTag.sourceKind, 'tag');
   });
 
   await t.test('rejects a tag without a commit', async (subtest) => {
@@ -115,9 +121,11 @@ test('local Git identity', async (t) => {
 
     const identity = await resolveVersionControl({ root, environment: {} });
     assert.equal(identity.commit, commit);
+    assert.equal(identity.reference, commit);
     assert.equal(identity.tag, '');
-    assert.equal(identity.referenceLabel, commit.slice(0, 7));
-    assert.equal(identity.sourceKind, 'commit');
+    assert.equal(identity.href, `${repository}/tree/main`);
+    assert.equal(identity.referenceLabel, 'main');
+    assert.equal(identity.sourceKind, 'branch');
   });
 
   await t.test('selects the release tag when another tag also points at HEAD', async (subtest) => {
@@ -128,13 +136,19 @@ test('local Git identity', async (t) => {
     const identity = await resolveVersionControl({ root, environment: {} });
     assert.equal(identity.tag, `v${version}`);
     assert.equal(identity.referenceLabel, `v${version}`);
+    assert.equal(identity.reference, identity.commit);
+    assert.equal(identity.href, `${repository}/tree/v${version}`);
+    assert.equal(identity.sourceKind, 'tag');
   });
 
   await t.test('forfeits the commit claim for tracked and untracked changes', async (subtest) => {
     const tracked = createCheckout(subtest);
     const cleanIdentity = await resolveVersionControl({ root: tracked.root, environment: {} });
     assert.equal(cleanIdentity.commit, tracked.commit);
-    assert.equal(cleanIdentity.sourceKind, 'commit');
+    assert.equal(cleanIdentity.reference, tracked.commit);
+    assert.equal(cleanIdentity.href, `${repository}/tree/main`);
+    assert.equal(cleanIdentity.referenceLabel, 'main');
+    assert.equal(cleanIdentity.sourceKind, 'branch');
 
     writeFileSync(join(tracked.root, 'guide.md'), 'changed after commit\n');
     const trackedDirty = await resolveVersionControl({ root: tracked.root, environment: {} });

@@ -95,6 +95,19 @@ _UNCONDITIONAL_RISK_MARKERS = (
     "validation-capture",
     "validation_capture",
 )
+_ASSISTANT_ARTIFACT_NAMES = frozenset(
+    {
+        ".claude",
+        ".codex",
+        ".cursor",
+        "agents.md",
+        "claude.md",
+        "codex.md",
+        "copilot-instructions.md",
+        "gemini.md",
+    }
+)
+_EXPECTED_INTERNAL_ASSISTANT_ARTIFACT_PATHS = frozenset({Path("AGENTS.md")})
 _ARCHIVE_SUFFIXES = (".7z", ".rar", ".tar", ".tar.gz", ".tgz", ".zip")
 _GENERATED_REPORT_FILES = frozenset(
     {
@@ -353,6 +366,10 @@ def _ignored_path_categories(
     categories: set[str] = set()
     if any(marker in lowered for marker in _UNCONDITIONAL_RISK_MARKERS):
         categories.add("validation-or-internal-capture-name")
+    if path not in _EXPECTED_INTERNAL_ASSISTANT_ARTIFACT_PATHS and any(
+        part.casefold() in _ASSISTANT_ARTIFACT_NAMES for part in path.parts
+    ):
+        categories.add("assistant-artifact-name")
     if _is_stale_project_output(path):
         categories.add("stale-project-output")
     if lowered.endswith(_ARCHIVE_SUFFIXES) and not _is_expected_ignored_path(path):
@@ -1134,7 +1151,7 @@ def _inspect_static_site(
     mount = f"{documentation_base_path}/"
     _require_root_redirect_targets(root_redirect, mount)
     try:
-        validate_public_brand_assets(brand_contents, policy)
+        validate_public_brand_assets(brand_contents, policy, surface="documentation")
     except ArtifactPolicyError as exc:
         raise VerificationError(str(exc)) from None
     return {
@@ -1225,7 +1242,7 @@ def _inspect_generated_web_tree(
     if not files:
         raise VerificationError(f"{label} output is empty")
     try:
-        validate_public_brand_assets(brand_contents, policy)
+        validate_public_brand_assets(brand_contents, policy, surface="operator")
     except ArtifactPolicyError as exc:
         raise VerificationError(f"{label} {exc}") from None
     return {
@@ -3753,6 +3770,13 @@ def _git_value(arguments: Sequence[str], environment: Mapping[str, str]) -> str:
     ).strip()
 
 
+def _require_clean_release_worktree(status: str) -> None:
+    """Refuse to verify artifacts that cannot be attributed to one commit."""
+
+    if status:
+        raise VerificationError("release verification requires a clean Git worktree")
+
+
 def _release_tag(environment: Mapping[str, str], project_version: str) -> str:
     """Name the tag this candidate publishes as, or nothing.
 
@@ -3886,7 +3910,7 @@ def _write_final_reports(
                 "artifact-allowlist-denylist-content-secret-inspection",
                 "exact-final-dist-client-wheel-operator-wheel-and-sdist-inventory",
                 "generated-report-allowlist-secret-address-and-path-inspection",
-                "released-docs-links-snippets-commands-parity-and-example-coverage",
+                "released-docs-links-snippets-commands-and-example-coverage",
                 "clean-two-build-static-site-check-and-promotion",
                 "documented-dependency-resolving-wheel-install-command",
                 "runtime-vulnerability-audit",
@@ -3908,8 +3932,6 @@ def _write_final_reports(
                 key: probe[key]
                 for key in (
                     "import_origin",
-                    "private_sdk_available",
-                    "private_sdk_imported",
                     "project_name",
                     "project_version",
                     "python",
@@ -3923,8 +3945,6 @@ def _write_final_reports(
                 key: python_312_probe[key]
                 for key in (
                     "import_origin",
-                    "private_sdk_available",
-                    "private_sdk_imported",
                     "project_name",
                     "project_version",
                     "python",
@@ -3935,8 +3955,6 @@ def _write_final_reports(
                 key: python_313_probe[key]
                 for key in (
                     "import_origin",
-                    "private_sdk_available",
-                    "private_sdk_imported",
                     "project_name",
                     "project_version",
                     "python",
@@ -3947,8 +3965,6 @@ def _write_final_reports(
                 key: python_314_probe[key]
                 for key in (
                     "import_origin",
-                    "private_sdk_available",
-                    "private_sdk_imported",
                     "project_name",
                     "project_version",
                     "python",
@@ -4109,7 +4125,11 @@ def verify_release(source_date_epoch: int) -> None:
     uv_lock_digest = sha256_file(REPOSITORY / "uv.lock")
     git_commit = _git_value(("rev-parse", "HEAD"), environment)
     git_tag = _release_tag(environment, str(policy["project_version"]))
-    git_worktree_dirty = bool(_git_value(("status", "--porcelain"), environment))
+    git_worktree_status = _git_value(
+        ("status", "--porcelain", "--untracked-files=all"), environment
+    )
+    _require_clean_release_worktree(git_worktree_status)
+    git_worktree_dirty = False
     _require_verification_inputs_unchanged(verified_inputs_digest, environment)
     python_312_interpreter = _find_python_minor("3.12", uv, environment)
     python_313_interpreter = _find_python_minor("3.13", uv, environment)

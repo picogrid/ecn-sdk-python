@@ -75,6 +75,4 @@ Every included example imports the installed `picogrid-ecn-client` wheel. Run
 ## Compatibility labels
 
 The [compatibility page](compatibility/limitations.md) is the public source of truth
-for supported and deferred behavior. Maintainer evidence tiers and complete
-historical workflow accounting remain in the non-public
-[original ECN-integration parity matrix](reference/original-ecn-integration-parity.md).
+for supported and deferred behavior.

@@ -49,11 +49,9 @@ const nonDocumentationTopLevelEntries = new Set([
   '.astro',
   '.wrangler',
 ]);
-// Keep this list aligned with the maintainer-only exclusions in docs/src/content.config.ts.
+// The maintainer README is repository guidance rather than a published guide page.
 const unpublishedDocumentationSources = new Set([
   'README.md',
-  join('reference', 'evidence-status.md'),
-  join('reference', 'original-ecn-integration-parity.md'),
 ]);
 const source = resolveVersionControl({ repository });
 

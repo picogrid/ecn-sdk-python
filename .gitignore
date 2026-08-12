@@ -15,7 +15,6 @@ src/*.egg-info/
 **/__pycache__/
 # Credential-like files stay visible to repository and release scans.
 .worktrees/
-.claude/
 
 # Playwright run output
 test-results/

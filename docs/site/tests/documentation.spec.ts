@@ -548,11 +548,9 @@ test('the version menu links the release to the source it was built from', async
   await trigger.click();
   await expect(trigger).toHaveAttribute('aria-expanded', 'true');
 
-  // A checkout with uncommitted work publishes no immutable reference, because
-  // no commit contains the rendered bytes, so the page links the branch. Either
-  // way the menu must name exactly the source the page's own metadata names.
-  // That a *released* build publishes a commit is enforced by the release gates,
-  // which build from a clean tree with the identity injected.
+  // Provenance metadata names the exact private engineering commit. The
+  // reader-facing link must instead name an exported public ref: the release
+  // tag when injected, or public main for ordinary clean and dirty builds.
   const commitMeta = page.locator('meta[name="source-commit"]');
   const commit = (await commitMeta.count()) ? await commitMeta.getAttribute('content') : null;
   if (commit === null) {
@@ -561,19 +559,26 @@ test('the version menu links the release to the source it was built from', async
     expect(commit).toMatch(/^[0-9a-f]{40}$/);
     await expect(page.locator('meta[name="source-ref"]')).toHaveAttribute('content', commit);
   }
+  const publicReference = process.env.DOCS_GIT_TAG || 'main';
+  const publicSourceKind = process.env.DOCS_GIT_TAG ? 'tag' : 'branch';
+  const publicTitle = `Built from ${publicSourceKind} ${publicReference}`;
 
   const menu = page.getByRole('menu', { name: 'Version' });
   const release = menu.getByRole('menuitem').first();
   await expect(release).toHaveAttribute('aria-current', 'true');
   await expect(release).toHaveAttribute(
     'href',
-    commit === null
-      ? 'https://github.com/picogrid/ecn-sdk-python/tree/main'
-      : `https://github.com/picogrid/ecn-sdk-python/commit/${commit}`,
+    `https://github.com/picogrid/ecn-sdk-python/tree/${publicReference}`,
   );
-  if (process.env.DOCS_GIT_TAG) {
-    await expect(page.locator('.documentation-source a')).toHaveText(process.env.DOCS_GIT_TAG);
-  }
+  await expect(release).toHaveAttribute('title', publicTitle);
+  await expect(release).toContainText(`${publicSourceKind} ${publicReference}`);
+  const footerSource = page.locator('.documentation-source a');
+  await expect(footerSource).toHaveAttribute(
+    'href',
+    `https://github.com/picogrid/ecn-sdk-python/tree/${publicReference}`,
+  );
+  await expect(footerSource).toHaveText(publicReference);
+  await expect(footerSource).toHaveAttribute('title', publicTitle);
   // What changed between releases is asked of the same control.
   const panel = page.locator('header.header .version-panel');
   await expect(panel.getByRole('menuitem', { name: 'Changelog' })).toBeVisible();
@@ -1097,13 +1102,9 @@ test('public navigation presents product journeys without maintainer routes', as
     await expect(navigation.getByRole('link', { name })).toBeVisible();
   }
 
-  for (const name of [
-    'Picogrid ECN SDK guide',
-    'Evidence and workflow status',
-    'Original ECN integration parity matrix',
-  ]) {
-    await expect(navigation.getByRole('link', { name })).toHaveCount(0);
-  }
+  await expect(
+    navigation.getByRole('link', { name: 'Picogrid ECN SDK guide' }),
+  ).toHaveCount(0);
 });
 
 test('local search reaches broker authorization guidance', async ({ page }) => {

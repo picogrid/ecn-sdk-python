@@ -857,7 +857,7 @@ starlight-menu-button[aria-expanded="true"] button .open-menu {
 /*
  * Below the width where the outline column appears, the theme's right-hand
  * container holds nothing: its panel is hidden there, and the disclosure that
- * would otherwise stand in for it is withdrawn (D051). Left rendered it is an
+ * would otherwise stand in for it is withdrawn. Left rendered it is an
  * empty, unnamed complementary landmark on every page — an entry in a screen
  * reader's landmark list that leads nowhere. The width is the theme's own
  * breakpoint for that column.

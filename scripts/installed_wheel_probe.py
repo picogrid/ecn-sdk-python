@@ -8,7 +8,6 @@ from __future__ import annotations
 import argparse
 import asyncio
 import importlib.metadata
-import importlib.util
 import json
 import os
 import sys
@@ -118,10 +117,6 @@ def probe(
         raise RuntimeError(
             f"package did not import from isolated site-packages: {module_file.name}"
         )
-    if importlib.util.find_spec("picogrid_edge_sdk") is not None:
-        raise RuntimeError("private edge SDK is present in the installed-wheel environment")
-    if any(name.startswith("picogrid_edge_sdk") for name in sys.modules):
-        raise RuntimeError("private edge SDK was imported")
 
     _probe_path_backed_tls_reader()
 
@@ -133,8 +128,6 @@ def probe(
     return {
         "dependencies": dependencies,
         "import_origin": "isolated-environment-site-packages",
-        "private_sdk_available": False,
-        "private_sdk_imported": False,
         "project_name": project.metadata["Name"],
         "project_version": project.version,
         "python": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",

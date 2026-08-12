@@ -40,10 +40,8 @@ include docs/quickstarts/sensor-publisher.md
 include docs/reference/api.md
 include docs/reference/configuration.md
 include docs/reference/coordinate-reference.md
-include docs/reference/evidence-status.md
 include docs/reference/exceptions.md
 include docs/reference/licensing.md
-include docs/reference/original-ecn-integration-parity.md
 include docs/reference/wire-formats.md
 include docs/security/credentials.md
 include docs/shipped-tooling.md
@@ -180,7 +178,6 @@ include operator-app/tests/publication-screenshot.spec.ts
 include operator-app/tests/screenshot.config.ts
 include operator-app/tsconfig.json
 include scripts/generate_api_reference.py
-include scripts/original-guide-inventory.json
 include scripts/public-api-manifest.json
 include scripts/release-policy.json
 include scripts/type-completeness-allowlist.json
