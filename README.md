@@ -201,4 +201,4 @@ product help, see [SUPPORT.md](https://github.com/picogrid/ecn-sdk-python/blob/m
 
 The Picogrid ECN SDK is licensed under the
 [Mozilla Public License 2.0](https://github.com/picogrid/ecn-sdk-python/blob/main/LICENSE).
-Picogrid names and marks are not licensed as trademarks.
+Picogrid names and marks are not licensed as trademarks..
