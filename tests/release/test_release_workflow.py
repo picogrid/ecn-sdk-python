@@ -144,5 +144,9 @@ def test_heavy_runner_is_limited_to_trusted_main_jobs() -> None:
     worker_count = "${{ github.ref == 'refs/heads/main' && vars.HEAVY_RUNNER && '4' || '1' }}"
     assert f"PLAYWRIGHT_WORKERS: {worker_count}" in release_workflow
 
-    releasing = (REPOSITORY / "RELEASING.md").read_text(encoding="utf-8")
-    assert "An existing tag with no matching release creates a new draft" in releasing
+    # RELEASING.md is the internal release custody runbook and is excluded from
+    # the public export, so only assert its contents when the file is present.
+    releasing_md = REPOSITORY / "RELEASING.md"
+    if releasing_md.exists():
+        releasing = releasing_md.read_text(encoding="utf-8")
+        assert "An existing tag with no matching release creates a new draft" in releasing
