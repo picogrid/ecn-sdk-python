@@ -80,6 +80,10 @@ published.
 - Mock results validate SDK behavior but do not establish compatibility with a
   deployed ECN.
 
+- The versioned `ecn-wire-conformance` corpus (version 0.2) pins every fixture by
+  SHA-256, pins canonical JSON encodings where applicable, and fails CI on unhashed
+  corpus changes.
+
 ### Documentation
 
 - A published documentation site provides installation, authentication, preflight,

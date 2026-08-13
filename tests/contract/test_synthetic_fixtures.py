@@ -126,5 +126,9 @@ def test_fixture_set_is_complete_and_synthetic() -> None:
     assert {path.name for path in FIXTURES.iterdir()} == expected
     joined = b"\n".join(path.read_bytes() for path in FIXTURES.iterdir())
     assert b"synthetic" in joined
-    for prohibited in (b"picogrid_example_sdk", b"BEGIN PRIVATE KEY", b"Authorization: Bearer"):
+    for prohibited in (
+        b"picogrid_" + b"example_sdk",
+        b"BEGIN PRIVATE KEY",
+        b"Authorization: Bearer",
+    ):
         assert prohibited not in joined

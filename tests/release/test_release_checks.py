@@ -36,11 +36,13 @@ from scripts.sync_dep_locks import canonical_root_requirement, requirement_name
 POLICY_PATH = Path(__file__).parents[2] / "scripts" / "release-policy.json"
 _CANONICAL_LICENSE_TEXT = POLICY_PATH.parents[1].joinpath("LICENSE").read_bytes()
 _NONPUBLIC_IMPORT_CANARY = b"import picogrid_" + b"example_sdk._internal\n"
-_UNAPPROVED_REPOSITORY_CANARY = b"https://github.com/picogrid/unpublished-sdk\n"
-_UNAPPROVED_SSH_REPOSITORY_CANARY = b"git@github.com:picogrid/unpublished-sdk.git\n"
-_UNAPPROVED_PORT_REPOSITORY_CANARY = b"https://github.com:443/picogrid/unpublished-sdk.git\n"
-_UNAPPROVED_SSH_PORT_REPOSITORY_CANARY = b"ssh://git@github.com:22/picogrid/unpublished-sdk.git\n"
-_PRIVATE_API_PATH_CANARY = b'path = "/internal/' + b'status"\n'
+_UNAPPROVED_REPOSITORY_CANARY = b"https://github.com/picogrid/" + b"unpublished-sdk\n"
+_UNAPPROVED_SSH_REPOSITORY_CANARY = b"git@github.com:picogrid/" + b"unpublished-sdk.git\n"
+_UNAPPROVED_PORT_REPOSITORY_CANARY = b"https://github.com:443/picogrid/" + b"unpublished-sdk.git\n"
+_UNAPPROVED_SSH_PORT_REPOSITORY_CANARY = (
+    b"ssh://git@github.com:22/picogrid/" + b"unpublished-sdk.git\n"
+)
+_PRIVATE_API_PATH_CANARY = b'path = "/' + b'internal/status"\n'
 _PRIVATE_KEY_CANARY = b"-----BEGIN " + b"PRIVATE KEY-----\n"
 _IPV4_CANARY = b"connect to 192.0.2." + b"10\n"
 _IPV6_CANARY = b"connect to 2001:db8:" + b":1\n"
@@ -1058,6 +1060,11 @@ def test_make_verify_release_selects_isolated_python_311() -> None:
         (_UNAPPROVED_PORT_REPOSITORY_CANARY, "unapproved Picogrid repository URL"),
         (_UNAPPROVED_SSH_PORT_REPOSITORY_CANARY, "unapproved Picogrid repository URL"),
         (_PRIVATE_API_PATH_CANARY, "private API path"),
+        (
+            b"https%3A%2F%2Fgithub.com%2Fpicogrid%2F" + b"unpublished-sdk",
+            "unapproved Picogrid repository URL",
+        ),
+        (b"%252F" + b"internal%252Fstatus", "private API path"),
         (_PRIVATE_KEY_CANARY, "private key"),
         (_IPV4_CANARY, "non-loopback IPv4"),
         (_IPV6_CANARY, "non-loopback IPv6"),
@@ -1089,6 +1096,7 @@ def test_wheel_content_scan_rejects_prohibited_material(
         b"https://github.com/picogrid/ecn-sdk-python.git\n",
         b"git@github.com:picogrid/legion-system-auth.git\n",
         b"https://github.com:443/picogrid/ecn-sdk-python.git\n",
+        b'https://github.com/picogrid/ecn-sdk-python\\n"',
         b"ssh://git@github.com:22/picogrid/legion-system-auth.git\n",
     ],
 )
@@ -1178,6 +1186,23 @@ def test_network_scan_decodes_percent_encoded_addresses(payload: bytes, expected
         scan_secret_and_address_content("generated.js", payload, policy)
 
 
+def test_publication_scan_decodes_html_entities() -> None:
+    policy = load_policy(POLICY_PATH)
+
+    with pytest.raises(ArtifactPolicyError, match="private API path"):
+        release_checks.scan_publication_content(
+            "site-dist/page.html",
+            b"&#x2f;internal&#x2f;status",
+            policy,
+        )
+
+    release_checks.scan_publication_content(
+        "example.py",
+        b"&#x2f;internal&#x2f;status",
+        policy,
+    )
+
+
 @pytest.mark.parametrize(
     "name",
     ("frontend/main.ts", "frontend/style.css", "Dockerfile", ".env.example"),
@@ -1199,6 +1224,45 @@ def test_worktree_scan_rejects_secret_content_without_echoing_it(tmp_path: Path)
 
     assert _SLACK_TOKEN_CANARY.decode().strip() not in str(raised.value)
     assert "README.md" not in str(raised.value)
+
+
+@pytest.mark.parametrize(
+    "payload",
+    (
+        _NONPUBLIC_IMPORT_CANARY,
+        _UNAPPROVED_REPOSITORY_CANARY,
+        _PRIVATE_API_PATH_CANARY,
+    ),
+)
+def test_worktree_source_scan_allows_nonpublic_reference_fixtures(
+    tmp_path: Path,
+    payload: bytes,
+) -> None:
+    policy = load_policy(POLICY_PATH)
+    candidate = tmp_path / "fixture.py"
+    candidate.write_bytes(payload)
+
+    assert (
+        release_workflow._scan_worktree_paths(
+            tmp_path,
+            [Path("fixture.py")],
+            [],
+            policy,
+        )["git_visible_files_scanned"]
+        == 1
+    )
+
+
+def test_operator_screenshot_reports_publication_content_rejection(tmp_path: Path) -> None:
+    policy = load_policy(POLICY_PATH)
+    screenshot = tmp_path / "operator.png"
+    screenshot.write_bytes(b"\x89PNG\r\n\x1a\n" + b"\0" * 1_000 + _NONPUBLIC_IMPORT_CANARY)
+
+    with pytest.raises(
+        release_workflow.VerificationError,
+        match="operator publication screenshot failed publication content scan",
+    ):
+        release_workflow._inspect_operator_screenshot(screenshot, policy)
 
 
 def test_worktree_scan_rejects_unexpected_ignored_file_even_with_innocuous_name(
@@ -2325,6 +2389,25 @@ def test_ignored_generated_content_scan_allows_stdlib_http_references(tmp_path: 
     }
 
 
+def test_ignored_generated_content_uses_publication_boundary_scanner(
+    tmp_path: Path,
+) -> None:
+    policy = load_policy(POLICY_PATH)
+    relative = Path("reports/generated/coverage.json")
+    candidate = tmp_path / relative
+    candidate.parent.mkdir(parents=True)
+    candidate.write_bytes(_NONPUBLIC_IMPORT_CANARY)
+
+    with pytest.raises(
+        release_workflow.VerificationError,
+        match="ignored generated report failed non-public SDK reference scan",
+    ) as raised:
+        release_workflow._scan_worktree_paths(tmp_path, [], [relative], policy)
+
+    assert relative.as_posix() not in str(raised.value)
+    assert _NONPUBLIC_IMPORT_CANARY.decode().strip() not in str(raised.value)
+
+
 def test_ignored_generated_report_content_uses_the_secret_scanner(tmp_path: Path) -> None:
     policy = load_policy(POLICY_PATH)
     relative = Path("reports/generated/coverage.json")
@@ -2767,7 +2850,7 @@ def test_sbom_sanitizer_removes_local_archive_reference(tmp_path: Path) -> None:
                         "externalReferences": [
                             {
                                 "type": "distribution",
-                                "url": "file:///private/tmp/candidate.whl",
+                                "url": "file:///tmp/candidate.whl",
                             },
                             {
                                 "type": "website",
@@ -2885,7 +2968,7 @@ def test_sbom_sanitizer_rejects_local_dependency_reference(tmp_path: Path) -> No
                         "externalReferences": [
                             {
                                 "type": "distribution",
-                                "url": "file:///private/tmp/dependency.whl",
+                                "url": "file:///tmp/dependency.whl",
                             }
                         ],
                     }
@@ -3458,8 +3541,8 @@ def test_immutable_source_snapshot_rejects_policy_path_escape(
             "import picogrid_ecn_client.workflows._retention",
             "non-public client module",
         ),
-        ("import picogrid_example_sdk", "non-public client module"),
-        ("from picogrid_example_sdk import x", "non-public client module"),
+        ("import picogrid_" + "example_sdk", "non-public client module"),
+        ("from picogrid_" + "example_sdk import x", "non-public client module"),
     ],
 )
 def test_installed_example_import_scan_rejects_non_public_sdk_names(

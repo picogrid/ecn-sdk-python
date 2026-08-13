@@ -51,6 +51,7 @@ from scripts.release_checks import (
     inspect_wheel,
     load_documentation_base_path,
     load_policy,
+    scan_publication_content,
     scan_secret_and_address_content,
     sha256_file,
     validate_public_brand_assets,
@@ -446,7 +447,7 @@ def _scan_ignored_generated_content(
         if any(marker in data.lower() for marker in _RETIRED_GENERATED_CONTENT_MARKERS):
             raise VerificationError("ignored generated output failed retired protocol marker scan")
         try:
-            scan_secret_and_address_content(
+            scan_publication_content(
                 relative.as_posix(),
                 data,
                 policy,
@@ -1127,7 +1128,7 @@ def _inspect_static_site(
             else frozenset()
         )
         try:
-            scan_secret_and_address_content(
+            scan_publication_content(
                 f"site-dist/{relative}",
                 data,
                 policy,
@@ -1223,7 +1224,7 @@ def _inspect_generated_web_tree(
         if relative.startswith("brand/"):
             brand_contents[relative] = data
         try:
-            scan_secret_and_address_content(
+            scan_publication_content(
                 f"{label}/{relative}",
                 data,
                 policy,
@@ -3175,10 +3176,11 @@ def _inspect_operator_screenshot(
     if not data.startswith(b"\x89PNG\r\n\x1a\n"):
         raise VerificationError("operator publication screenshot is not a PNG")
     try:
-        scan_secret_and_address_content(path.as_posix(), data, policy)
+        scan_publication_content(path.as_posix(), data, policy)
     except ArtifactPolicyError as exc:
-        raise VerificationError("operator publication screenshot failed secret scan") from exc
-
+        raise VerificationError(
+            "operator publication screenshot failed publication content scan"
+        ) from exc
     cursor = 8
     chunk_types: list[str] = []
     width = height = 0
@@ -3988,7 +3990,7 @@ def _inspect_generated_report_entries(entries: Sequence[Path], policy: dict[str,
         if any(marker in data.lower() for marker in _RETIRED_GENERATED_CONTENT_MARKERS):
             raise VerificationError("generated release report failed retired protocol marker scan")
         try:
-            scan_secret_and_address_content(
+            scan_publication_content(
                 f"reports/generated/{path.name}",
                 data,
                 policy,

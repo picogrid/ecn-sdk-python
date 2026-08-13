@@ -9,6 +9,7 @@ import { readFileSync } from 'node:fs';
 import { resolveLegionDocumentation } from '../legion-documentation.mjs';
 import { publicGuideRoutes } from '../public-routes.mjs';
 import { documentationBase } from '../site-config.mjs';
+import { resolveVersionControl } from '../version-control.mjs';
 
 // The conformance tags do not include the rules a screen reader depends on most
 // — that landmarks are distinguishable, that heading levels are not skipped,
@@ -559,8 +560,11 @@ test('the version menu links the release to the source it was built from', async
     expect(commit).toMatch(/^[0-9a-f]{40}$/);
     await expect(page.locator('meta[name="source-ref"]')).toHaveAttribute('content', commit);
   }
-  const publicReference = process.env.DOCS_GIT_TAG || 'main';
-  const publicSourceKind = process.env.DOCS_GIT_TAG ? 'tag' : 'branch';
+  const publicSource = resolveVersionControl({
+    repository: 'https://github.com/picogrid/ecn-sdk-python',
+  });
+  const publicReference = publicSource.referenceLabel;
+  const publicSourceKind = publicSource.sourceKind;
   const publicTitle = `Built from ${publicSourceKind} ${publicReference}`;
 
   const menu = page.getByRole('menu', { name: 'Version' });

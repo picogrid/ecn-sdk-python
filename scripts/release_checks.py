@@ -22,6 +22,7 @@ from collections.abc import Mapping
 from dataclasses import asdict, dataclass
 from email.message import Message
 from email.parser import BytesParser
+from html import unescape as html_unescape
 from pathlib import Path, PurePosixPath
 from typing import Any
 from urllib.parse import unquote, urlsplit
@@ -77,7 +78,7 @@ _TEXT_SUFFIXES = frozenset(
 )
 _NONPUBLIC_SDK_IMPORT = re.compile(rb"picogrid[_-][a-z0-9_-]+[_-]sdk(?![a-z0-9_-])", re.IGNORECASE)
 _UNAPPROVED_PICOGRID_REPOSITORY = re.compile(
-    rb"github\.com(?::[0-9]+)?[/:]picogrid/(?!ecn-sdk-python(?:\.git)?(?:[/?#\s\"']|$)|legion-system-auth(?:\.git)?(?:[/?#\s\"']|$))[a-z0-9_.-]+",
+    rb"github\.com(?::[0-9]+)?[/:]picogrid/(?!ecn-sdk-python(?:\.git)?(?:[\x5c/?#\s\"']|$)|legion-system-auth(?:\.git)?(?:[\x5c/?#\s\"']|$))[a-z0-9_.-]+",
     re.IGNORECASE,
 )
 _PRIVATE_INDEX = re.compile(
@@ -1754,19 +1755,9 @@ def _scan_retired_document_references(
 
 def _scan_content(name: str, data: bytes, policy: dict[str, Any]) -> None:
     path = PurePosixPath(name)
-    if _NONPUBLIC_SDK_IMPORT.search(data):
-        raise ArtifactPolicyError(f"non-public SDK reference found in {name}")
-    patterns = {
-        "unapproved Picogrid repository URL": _UNAPPROVED_PICOGRID_REPOSITORY,
-        "private package index": _PRIVATE_INDEX,
-        "private API path": _PRIVATE_API_PATH,
-    }
-    for label, pattern in patterns.items():
-        if pattern.search(data):
-            raise ArtifactPolicyError(f"{label} found in {name}")
 
     policy_member = path.parts[-2:] == ("scripts", "release-policy.json")
-    scan_secret_and_address_content(
+    scan_publication_content(
         name,
         data,
         policy,
@@ -1783,6 +1774,38 @@ def _scan_content(name: str, data: bytes, policy: dict[str, Any]) -> None:
             raise ArtifactPolicyError(f"retired runtime marker found in {name}")
 
 
+def _scan_nonpublic_references(name: str, data: bytes) -> None:
+    if _NONPUBLIC_SDK_IMPORT.search(data):
+        raise ArtifactPolicyError(f"non-public SDK reference found in {name}")
+    patterns = {
+        "unapproved Picogrid repository URL": _UNAPPROVED_PICOGRID_REPOSITORY,
+        "private package index": _PRIVATE_INDEX,
+        "private API path": _PRIVATE_API_PATH,
+    }
+    for label, pattern in patterns.items():
+        if pattern.search(data):
+            raise ArtifactPolicyError(f"{label} found in {name}")
+
+
+def scan_publication_content(
+    name: str,
+    data: bytes,
+    policy: dict[str, Any],
+    *,
+    allow_synthetic_hosts: bool = False,
+    allowed_exact_urls: frozenset[str] = frozenset(),
+) -> None:
+    """Reject prohibited references, secrets, and network addresses from one file."""
+    _scan_secret_and_address_content(
+        name,
+        data,
+        policy,
+        scan_nonpublic_references=True,
+        allow_synthetic_hosts=allow_synthetic_hosts,
+        allowed_exact_urls=allowed_exact_urls,
+    )
+
+
 def scan_secret_and_address_content(
     name: str,
     data: bytes,
@@ -1792,6 +1815,27 @@ def scan_secret_and_address_content(
     allowed_exact_urls: frozenset[str] = frozenset(),
 ) -> None:
     """Reject publication secrets and network addresses from one candidate file."""
+    _scan_secret_and_address_content(
+        name,
+        data,
+        policy,
+        scan_nonpublic_references=False,
+        allow_synthetic_hosts=allow_synthetic_hosts,
+        allowed_exact_urls=allowed_exact_urls,
+    )
+
+
+def _scan_secret_and_address_content(
+    name: str,
+    data: bytes,
+    policy: dict[str, Any],
+    *,
+    scan_nonpublic_references: bool,
+    allow_synthetic_hosts: bool,
+    allowed_exact_urls: frozenset[str],
+) -> None:
+    if scan_nonpublic_references:
+        _scan_nonpublic_references(name, data)
 
     patterns = {
         "private key": _PRIVATE_KEY,
@@ -1824,6 +1868,17 @@ def scan_secret_and_address_content(
         if decoded == scan_texts[-1]:
             break
         scan_texts.append(decoded)
+
+    if PurePosixPath(name).suffix.casefold() in (".htm", ".html"):
+        percent_variant_count = len(scan_texts)
+        for index in range(percent_variant_count):
+            decoded = html_unescape(scan_texts[index])
+            if decoded != scan_texts[index] and decoded not in scan_texts:
+                scan_texts.append(decoded)
+
+    if scan_nonpublic_references:
+        for candidate_text in scan_texts[1:]:
+            _scan_nonpublic_references(name, candidate_text.encode("utf-8"))
 
     for candidate_text in scan_texts:
         for raw_address in _IPV4.findall(candidate_text.encode("utf-8")):
