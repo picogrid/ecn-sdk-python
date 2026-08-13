@@ -1,0 +1,52 @@
+{
+  "description": "Golden wire-conformance vectors for the aligned MQTT topic families: JSON entity events, JSON entity locations, and local task requests and responses. Each vector carries one canonical expectation: the exact topic string built from the named components. Conforming implementations must build exactly this topic from the components and, where they parse the family, recover exactly these components from the topic.",
+  "vectors": [
+    {
+      "id": "json-entity-track-event",
+      "kind": "entity_event",
+      "integration": "synthetic-vendor",
+      "entity_id": "10000000-0000-4000-8000-000000000001",
+      "category": "TRACK",
+      "topic": "entity/synthetic-vendor/10000000-0000-4000-8000-000000000001/track"
+    },
+    {
+      "id": "json-entity-detection-event",
+      "kind": "entity_event",
+      "integration": "synthetic-vendor",
+      "entity_id": "10000000-0000-4000-8000-000000000002",
+      "category": "DETECTION",
+      "topic": "entity/synthetic-vendor/10000000-0000-4000-8000-000000000002/detection"
+    },
+    {
+      "id": "json-entity-device-event",
+      "kind": "entity_event",
+      "integration": "synthetic-vendor",
+      "entity_id": "10000000-0000-4000-8000-000000000005",
+      "category": "DEVICE",
+      "topic": "entity/synthetic-vendor/10000000-0000-4000-8000-000000000005/device"
+    },
+    {
+      "id": "json-location-update",
+      "kind": "location",
+      "integration": "synthetic-vendor",
+      "entity_id": "10000000-0000-4000-8000-000000000003",
+      "topic": "entity_location/synthetic-vendor/10000000-0000-4000-8000-000000000003"
+    },
+    {
+      "id": "local-task-request",
+      "kind": "task_request",
+      "integration": "synthetic-vendor",
+      "entity_id": "10000000-0000-4000-8000-000000000004",
+      "command": "set-mode",
+      "topic": "task/synthetic-vendor/10000000-0000-4000-8000-000000000004/set-mode"
+    },
+    {
+      "id": "local-task-response",
+      "kind": "task_response",
+      "integration": "synthetic-vendor",
+      "entity_id": "10000000-0000-4000-8000-000000000004",
+      "command": "set-mode",
+      "topic": "task/synthetic-vendor/10000000-0000-4000-8000-000000000004/set-mode/response"
+    }
+  ]
+}

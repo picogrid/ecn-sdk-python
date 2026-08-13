@@ -82,7 +82,6 @@ asyncio_mode = "strict"
 asyncio_default_fixture_loop_scope = "function"
 markers = [
   "contract: reusable public protocol contract tests",
-  "differential: optional comparison with an installed private SDK",
   "e2e: full offline workflow tests",
   "integration: opt-in tests against an authorized ECN",
   "performance: conservative public-client performance guardrails",

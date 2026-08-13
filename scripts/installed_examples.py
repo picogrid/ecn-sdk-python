@@ -58,7 +58,11 @@ def _public_import_violation(tree: ast.AST) -> str | None:
         imports_public_sdk = False
 
         for module in modules:
-            if module == "picogrid_edge_sdk" or module.startswith("picogrid_edge_sdk."):
+            if (
+                module.startswith("picogrid_")
+                and module != _PUBLIC_PACKAGE
+                and not module.startswith(f"{_PUBLIC_PACKAGE}.")
+            ):
                 return "non-public client module"
             if module != _PUBLIC_PACKAGE and not module.startswith(f"{_PUBLIC_PACKAGE}."):
                 continue

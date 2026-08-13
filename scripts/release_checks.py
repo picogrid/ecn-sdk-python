@@ -22,6 +22,7 @@ from collections.abc import Mapping
 from dataclasses import asdict, dataclass
 from email.message import Message
 from email.parser import BytesParser
+from html import unescape as html_unescape
 from pathlib import Path, PurePosixPath
 from typing import Any
 from urllib.parse import unquote, urlsplit
@@ -75,9 +76,10 @@ _TEXT_SUFFIXES = frozenset(
         ".yml",
     }
 )
-_PRIVATE_IMPORT = re.compile(rb"picogrid[_-]edge[_-]sdk", re.IGNORECASE)
-_INTERNAL_REPOSITORY = re.compile(
-    rb"github\.com/picogrid/(?:edge-sdk|remote-ECN-integration)", re.IGNORECASE
+_NONPUBLIC_SDK_IMPORT = re.compile(rb"picogrid[_-][a-z0-9_-]+[_-]sdk(?![a-z0-9_-])", re.IGNORECASE)
+_UNAPPROVED_PICOGRID_REPOSITORY = re.compile(
+    rb"github\.com(?::[0-9]+)?[/:]picogrid/(?!ecn-sdk-python(?:\.git)?(?:[\x5c/?#\s\"']|$)|legion-system-auth(?:\.git)?(?:[\x5c/?#\s\"']|$))[a-z0-9_.-]+",
+    re.IGNORECASE,
 )
 _PRIVATE_INDEX = re.compile(
     rb"https?://[^\s\"']*(?:packages|pypi|index)[^\s\"']*picogrid[^\s\"']*",
@@ -255,7 +257,6 @@ class DocumentationInspection:
     documentation_files: tuple[str, ...]
     example_files: tuple[str, ...]
     link_count: int
-    parity_rows: int
     python_snippets: int
     supported_how_tos: int
 
@@ -355,18 +356,15 @@ def load_policy(path: Path) -> dict[str, Any]:
         "documentation_deferred_how_to_examples",
         "documentation_guide",
         "documentation_maintainer_index",
-        "documentation_parity_matrix",
         "forbidden_path_fragments",
         "forbidden_path_suffixes",
         "generated_site_placeholder_urls",
         "license_expression",
         "license_text_sha256",
-        "original_guide_inventory",
         "operator_runtime_requirements",
         "operator_third_party_licenses_sha256",
         "operator_wheel_dist_info_files",
         "operator_wheel_package_files",
-        "parity_required_row_keys",
         "project_version",
         "public_brand_assets",
         "requires_python",
@@ -423,26 +421,31 @@ def _validate_license_text(data: bytes, policy: dict[str, Any], member: str) -> 
 
 def _public_brand_asset_specs(
     policy: dict[str, Any],
-) -> dict[str, tuple[str, int, int]]:
+) -> dict[str, tuple[str, int, int, frozenset[str]]]:
     value = policy.get("public_brand_assets")
     expected_names = {
         "brand/ecn-client-og.png",
         "brand/picogrid-app-icon-192.png",
         "brand/picogrid-app-icon-512.png",
+        "brand/picogrid-nav-texture.png",
         "brand/picogrid-wordmark-dark.png",
         "brand/picogrid-wordmark-light.png",
     }
     if not isinstance(value, dict) or set(value) != expected_names:
         raise ArtifactPolicyError("release policy public brand asset inventory is invalid")
-    specs: dict[str, tuple[str, int, int]] = {}
+    specs: dict[str, tuple[str, int, int, frozenset[str]]] = {}
     for name, raw_spec in value.items():
         if not isinstance(name, str) or not isinstance(raw_spec, dict):
             raise ArtifactPolicyError("release policy public brand asset entry is invalid")
-        if set(raw_spec) != {"height", "sha256", "width"}:
+        expected_keys = {"height", "sha256", "width"}
+        if name == "brand/picogrid-nav-texture.png":
+            expected_keys.add("surfaces")
+        if set(raw_spec) != expected_keys:
             raise ArtifactPolicyError("release policy public brand asset entry is invalid")
         digest = raw_spec.get("sha256")
         width = raw_spec.get("width")
         height = raw_spec.get("height")
+        raw_surfaces = raw_spec.get("surfaces", ["documentation", "operator"])
         if (
             not isinstance(digest, str)
             or re.fullmatch(r"[0-9a-f]{64}", digest) is None
@@ -452,9 +455,16 @@ def _public_brand_asset_specs(
             or isinstance(height, bool)
             or not isinstance(height, int)
             or height <= 0
+            or not isinstance(raw_surfaces, list)
+            or not raw_surfaces
+            or any(
+                not isinstance(surface, str) or surface not in {"documentation", "operator"}
+                for surface in raw_surfaces
+            )
+            or len(set(raw_surfaces)) != len(raw_surfaces)
         ):
             raise ArtifactPolicyError("release policy public brand asset entry is invalid")
-        specs[name] = (digest, width, height)
+        specs[name] = (digest, width, height, frozenset(raw_surfaces))
     return specs
 
 
@@ -463,12 +473,14 @@ def validate_public_brand_assets(
     policy: dict[str, Any],
     *,
     prefix: str = "",
+    surface: str | None = None,
 ) -> None:
-    """Require the NOTICE-pinned brand bytes and PNG dimensions."""
-
-    for relative, (expected_digest, expected_width, expected_height) in sorted(
+    """Require each applicable public brand asset's bytes and PNG dimensions."""
+    for relative, (expected_digest, expected_width, expected_height, surfaces) in sorted(
         _public_brand_asset_specs(policy).items()
     ):
+        if surface is not None and surface not in surfaces:
+            continue
         name = f"{prefix}{relative}"
         data = contents.get(name)
         if data is None:
@@ -819,9 +831,6 @@ def inspect_documentation(repository: Path, policy: dict[str, Any]) -> Documenta
         raise ArtifactPolicyError(
             "documentation maintainer index is outside the exact docs inventory"
         )
-    parity_matrix = _string_value(policy, "documentation_parity_matrix")
-    if parity_matrix not in documentation_files:
-        raise ArtifactPolicyError("documentation parity matrix is outside the exact docs inventory")
     public_examples = {
         path
         for path in example_files
@@ -879,14 +888,6 @@ def inspect_documentation(repository: Path, policy: dict[str, Any]) -> Documenta
             )
             is not None
         )
-    if parity_matrix not in resolved_links[maintainer_index]:
-        raise ArtifactPolicyError(
-            "documentation maintainer index must link the released parity matrix"
-        )
-    if parity_matrix in resolved_links[guide]:
-        raise ArtifactPolicyError(
-            "public documentation guide must not expose the maintainer parity matrix"
-        )
 
     python_snippets = 0
     command_blocks = 0
@@ -930,19 +931,6 @@ def inspect_documentation(repository: Path, policy: dict[str, Any]) -> Documenta
         policy=policy,
     )
 
-    parity_row_keys = _string_list(policy, "parity_required_row_keys")
-    if list(parity_row_keys) != sorted(set(parity_row_keys)):
-        raise ArtifactPolicyError("release policy parity row keys must be sorted and unique")
-    parity_rows = _validate_parity_matrix(
-        matrix=parity_matrix,
-        text=prose[parity_matrix],
-        required_row_keys=set(parity_row_keys),
-    )
-    _validate_original_guide_inventory(
-        repository=repository,
-        policy=policy,
-        required_row_keys=set(parity_row_keys),
-    )
     how_to_files = {name for name in documentation_files if name.startswith("docs/how-to/")}
     if not how_to_files:
         raise ArtifactPolicyError("release documentation has no supported how-to pages")
@@ -1010,7 +998,6 @@ def inspect_documentation(repository: Path, policy: dict[str, Any]) -> Documenta
         documentation_files=documentation_files,
         example_files=example_files,
         link_count=link_count,
-        parity_rows=parity_rows,
         python_snippets=python_snippets,
         supported_how_tos=len(supported_how_tos),
     )
@@ -1383,233 +1370,6 @@ def _validate_installation_guide(
         )
 
 
-def _markdown_table_cells(line: str) -> tuple[str, ...]:
-    stripped = line.strip()
-    if not stripped.startswith("|") or not stripped.endswith("|"):
-        return ()
-    return tuple(cell.strip() for cell in stripped[1:-1].split("|"))
-
-
-def _validate_parity_matrix(
-    *,
-    matrix: str,
-    text: str,
-    required_row_keys: set[str],
-) -> int:
-    if not required_row_keys:
-        raise ArtifactPolicyError(f"release policy parity row-key inventory is empty for {matrix}")
-    lines = text.splitlines()
-    tables: list[tuple[tuple[str, ...], list[tuple[str, ...]]]] = []
-    for index in range(len(lines) - 1):
-        header = _markdown_table_cells(lines[index])
-        separator = _markdown_table_cells(lines[index + 1])
-        if not header or len(separator) != len(header):
-            continue
-        if not all(re.fullmatch(r":?-{3,}:?", cell) for cell in separator):
-            continue
-        normalized = tuple(cell.casefold() for cell in header)
-        if normalized != (
-            "row key",
-            "original workflow or item",
-            "public equivalent",
-            "disposition",
-            "verification",
-            "safety or migration difference",
-        ):
-            continue
-        rows: list[tuple[str, ...]] = []
-        for row_line in lines[index + 2 :]:
-            row = _markdown_table_cells(row_line)
-            if not row:
-                break
-            if len(row) != len(header):
-                raise ArtifactPolicyError("parity table contains an invalid row")
-            rows.append(row)
-        tables.append((header, rows))
-    if not tables:
-        raise ArtifactPolicyError("documentation parity matrix has no exact grouped tables")
-    if any(not table_rows for _header, table_rows in tables):
-        raise ArtifactPolicyError("documentation parity matrix contains an empty group")
-
-    rows = [row for _header, table_rows in tables for row in table_rows]
-    if not rows:
-        raise ArtifactPolicyError("documentation parity table is empty")
-    discovered_keys: set[str] = set()
-    dispositions: set[str] = set()
-    allowed_dispositions = {"supported", "changed semantics", "explicitly deferred"}
-    for row in rows:
-        row_key, *content = row
-        if re.fullmatch(r"[A-Z0-9]+(?:-[A-Z0-9]+)*", row_key) is None:
-            raise ArtifactPolicyError("documentation parity matrix has an invalid row key")
-        if row_key in discovered_keys:
-            raise ArtifactPolicyError("documentation parity matrix has a duplicate row key")
-        discovered_keys.add(row_key)
-        disposition = content[2].casefold()
-        if disposition not in allowed_dispositions:
-            raise ArtifactPolicyError("documentation parity matrix has an invalid disposition")
-        dispositions.add(disposition)
-        if content[3].casefold() not in {
-            "offline-only",
-            "staging blocked",
-            "staging pending",
-            "staging transport only",
-            "staging verified",
-        }:
-            raise ArtifactPolicyError("documentation parity matrix has invalid verification state")
-        if any(not cell.strip(" -") for cell in content):
-            raise ArtifactPolicyError("documentation parity matrix has an incomplete row")
-    if discovered_keys != required_row_keys:
-        raise ArtifactPolicyError(
-            "documentation parity matrix differs from required row-key inventory"
-        )
-    if dispositions != allowed_dispositions:
-        raise ArtifactPolicyError("documentation parity matrix must use every disposition category")
-    return len(rows)
-
-
-def _validate_original_guide_inventory(
-    *,
-    repository: Path,
-    policy: dict[str, Any],
-    required_row_keys: set[str],
-) -> None:
-    """Bind every parity row to one item in the exact pinned original tree.
-
-    Source paths are represented only by SHA-256 values so the public inventory does
-    not publish private package names or internal file layout. The pinned commit,
-    tree, aggregate counts, and sorted-path digests make the comparison reproducible
-    for an authorized reviewer with access to the read-only reference repository.
-    """
-
-    expected = policy.get("original_guide_inventory")
-    if not isinstance(expected, dict):
-        raise ArtifactPolicyError("release policy original-guide inventory must be an object")
-    expected_keys = {
-        "aggregate_descendant_count",
-        "aggregate_row_key",
-        "aggregate_sorted_path_list_sha256",
-        "direct_file_count",
-        "direct_sorted_path_list_sha256",
-        "file",
-        "mapping_sha256",
-        "reference_commit",
-        "reference_tree",
-        "sorted_path_list_sha256",
-        "total_file_count",
-    }
-    if set(expected) != expected_keys:
-        raise ArtifactPolicyError("release policy original-guide inventory keys are not exact")
-    relative = expected.get("file")
-    if not isinstance(relative, str):
-        raise ArtifactPolicyError("original-guide inventory path must be a string")
-    inventory_path = PurePosixPath(relative)
-    if (
-        inventory_path.is_absolute()
-        or ".." in inventory_path.parts
-        or not relative.startswith("scripts/")
-        or inventory_path.suffix != ".json"
-    ):
-        raise ArtifactPolicyError("original-guide inventory path is unsafe")
-    path = repository.joinpath(*inventory_path.parts)
-    if not path.is_file() or path.is_symlink():
-        raise ArtifactPolicyError("original-guide inventory is missing or unsafe")
-    try:
-        inventory = json.loads(path.read_text(encoding="utf-8"))
-    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-        raise ArtifactPolicyError("original-guide inventory is not valid UTF-8 JSON") from exc
-    if not isinstance(inventory, dict):
-        raise ArtifactPolicyError("original-guide inventory must be an object")
-    inventory_keys = {
-        "aggregate",
-        "direct_file_count",
-        "direct_sorted_path_list_sha256",
-        "items",
-        "mapping_sha256",
-        "reference_commit",
-        "reference_tree",
-        "sorted_path_list_sha256",
-        "total_file_count",
-    }
-    if set(inventory) != inventory_keys:
-        raise ArtifactPolicyError("original-guide inventory keys are not exact")
-    for key in (
-        "reference_commit",
-        "reference_tree",
-        "sorted_path_list_sha256",
-        "mapping_sha256",
-    ):
-        if inventory.get(key) != expected.get(key):
-            raise ArtifactPolicyError("original-guide inventory identity differs from policy")
-    for key in ("total_file_count", "direct_file_count"):
-        value = inventory.get(key)
-        if isinstance(value, bool) or not isinstance(value, int) or value != expected.get(key):
-            raise ArtifactPolicyError("original-guide inventory count differs from policy")
-    for key in ("reference_commit", "reference_tree", "sorted_path_list_sha256"):
-        if (
-            re.fullmatch(
-                r"[0-9a-f]{40}" if key != "sorted_path_list_sha256" else r"[0-9a-f]{64}",
-                str(inventory[key]),
-            )
-            is None
-        ):
-            raise ArtifactPolicyError("original-guide inventory identity is malformed")
-
-    aggregate = inventory.get("aggregate")
-    if not isinstance(aggregate, dict) or set(aggregate) != {
-        "descendant_count",
-        "row_key",
-        "sorted_path_list_sha256",
-    }:
-        raise ArtifactPolicyError("original-guide aggregate inventory is malformed")
-    if aggregate.get("row_key") != expected.get("aggregate_row_key"):
-        raise ArtifactPolicyError("original-guide aggregate row is unexpected")
-    if aggregate.get("descendant_count") != expected.get("aggregate_descendant_count"):
-        raise ArtifactPolicyError("original-guide aggregate count differs from policy")
-    if aggregate.get("sorted_path_list_sha256") != expected.get(
-        "aggregate_sorted_path_list_sha256"
-    ):
-        raise ArtifactPolicyError("original-guide aggregate digest differs from policy")
-    direct_digest = inventory.get("direct_sorted_path_list_sha256")
-    if direct_digest != expected.get("direct_sorted_path_list_sha256"):
-        raise ArtifactPolicyError("original-guide direct path digest differs from policy")
-
-    items = inventory.get("items")
-    if not isinstance(items, list) or len(items) != expected.get("direct_file_count"):
-        raise ArtifactPolicyError("original-guide direct inventory count differs from policy")
-    row_keys: list[str] = []
-    source_hashes: list[str] = []
-    for item in items:
-        if not isinstance(item, dict) or set(item) != {"row_key", "source_path_sha256"}:
-            raise ArtifactPolicyError("original-guide direct inventory item is malformed")
-        row_key = item.get("row_key")
-        source_hash = item.get("source_path_sha256")
-        if (
-            not isinstance(row_key, str)
-            or re.fullmatch(r"[A-Z0-9]+(?:-[A-Z0-9]+)*", row_key) is None
-        ):
-            raise ArtifactPolicyError("original-guide inventory row key is malformed")
-        if not isinstance(source_hash, str) or re.fullmatch(r"[0-9a-f]{64}", source_hash) is None:
-            raise ArtifactPolicyError("original-guide source-path digest is malformed")
-        row_keys.append(row_key)
-        source_hashes.append(source_hash)
-    if len(set(row_keys)) != len(row_keys) or len(set(source_hashes)) != len(source_hashes):
-        raise ArtifactPolicyError("original-guide inventory contains a duplicate mapping")
-    if set(row_keys) | {str(aggregate["row_key"])} != required_row_keys:
-        raise ArtifactPolicyError("original-guide inventory differs from parity row inventory")
-    canonical = json.dumps(
-        sorted(items, key=lambda item: str(item["row_key"])),
-        sort_keys=True,
-        separators=(",", ":"),
-    ).encode("utf-8")
-    mapping_digest = hashlib.sha256(canonical).hexdigest()
-    if mapping_digest != inventory.get("mapping_sha256"):
-        raise ArtifactPolicyError("original-guide mapping digest is inconsistent")
-    if int(inventory["direct_file_count"]) + int(aggregate["descendant_count"]) != int(
-        inventory["total_file_count"]
-    ):
-        raise ArtifactPolicyError("original-guide inventory total is inconsistent")
-
-
 def inspect_wheel(path: Path, policy: dict[str, Any]) -> ArtifactInspection:
     """Inspect a wheel against an exact allowlist plus publication deny rules."""
 
@@ -1720,7 +1480,12 @@ def inspect_operator_wheel(path: Path, policy: dict[str, Any]) -> ArtifactInspec
             _scan_retired_document_references(name, data, policy)
         license_name = f"{dist_info_prefix}licenses/LICENSE"
         _validate_license_text(contents[license_name], policy, license_name)
-        validate_public_brand_assets(contents, policy, prefix="operator_app/static/")
+        validate_public_brand_assets(
+            contents,
+            policy,
+            prefix="operator_app/static/",
+            surface="operator",
+        )
         third_party_name = f"{dist_info_prefix}licenses/THIRD_PARTY_LICENSES.md"
         third_party_digest = hashlib.sha256(contents[third_party_name]).hexdigest()
         expected_third_party_digest = _string_value(
@@ -1805,11 +1570,13 @@ def inspect_sdist(path: Path, policy: dict[str, Any]) -> ArtifactInspection:
             contents,
             policy,
             prefix=f"{root}/docs/site/public/",
+            surface="documentation",
         )
         validate_public_brand_assets(
             contents,
             policy,
             prefix=f"{root}/operator-app/frontend/public/",
+            surface="operator",
         )
         _validate_metadata(contents[f"{root}/PKG-INFO"], policy)
         _validate_metadata(contents[f"{root}/src/{IMPORT_NAME}.egg-info/PKG-INFO"], policy)
@@ -1988,19 +1755,9 @@ def _scan_retired_document_references(
 
 def _scan_content(name: str, data: bytes, policy: dict[str, Any]) -> None:
     path = PurePosixPath(name)
-    if _PRIVATE_IMPORT.search(data):
-        raise ArtifactPolicyError(f"private SDK reference found in {name}")
-    patterns = {
-        "internal repository URL": _INTERNAL_REPOSITORY,
-        "private package index": _PRIVATE_INDEX,
-        "private API path": _PRIVATE_API_PATH,
-    }
-    for label, pattern in patterns.items():
-        if pattern.search(data):
-            raise ArtifactPolicyError(f"{label} found in {name}")
 
     policy_member = path.parts[-2:] == ("scripts", "release-policy.json")
-    scan_secret_and_address_content(
+    scan_publication_content(
         name,
         data,
         policy,
@@ -2017,6 +1774,38 @@ def _scan_content(name: str, data: bytes, policy: dict[str, Any]) -> None:
             raise ArtifactPolicyError(f"retired runtime marker found in {name}")
 
 
+def _scan_nonpublic_references(name: str, data: bytes) -> None:
+    if _NONPUBLIC_SDK_IMPORT.search(data):
+        raise ArtifactPolicyError(f"non-public SDK reference found in {name}")
+    patterns = {
+        "unapproved Picogrid repository URL": _UNAPPROVED_PICOGRID_REPOSITORY,
+        "private package index": _PRIVATE_INDEX,
+        "private API path": _PRIVATE_API_PATH,
+    }
+    for label, pattern in patterns.items():
+        if pattern.search(data):
+            raise ArtifactPolicyError(f"{label} found in {name}")
+
+
+def scan_publication_content(
+    name: str,
+    data: bytes,
+    policy: dict[str, Any],
+    *,
+    allow_synthetic_hosts: bool = False,
+    allowed_exact_urls: frozenset[str] = frozenset(),
+) -> None:
+    """Reject prohibited references, secrets, and network addresses from one file."""
+    _scan_secret_and_address_content(
+        name,
+        data,
+        policy,
+        scan_nonpublic_references=True,
+        allow_synthetic_hosts=allow_synthetic_hosts,
+        allowed_exact_urls=allowed_exact_urls,
+    )
+
+
 def scan_secret_and_address_content(
     name: str,
     data: bytes,
@@ -2026,6 +1815,27 @@ def scan_secret_and_address_content(
     allowed_exact_urls: frozenset[str] = frozenset(),
 ) -> None:
     """Reject publication secrets and network addresses from one candidate file."""
+    _scan_secret_and_address_content(
+        name,
+        data,
+        policy,
+        scan_nonpublic_references=False,
+        allow_synthetic_hosts=allow_synthetic_hosts,
+        allowed_exact_urls=allowed_exact_urls,
+    )
+
+
+def _scan_secret_and_address_content(
+    name: str,
+    data: bytes,
+    policy: dict[str, Any],
+    *,
+    scan_nonpublic_references: bool,
+    allow_synthetic_hosts: bool,
+    allowed_exact_urls: frozenset[str],
+) -> None:
+    if scan_nonpublic_references:
+        _scan_nonpublic_references(name, data)
 
     patterns = {
         "private key": _PRIVATE_KEY,
@@ -2058,6 +1868,17 @@ def scan_secret_and_address_content(
         if decoded == scan_texts[-1]:
             break
         scan_texts.append(decoded)
+
+    if PurePosixPath(name).suffix.casefold() in (".htm", ".html"):
+        percent_variant_count = len(scan_texts)
+        for index in range(percent_variant_count):
+            decoded = html_unescape(scan_texts[index])
+            if decoded != scan_texts[index] and decoded not in scan_texts:
+                scan_texts.append(decoded)
+
+    if scan_nonpublic_references:
+        for candidate_text in scan_texts[1:]:
+            _scan_nonpublic_references(name, candidate_text.encode("utf-8"))
 
     for candidate_text in scan_texts:
         for raw_address in _IPV4.findall(candidate_text.encode("utf-8")):

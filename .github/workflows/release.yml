@@ -17,10 +17,9 @@ env:
   UV_VERSION: "0.7.20"
 
 jobs:
-  # Release Please authors version-bump pull requests, so it may only run in the
-  # private engineering upstream. Public main accepts byte-preserving export merges
-  # exclusively; a bump commit authored there would break the export equivalence
-  # barrier described in PUBLIC_DISTRIBUTION.md.
+  # The canonical public repository derives release state from its immutable version
+  # tag. Release Please is reserved for repositories where automated version PRs are
+  # explicitly enabled.
   release-please:
     name: Prepare or create a draft release
     if: >-
@@ -48,14 +47,13 @@ jobs:
           manifest-file: .github/.release-please-manifest.json
           target-branch: main
 
-  # Every downstream job consumes this job's outputs, never Release Please's
-  # directly. In the private upstream it passes the Release Please outputs through
-  # unchanged. In the public distribution repository, where Release Please is
-  # deliberately disabled, it derives the same identity from the merged and
-  # equivalence-verified tree: the version is read from pyproject.toml, the tag is
-  # that version prefixed with "v", and release state is resolved by immutable tag
-  # and numeric release ID. A merged tree that resolves to an already published
-  # release stops without rebuilding or publishing.
+  # Every downstream job consumes normalized outputs rather than binding directly
+  # to one release-state provider. For the canonical public repository, Release
+  # Please is skipped while release automation is enabled, so the repository derives
+  # the same identity from the merged and equivalence-verified tree: the version
+  # comes from pyproject.toml, and release state is resolved by immutable tag and
+  # numeric release ID. A tree that resolves to an already published release stops
+  # without rebuilding or publishing.
   resolve-release:
     name: Resolve the release candidate identity
     if: >-

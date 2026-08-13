@@ -1,10 +1,10 @@
 ---
 /**
- * Publish the exact source every page was built from beneath the theme footer.
+ * Publish a navigable public source reference beneath the theme footer.
  *
- * The header carries the released version; this line carries the immutable Git
- * reference behind it, so a reader comparing the hosted guide against the
- * repository can reach the precise tag or commit rather than a moving branch.
+ * Exact build provenance stays in page metadata. This reader-facing line uses
+ * the exported release tag or public main so every link resolves in the public
+ * distribution repository.
  */
 import Footer from '@astrojs/starlight/components/Footer.astro';
 import { resolveVersionControl } from '../../site/version-control.mjs';
@@ -17,7 +17,7 @@ const summary = `Version ${source.version} \u00b7 ${source.sourceKind} `;
 ---
 
 <Footer />
-<p class="documentation-source">{summary}<a href={source.href} title={`Built from ${source.sourceKind} ${source.reference}`}>{source.referenceLabel}</a></p>
+<p class="documentation-source">{summary}<a href={source.href} title={`Built from ${source.sourceKind} ${source.referenceLabel}`}>{source.referenceLabel}</a></p>
 
 <style>
   .documentation-source {

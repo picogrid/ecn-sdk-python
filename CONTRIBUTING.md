@@ -85,6 +85,9 @@ Use the complete release gate for the final candidate:
 make verify-release
 ```
 
+Run the release gate from a clean Git worktree. It fails before building when tracked
+or untracked changes prevent the candidate from being attributed to one commit.
+
 The release gate removes `node_modules`, `.astro`, and `site-dist` while reproducing
 the release environment. Run `make docs-install` again before another documentation
 check or preview.

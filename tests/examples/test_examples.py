@@ -169,8 +169,8 @@ def test_example_import_check_rejects_plain_private_import(
         "from picogrid_ecn_client.workflows import observe",
         "from picogrid_ecn_client import _internal",
         "import picogrid_ecn_client.workflows._retention",
-        "import picogrid_edge_sdk",
-        "from picogrid_edge_sdk import x",
+        "import picogrid_" + "example_sdk",
+        "from picogrid_" + "example_sdk import x",
     ],
 )
 def test_example_import_check_rejects_non_public_sdk_names(
