@@ -11,7 +11,7 @@ function resolve(environment) {
 }
 
 const defaultTarget = {
-  href: 'https://docs.picogrid.com/reference/start',
+  href: 'https://docs.picogrid.com/legion/',
   label: 'Legion API',
   origin: 'https://docs.picogrid.com',
   title: 'Legion API documentation',
@@ -28,7 +28,7 @@ test('uses the default target when LEGION_DOCS_URL is empty or whitespace', () =
 });
 
 test('accepts explicit targets under each documentation root', () => {
-  for (const root of ['docs', 'guides', 'reference']) {
+  for (const root of ['legion', 'docs', 'guides', 'reference']) {
     const href = `https://docs.picogrid.com/${root}/start`;
     assert.equal(resolve({ LEGION_DOCS_URL: href }).href, href);
   }
@@ -122,14 +122,14 @@ test('rejects bare query and fragment delimiters', () => {
 test('rejects a path outside the documentation roots', () => {
   assert.throws(
     () => resolve({ LEGION_DOCS_URL: 'https://docs.picogrid.com/api/start' }),
-    /the Legion documentation target must address a published documentation path \(docs, guides, reference\)/,
+    /the Legion documentation target must address a published documentation path \(legion, docs, guides, reference\)/,
   );
 });
 
 test('rejects an empty path segment', () => {
   assert.throws(
     () => resolve({ LEGION_DOCS_URL: 'https://docs.picogrid.com/reference//start' }),
-    /the Legion documentation target must address a published documentation path \(docs, guides, reference\)/,
+    /the Legion documentation target must address a published documentation path \(legion, docs, guides, reference\)/,
   );
 });
 
