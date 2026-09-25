@@ -32,6 +32,29 @@ const base = documentationBase;
 const brandIcon = `${base}brand/picogrid-app-icon-192.png`;
 const openGraphImage = `${documentationCanonicalBase}brand/ecn-client-og.png`;
 const versionControl = resolveVersionControl({ repository });
+
+// Google Analytics 4 for docs.picogrid.com (the shared "Picogrid Docs" GA4
+// property). The measurement id is supplied at build time via the
+// GA4_MEASUREMENT_ID environment variable; when it is unset the head entries
+// below are omitted, so a build without it is byte-identical to an untracked
+// site. ECN SDK and Legion share one property and are split by page path in
+// the Grafana dashboard, so both sites build with the same id.
+const ga4MeasurementId = process.env.GA4_MEASUREMENT_ID ?? '';
+const analyticsHead = ga4MeasurementId
+  ? [
+      {
+        tag: 'script',
+        attrs: {
+          async: true,
+          src: `https://www.googletagmanager.com/gtag/js?id=${ga4MeasurementId}`,
+        },
+      },
+      {
+        tag: 'script',
+        content: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${ga4MeasurementId}');`,
+      },
+    ]
+  : [];
 const documentationVersion = versionControl.version;
 const apiManifest = JSON.parse(
   readFileSync(new URL('../scripts/public-api-manifest.json', import.meta.url), 'utf8'),
@@ -284,6 +307,7 @@ export default defineConfig({
             }
           });`,
         },
+        ...analyticsHead,
       ],
       lastUpdated: true,
       markdown: {
