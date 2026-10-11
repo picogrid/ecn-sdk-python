@@ -11,7 +11,7 @@ tableOfContents: true
 >
 > Related guidance: [getting-started/preflight](/getting-started/preflight/), [how-to/troubleshooting](/how-to/troubleshooting/).
 >
-> Runnable examples: [preflight.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/preflight.py).
+> Runnable examples: [preflight.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/preflight.py).
 
 ```python
 from picogrid_ecn_client import ConnectionStatus
@@ -37,7 +37,7 @@ ConnectionStatus(
 )
 ```
 
-[Source · models/diagnostics.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/models/diagnostics.py#L87)
+[Source · models/diagnostics.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/models/diagnostics.py#L91)
 
 ## Fields
 

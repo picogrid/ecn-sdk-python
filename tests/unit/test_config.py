@@ -929,7 +929,7 @@ def test_credential_paths_are_absent_from_repr_and_validation_errors() -> None:
 
 @pytest.mark.parametrize(
     "integration_name",
-    ["x", "-leading", "trailing-", "contains.dot", "geolocation"],
+    ["x", "-leading", "trailing-", "contains.dot", "geolocation", "response", "RESPONSE"],
 )
 def test_integration_name_matches_pinned_identifier_grammar(
     integration_name: str,

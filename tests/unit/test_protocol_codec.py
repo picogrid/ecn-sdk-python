@@ -7,9 +7,11 @@ from datetime import UTC, datetime
 from uuid import UUID
 
 import pytest
-from google.protobuf.descriptor_pb2 import FileDescriptorProto
+from google.protobuf.descriptor import FileDescriptor
+from google.protobuf.descriptor_pb2 import FieldDescriptorProto, FileDescriptorProto
 
 from picogrid_ecn_client import decode_entity_event_protobuf
+from picogrid_ecn_client._geodesy import ecef_to_ned_velocity, geodetic_to_ecef
 from picogrid_ecn_client._protocol import (
     build_entity_protobuf_topic,
     build_entity_topic,
@@ -397,6 +399,10 @@ def test_entity_protobuf_round_trip_uses_only_public_subset() -> None:
     event = decode_entity_protobuf(topic, payload, MAX_SIZE)
 
     assert wire_message.entity.id == ENTITY_ID.bytes
+    assert (
+        wire_message.entity.recorded_at.seconds,
+        wire_message.entity.recorded_at.nanos,
+    ) == (wire_message.recorded_at.seconds, wire_message.recorded_at.nanos)
     assert not wire_message.entity.HasField("category")
     assert event.entity.id == entity.id
     assert event.entity.integration == entity.integration
@@ -407,7 +413,6 @@ def test_entity_protobuf_round_trip_uses_only_public_subset() -> None:
     assert event.entity.position.latitude == pytest.approx(entity.position.latitude)
     assert event.entity.position.velocity is not None
     assert event.entity.position.velocity.down == pytest.approx(-0.5)
-
     assert set(common_pb2.DESCRIPTOR.message_types_by_name) == {
         "EntityMessage",
         "LocationMessage",
@@ -420,30 +425,256 @@ def test_entity_protobuf_round_trip_uses_only_public_subset() -> None:
     assert entity_pb2.DESCRIPTOR.package == "picogrid.open.v1"
 
 
-def test_public_protobuf_descriptor_does_not_invent_reserved_or_optional_message_fields() -> None:
-    common_file = FileDescriptorProto()
-    common_pb2.DESCRIPTOR.CopyToProto(common_file)
-    entity_message = next(
-        message for message in common_file.message_type if message.name == "EntityMessage"
-    )
-    assert [(item.start, item.end) for item in entity_message.reserved_range] == []
-    assert 2 not in {field.number for field in entity_message.field}
+def _normalized_descriptor(descriptor: FileDescriptor) -> dict[str, object]:
+    file_descriptor = FileDescriptorProto()
+    descriptor.CopyToProto(file_descriptor)
+    return {
+        "enums": {
+            enum.name: tuple((value.name, value.number) for value in enum.value)
+            for enum in file_descriptor.enum_type
+        },
+        "messages": {
+            message.name: {
+                "fields": tuple(
+                    (
+                        field.name,
+                        field.number,
+                        FieldDescriptorProto.Type.Name(field.type),
+                        field.type_name.rsplit(".", 1)[-1] or None,
+                        FieldDescriptorProto.Label.Name(field.label),
+                        (
+                            message.oneof_decl[field.oneof_index].name
+                            if field.HasField("oneof_index")
+                            else None
+                        ),
+                        field.proto3_optional,
+                    )
+                    for field in message.field
+                ),
+                "reserved_ranges": tuple((item.start, item.end) for item in message.reserved_range),
+            }
+            for message in file_descriptor.message_type
+        },
+    }
 
-    entity_file = FileDescriptorProto()
-    entity_pb2.DESCRIPTOR.CopyToProto(entity_file)
-    event_message = next(
-        message for message in entity_file.message_type if message.name == "EntityEventMessage"
-    )
-    event_location = next(field for field in event_message.field if field.name == "location")
-    assert event_location.proto3_optional is False
-    assert not event_location.HasField("oneof_index")
-    assert list(event_message.oneof_decl) == []
 
-    location_message = next(
-        message for message in entity_file.message_type if message.name == "EntityLocationMessage"
-    )
-    assert [(item.start, item.end) for item in location_message.reserved_range] == []
-    assert 1 not in {field.number for field in location_message.field}
+def test_public_protobuf_descriptor_matches_canonical_snapshot() -> None:
+    assert _normalized_descriptor(common_pb2.DESCRIPTOR) == {
+        "enums": {
+            "EntityCategory": (
+                ("ENTITY_CATEGORY_UNSPECIFIED", 0),
+                ("ENTITY_CATEGORY_DEVICE", 1),
+                ("ENTITY_CATEGORY_DETECTION", 2),
+                ("ENTITY_CATEGORY_TRACK", 3),
+                ("ENTITY_CATEGORY_SYSTEM", 4),
+                ("ENTITY_CATEGORY_SENSOR", 5),
+                ("ENTITY_CATEGORY_ALERT", 6),
+                ("ENTITY_CATEGORY_WEATHER", 7),
+                ("ENTITY_CATEGORY_GEOMETRIC", 8),
+                ("ENTITY_CATEGORY_ZONE", 9),
+                ("ENTITY_CATEGORY_VEHICLE", 10),
+                ("ENTITY_CATEGORY_UXV", 11),
+            ),
+            "EntityStatus": (
+                ("ENTITY_STATUS_UNSPECIFIED", 0),
+                ("ENTITY_STATUS_ACTIVE", 1),
+                ("ENTITY_STATUS_INACTIVE", 2),
+                ("ENTITY_STATUS_UNKNOWN", 3),
+            ),
+            "Affiliation": (
+                ("AFFILIATION_UNSPECIFIED", 0),
+                ("AFFILIATION_FRIEND", 1),
+                ("AFFILIATION_HOSTILE", 2),
+                ("AFFILIATION_NEUTRAL", 3),
+                ("AFFILIATION_UNKNOWN", 4),
+                ("AFFILIATION_SUSPECT", 5),
+                ("AFFILIATION_PENDING", 6),
+                ("AFFILIATION_ASSUMED_FRIEND", 7),
+                ("AFFILIATION_EXERCISE_PENDING", 8),
+                ("AFFILIATION_EXERCISE_UNKNOWN", 9),
+                ("AFFILIATION_EXERCISE_FRIEND", 10),
+                ("AFFILIATION_EXERCISE_NEUTRAL", 11),
+                ("AFFILIATION_EXERCISE_ASSUMED_FRIEND", 12),
+                ("AFFILIATION_JOKER", 13),
+                ("AFFILIATION_FAKER", 14),
+                ("AFFILIATION_NONE_SPECIFIED", 15),
+            ),
+            "GeometryType": (
+                ("GEOMETRY_TYPE_UNSPECIFIED", 0),
+                ("GEOMETRY_TYPE_POINT", 1),
+                ("GEOMETRY_TYPE_LINE_STRING", 2),
+                ("GEOMETRY_TYPE_POLYGON", 3),
+            ),
+            "CRS": (
+                ("CRS_UNSPECIFIED", 0),
+                ("CRS_ECEF", 1),
+                ("CRS_LLA", 2),
+            ),
+        },
+        "messages": {
+            "LocationMessage": {
+                "fields": (
+                    ("latitude", 1, "TYPE_DOUBLE", None, "LABEL_OPTIONAL", None, False),
+                    ("longitude", 2, "TYPE_DOUBLE", None, "LABEL_OPTIONAL", None, False),
+                    ("altitude", 3, "TYPE_FLOAT", None, "LABEL_OPTIONAL", "_altitude", True),
+                    ("bearing", 4, "TYPE_FLOAT", None, "LABEL_OPTIONAL", "_bearing", True),
+                    ("accuracy", 5, "TYPE_FLOAT", None, "LABEL_OPTIONAL", "_accuracy", True),
+                    ("source", 6, "TYPE_STRING", None, "LABEL_OPTIONAL", "_source", True),
+                    (
+                        "recorded_at",
+                        7,
+                        "TYPE_MESSAGE",
+                        "Timestamp",
+                        "LABEL_OPTIONAL",
+                        None,
+                        False,
+                    ),
+                    ("velocity", 8, "TYPE_FLOAT", None, "LABEL_REPEATED", None, False),
+                    (
+                        "angular_velocity",
+                        9,
+                        "TYPE_FLOAT",
+                        None,
+                        "LABEL_REPEATED",
+                        None,
+                        False,
+                    ),
+                    ("confidence", 10, "TYPE_FLOAT", None, "LABEL_OPTIONAL", "_confidence", True),
+                    ("radius", 11, "TYPE_FLOAT", None, "LABEL_OPTIONAL", "_radius", True),
+                    ("covariance", 12, "TYPE_FLOAT", None, "LABEL_REPEATED", None, False),
+                    ("orientation", 13, "TYPE_FLOAT", None, "LABEL_REPEATED", None, False),
+                    ("acceleration", 14, "TYPE_FLOAT", None, "LABEL_REPEATED", None, False),
+                    ("crs", 15, "TYPE_ENUM", "CRS", "LABEL_OPTIONAL", "_crs", True),
+                    (
+                        "geometry_type",
+                        16,
+                        "TYPE_ENUM",
+                        "GeometryType",
+                        "LABEL_OPTIONAL",
+                        "_geometry_type",
+                        True,
+                    ),
+                    ("coordinates", 17, "TYPE_DOUBLE", None, "LABEL_REPEATED", None, False),
+                ),
+                "reserved_ranges": (),
+            },
+            "EntityMessage": {
+                "fields": (
+                    ("id", 1, "TYPE_BYTES", None, "LABEL_OPTIONAL", None, False),
+                    (
+                        "recorded_at",
+                        2,
+                        "TYPE_MESSAGE",
+                        "Timestamp",
+                        "LABEL_OPTIONAL",
+                        None,
+                        False,
+                    ),
+                    ("name", 3, "TYPE_STRING", None, "LABEL_OPTIONAL", "_name", True),
+                    ("type_name", 4, "TYPE_STRING", None, "LABEL_OPTIONAL", "_type_name", True),
+                    (
+                        "category",
+                        5,
+                        "TYPE_ENUM",
+                        "EntityCategory",
+                        "LABEL_OPTIONAL",
+                        "_category",
+                        True,
+                    ),
+                    (
+                        "status",
+                        6,
+                        "TYPE_ENUM",
+                        "EntityStatus",
+                        "LABEL_OPTIONAL",
+                        "_status",
+                        True,
+                    ),
+                    (
+                        "affiliation",
+                        7,
+                        "TYPE_ENUM",
+                        "Affiliation",
+                        "LABEL_OPTIONAL",
+                        "_affiliation",
+                        True,
+                    ),
+                    ("parent_id", 8, "TYPE_BYTES", None, "LABEL_OPTIONAL", "_parent_id", True),
+                    (
+                        "metadata_json",
+                        9,
+                        "TYPE_BYTES",
+                        None,
+                        "LABEL_OPTIONAL",
+                        "_metadata_json",
+                        True,
+                    ),
+                    (
+                        "classification_json",
+                        10,
+                        "TYPE_BYTES",
+                        None,
+                        "LABEL_OPTIONAL",
+                        "_classification_json",
+                        True,
+                    ),
+                ),
+                "reserved_ranges": ((11, 12), (12, 13)),
+            },
+        },
+    }
+    assert _normalized_descriptor(entity_pb2.DESCRIPTOR) == {
+        "enums": {},
+        "messages": {
+            "EntityEventMessage": {
+                "fields": (
+                    (
+                        "recorded_at",
+                        1,
+                        "TYPE_MESSAGE",
+                        "Timestamp",
+                        "LABEL_OPTIONAL",
+                        None,
+                        False,
+                    ),
+                    (
+                        "entity",
+                        2,
+                        "TYPE_MESSAGE",
+                        "EntityMessage",
+                        "LABEL_OPTIONAL",
+                        None,
+                        False,
+                    ),
+                    (
+                        "location",
+                        3,
+                        "TYPE_MESSAGE",
+                        "LocationMessage",
+                        "LABEL_OPTIONAL",
+                        None,
+                        False,
+                    ),
+                ),
+                "reserved_ranges": (),
+            },
+            "EntityLocationMessage": {
+                "fields": (
+                    ("entity_id", 1, "TYPE_BYTES", None, "LABEL_OPTIONAL", None, False),
+                    (
+                        "location",
+                        2,
+                        "TYPE_MESSAGE",
+                        "LocationMessage",
+                        "LABEL_OPTIONAL",
+                        None,
+                        False,
+                    ),
+                ),
+                "reserved_ranges": (),
+            },
+        },
+    }
 
 
 def test_entity_protobuf_location_uses_event_timestamp_when_omitted() -> None:
@@ -544,6 +775,61 @@ def test_entity_protobuf_maps_future_category_and_retains_topic_agreement() -> N
     assert public_event.entity.category is EntityCategory.OTHER
 
 
+@pytest.mark.parametrize("component", ["seconds", "nanos"])
+def test_entity_protobuf_rejects_mismatched_entity_recorded_at(component: str) -> None:
+    message = entity_pb2.EntityEventMessage.FromString(encode_entity_protobuf(_entity(), MAX_SIZE))
+    setattr(
+        message.entity.recorded_at,
+        component,
+        getattr(message.entity.recorded_at, component) + 1,
+    )
+
+    with pytest.raises(
+        ProtocolError,
+        match="entity protobuf recorded_at does not match its envelope",
+    ):
+        decode_entity_protobuf(
+            build_entity_protobuf_topic("vendor-a", EntityCategory.TRACK),
+            message.SerializeToString(),
+            MAX_SIZE,
+        )
+
+
+def test_entity_protobuf_accepts_unset_entity_recorded_at() -> None:
+    message = entity_pb2.EntityEventMessage.FromString(encode_entity_protobuf(_entity(), MAX_SIZE))
+    message.entity.ClearField("recorded_at")
+
+    event = decode_entity_protobuf(
+        build_entity_protobuf_topic("vendor-a", EntityCategory.TRACK),
+        message.SerializeToString(),
+        MAX_SIZE,
+    )
+
+    assert event.timestamp == RECORDED_AT
+
+
+def test_entity_protobuf_round_trips_new_enums() -> None:
+    entity = _entity().model_copy(
+        update={
+            "category": EntityCategory.WEATHER,
+            "affiliation": Affiliation.EXERCISE_FRIEND,
+        }
+    )
+    payload = encode_entity_protobuf(entity, MAX_SIZE)
+    message = entity_pb2.EntityEventMessage.FromString(payload)
+
+    message.entity.category = common_pb2.ENTITY_CATEGORY_WEATHER
+    payload = message.SerializeToString()
+    assert message.entity.affiliation == common_pb2.AFFILIATION_EXERCISE_FRIEND
+    event = decode_entity_protobuf(
+        build_entity_protobuf_topic(entity.integration, entity.category),
+        payload,
+        MAX_SIZE,
+    )
+    assert event.entity.category is EntityCategory.WEATHER
+    assert event.entity.affiliation is Affiliation.EXERCISE_FRIEND
+
+
 def test_entity_protobuf_rejects_mismatched_location_timestamp() -> None:
     entity = _entity()
     assert entity.position is not None
@@ -575,12 +861,12 @@ def test_entity_publication_rejects_cross_format_event_timestamp_or_location_amb
 
 def test_location_protobuf_round_trip_and_malformed_translation() -> None:
     location = _location()
-    topic = build_location_protobuf_topic("vendor-a", ENTITY_ID)
-    event = decode_location_protobuf(
-        topic,
-        encode_location_protobuf(location, MAX_SIZE),
-        MAX_SIZE,
-    )
+    topic = build_location_protobuf_topic("vendor-a")
+    payload = encode_location_protobuf(location, ENTITY_ID, MAX_SIZE)
+    message = entity_pb2.EntityLocationMessage.FromString(payload)
+    event = decode_location_protobuf(topic, payload, MAX_SIZE)
+
+    assert message.entity_id == ENTITY_ID.bytes
     assert event.entity_id == ENTITY_ID
     assert event.integration == "vendor-a"
     assert event.location.longitude == pytest.approx(location.longitude)
@@ -589,6 +875,100 @@ def test_location_protobuf_round_trip_and_malformed_translation() -> None:
         decode_location_protobuf(topic, b"\xff", MAX_SIZE)
     with pytest.raises(ResourceLimitError):
         decode_location_protobuf(topic, b"0123456789", 4)
+
+
+@pytest.mark.parametrize("entity_id", [b"", b"\x00" * 15])
+def test_location_protobuf_rejects_invalid_payload_entity_id(entity_id: bytes) -> None:
+    message = entity_pb2.EntityLocationMessage(entity_id=entity_id)
+    message.location.CopyFrom(codec._location_to_message(_location()))
+
+    with pytest.raises(
+        ProtocolError,
+        match="location protobuf entity ID must contain 16 bytes",
+    ):
+        decode_location_protobuf(
+            build_location_protobuf_topic("vendor-a"),
+            message.SerializeToString(),
+            MAX_SIZE,
+        )
+
+
+def test_location_protobuf_tolerates_extended_fields() -> None:
+    message = entity_pb2.EntityLocationMessage(entity_id=ENTITY_ID.bytes)
+    message.location.CopyFrom(codec._location_to_message(_location()))
+    message.location.radius = 25.0
+    message.location.covariance.extend([1.0] * 9)
+    message.location.orientation.extend([0.0, 0.0, 0.0, 1.0])
+    message.location.acceleration.extend([0.1, 0.2, 0.3])
+    message.location.geometry_type = common_pb2.GEOMETRY_TYPE_POINT
+    message.location.coordinates.extend([1.0, 2.0, 3.0])
+
+    event = decode_location_protobuf(
+        build_location_protobuf_topic("vendor-a"),
+        message.SerializeToString(),
+        MAX_SIZE,
+    )
+
+    assert event.location.latitude == pytest.approx(_location().latitude)
+    assert event.location.longitude == pytest.approx(_location().longitude)
+    assert not hasattr(event.location, "radius")
+    assert not hasattr(event.location, "covariance")
+    assert not hasattr(event.location, "orientation")
+    assert not hasattr(event.location, "acceleration")
+    assert not hasattr(event.location, "geometry_type")
+    assert not hasattr(event.location, "coordinates")
+
+
+def test_location_protobuf_converts_ecef_position_and_vectors_to_geodetic_ned() -> None:
+    latitude, longitude, altitude = 34.5, -117.25, 123.5
+    x, y, z = geodetic_to_ecef(latitude, longitude, altitude)
+    message = entity_pb2.EntityLocationMessage(entity_id=ENTITY_ID.bytes)
+    message.location.latitude = x
+    message.location.longitude = y
+    message.location.altitude = z
+    message.location.recorded_at.FromDatetime(RECORDED_AT)
+    message.location.crs = common_pb2.CRS_ECEF
+    message.location.velocity.extend([1.0, 2.0, -0.5])
+    message.location.angular_velocity.extend([0.1, 0.2, -0.05])
+
+    event = decode_location_protobuf(
+        build_location_protobuf_topic("vendor-a"),
+        message.SerializeToString(),
+        MAX_SIZE,
+    )
+
+    assert event.location.latitude == pytest.approx(latitude, abs=1e-5)
+    assert event.location.longitude == pytest.approx(longitude, abs=1e-5)
+    assert event.location.altitude == pytest.approx(altitude, abs=0.1)
+    velocity = ecef_to_ned_velocity(latitude, longitude, 1.0, 2.0, -0.5)
+    assert event.location.velocity is not None
+    assert (
+        event.location.velocity.north,
+        event.location.velocity.east,
+        event.location.velocity.down,
+    ) == pytest.approx(velocity)
+    angular_velocity = ecef_to_ned_velocity(latitude, longitude, 0.1, 0.2, -0.05)
+    assert event.location.angular_velocity is not None
+    assert (
+        event.location.angular_velocity.roll,
+        event.location.angular_velocity.pitch,
+        event.location.angular_velocity.yaw,
+    ) == pytest.approx(angular_velocity)
+
+
+def test_location_protobuf_rejects_ecef_without_z() -> None:
+    message = entity_pb2.EntityLocationMessage(entity_id=ENTITY_ID.bytes)
+    message.location.latitude = 1000000.0
+    message.location.longitude = 2000000.0
+    message.location.recorded_at.FromDatetime(RECORDED_AT)
+    message.location.crs = common_pb2.CRS_ECEF
+
+    with pytest.raises(ProtocolError, match="ECEF location is missing its z coordinate"):
+        decode_location_protobuf(
+            build_location_protobuf_topic("vendor-a"),
+            message.SerializeToString(),
+            MAX_SIZE,
+        )
 
 
 def test_protobuf_geometric_round_trip_derives_category_from_topic() -> None:
@@ -601,6 +981,22 @@ def test_protobuf_geometric_round_trip_derives_category_from_topic() -> None:
     assert (
         decode_entity_protobuf(topic, payload, MAX_SIZE).entity.category is EntityCategory.GEOMETRIC
     )
+
+
+@pytest.mark.parametrize("invalid_crs", [common_pb2.CRS_UNSPECIFIED, 99])
+def test_location_protobuf_rejects_invalid_present_crs(invalid_crs: int) -> None:
+    message = entity_pb2.EntityLocationMessage(entity_id=ENTITY_ID.bytes)
+    message.location.latitude = 34.5
+    message.location.longitude = -117.25
+    message.location.recorded_at.FromDatetime(RECORDED_AT)
+    message.location.crs = invalid_crs
+
+    with pytest.raises(ProtocolError, match="invalid crs"):
+        decode_location_protobuf(
+            build_location_protobuf_topic("vendor-a"),
+            message.SerializeToString(),
+            MAX_SIZE,
+        )
 
 
 def test_protobuf_rejects_fields_not_in_the_committed_subset() -> None:

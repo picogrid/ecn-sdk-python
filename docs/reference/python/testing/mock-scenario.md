@@ -11,7 +11,7 @@ tableOfContents: true
 >
 > Related guidance: [getting-started/mock-setup](/getting-started/mock-setup/).
 >
-> Runnable examples: [preflight.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/preflight.py).
+> Runnable examples: [preflight.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/preflight.py).
 
 ```python
 from picogrid_ecn_client.testing import MockScenario
@@ -23,7 +23,7 @@ Store mutable deterministic fault controls for one mock instance.
 class MockScenario: ...
 ```
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L181)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L181)
 
 ## `delays`
 
@@ -33,7 +33,7 @@ Delays in seconds keyed by a supported mock operation.
 delays: dict[str, float]
 ```
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L185)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L185)
 
 ## `drop_messages_remaining`
 
@@ -43,7 +43,7 @@ Number of upcoming client publications to suppress.
 drop_messages_remaining: int
 ```
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L187)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L187)
 
 ## `malformed_messages_remaining`
 
@@ -53,7 +53,7 @@ Number of upcoming client publications to replace with malformed data.
 malformed_messages_remaining: int
 ```
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L189)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L189)
 
 ## `denied_operations`
 
@@ -63,7 +63,7 @@ Mock-only ACL operation labels currently forced to deny.
 denied_operations: set[str]
 ```
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L191)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L191)
 
 ## `connect_drops_remaining`
 
@@ -73,7 +73,7 @@ Number of upcoming valid CONNECT attempts to close without CONNACK.
 connect_drops_remaining: int
 ```
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L193)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L193)
 
 ## `authentication_rejections_remaining`
 
@@ -83,7 +83,7 @@ Number of upcoming otherwise-valid authentications to reject.
 authentication_rejections_remaining: int
 ```
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L195)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L195)
 
 ## `reset`
 
@@ -93,4 +93,4 @@ Restore every fault control to its deterministic default.
 def reset() -> None
 ```
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L202)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L202)

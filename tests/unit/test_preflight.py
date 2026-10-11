@@ -354,15 +354,24 @@ def test_subscription_probe_builds_only_narrow_retained_filters() -> None:
         integration="synthetic-client",
         category=EntityCategory.TRACK,
     )
-    location_probe = SubscriptionProbe(
+    protobuf_location_probe = SubscriptionProbe(
+        kind=SubscriptionProbeKind.LOCATION,
+        integration="synthetic-client",
+        wire_format=WireFormat.PROTOBUF,
+    )
+    json_location_probe = SubscriptionProbe(
         kind=SubscriptionProbeKind.LOCATION,
         integration="synthetic-client",
         entity_id="00000000-0000-4000-8000-000000000001",
-        wire_format=WireFormat.PROTOBUF,
     )
     assert ECNClient._subscription_probe_topic(entity_probe) == "entity/synthetic-client/+/track"
-    assert ECNClient._subscription_probe_topic(location_probe) == (
-        "entity_location_pb/synthetic-client/00000000-0000-4000-8000-000000000001"
+    assert (
+        ECNClient._subscription_probe_topic(protobuf_location_probe)
+        == "entity_location_pb/synthetic-client"
+    )
+    assert (
+        ECNClient._subscription_probe_topic(json_location_probe)
+        == "entity_location/synthetic-client/00000000-0000-4000-8000-000000000001"
     )
 
 
@@ -385,6 +394,21 @@ def test_subscription_probe_rejects_unbounded_or_unrepresentable_shapes() -> Non
             kind=SubscriptionProbeKind.ENTITY,
             integration="synthetic-client",
             category=EntityCategory.OTHER,
+        )
+    with pytest.raises(ValueError, match="JSON location subscription probes require entity_id"):
+        SubscriptionProbe(
+            kind=SubscriptionProbeKind.LOCATION,
+            integration="synthetic-client",
+        )
+    with pytest.raises(
+        ValueError,
+        match="protobuf location topics do not contain an entity ID",
+    ):
+        SubscriptionProbe(
+            kind=SubscriptionProbeKind.LOCATION,
+            integration="synthetic-client",
+            entity_id="00000000-0000-4000-8000-000000000001",
+            wire_format=WireFormat.PROTOBUF,
         )
 
 

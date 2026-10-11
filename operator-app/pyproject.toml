@@ -5,7 +5,7 @@ backend-path = ["."]
 
 [project]
 name = "picogrid-ecn-operator-app"
-version = "0.1.0" # x-release-please-version
+version = "0.2.0" # x-release-please-version
 description = "Browser operator view for authorized Picogrid ECN entity, location, and task workflows"
 readme = "README.md"
 requires-python = ">=3.11,<3.15"
@@ -14,7 +14,7 @@ license-files = ["LICENSE", "THIRD_PARTY_LICENSES.md"]
 dependencies = [
   "fastapi==0.141.1",
   "jsonschema==4.26.0",
-  "picogrid-ecn-client==0.1.0", # x-release-please-version
+  "picogrid-ecn-client==0.2.0", # x-release-please-version
   "pydantic==2.13.4",
   "starlette==1.4.1",
   "uvicorn==0.52.1",

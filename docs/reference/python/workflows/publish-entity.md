@@ -11,7 +11,7 @@ tableOfContents: false
 >
 > Related guidance: [shipped-tooling](/shipped-tooling/).
 >
-> Runnable examples: [publish_entity.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/publish_entity.py).
+> Runnable examples: [publish_entity.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/publish_entity.py).
 
 ```python
 from picogrid_ecn_client.workflows import publish_entity
@@ -56,4 +56,4 @@ async def publish_entity(
 | --- | --- |
 | ECNClientError | If validation, connection, or publication fails. |
 
-[Source · workflows/publish.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/workflows/publish.py#L53)
+[Source · workflows/publish.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/workflows/publish.py#L53)

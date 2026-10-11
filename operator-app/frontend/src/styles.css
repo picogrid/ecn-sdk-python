@@ -489,6 +489,34 @@ h3 {
   background: #727272;
 }
 
+.pending,
+.exercise_pending {
+  background: #c9b037;
+}
+
+.assumed_friend,
+.exercise_friend,
+.exercise_assumed_friend {
+  background: #17c063;
+}
+
+.exercise_unknown,
+.none_specified {
+  background: #727272;
+}
+
+.exercise_neutral {
+  background: #5281e6;
+}
+
+.joker {
+  background: #ffb74d;
+}
+
+.faker {
+  background: #f44336;
+}
+
 .map-attribution {
   right: 0;
   bottom: 0;

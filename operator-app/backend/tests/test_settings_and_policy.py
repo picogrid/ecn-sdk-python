@@ -103,6 +103,8 @@ def test_basemap_template_requires_plain_text_attribution(template: str) -> None
     [
         ("OPERATOR_ECN_INTEGRATION_ALLOWLIST", "x"),
         ("OPERATOR_ECN_INTEGRATION_ALLOWLIST", "geolocation"),
+        ("OPERATOR_ECN_INTEGRATION_ALLOWLIST", "response"),
+        ("OPERATOR_ECN_INTEGRATION_ALLOWLIST", "RESPONSE"),
         ("OPERATOR_ECN_CATEGORY_ALLOWLIST", "OTHER"),
         ("OPERATOR_ECN_CATEGORY_ALLOWLIST", "not-a-category"),
     ],

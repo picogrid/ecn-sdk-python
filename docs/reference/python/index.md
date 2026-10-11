@@ -33,7 +33,7 @@ from picogrid_ecn_client import __version__
 ```
 
 ```python
-__version__ = '0.1.0'
+__version__ = '0.2.0'
 ```
 
 The installed package version.

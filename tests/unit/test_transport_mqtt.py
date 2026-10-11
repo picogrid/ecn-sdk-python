@@ -16,7 +16,7 @@ import traceback
 from collections.abc import AsyncIterator
 from pathlib import Path
 from typing import Any, ClassVar, Self, cast
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import aiomqtt
 import pytest
@@ -5201,7 +5201,7 @@ async def test_transient_response_subscribe_does_not_suspend_global_readiness() 
     try:
         opening = asyncio.create_task(
             transport.subscribe(
-                "task/vendor-a/00000000-0000-4000-8000-000000000001/command/response",
+                f"task/vendor-a/{uuid4()}/command/response",
                 _noop_message_callback,
                 restore_on_reconnect=False,
             )
@@ -5619,6 +5619,34 @@ async def test_close_racing_unsubscribe_consumes_late_cleanup_error() -> None:
     assert transport._subscription_setup_tasks == set()
     assert transport._broker_operation_tasks == set()
     assert client.session_invalidations == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("started", [False, True])
+async def test_close_cancelling_inflight_unsubscribe_completes_removal(started: bool) -> None:
+    transport = MQTTTransport(_config())
+    client = _RacingClient()
+    transport._client = client  # type: ignore[assignment]
+    transport._connected = True
+
+    async def callback(_topic: str, _payload: bytes) -> None:
+        return None
+
+    handle = await transport.subscribe(ENTITY_JSON_SUBSCRIPTION, callback)
+    client.block_unsubscribe = True
+    removing = asyncio.create_task(transport.unsubscribe(handle))
+    if started:
+        await asyncio.wait_for(client.unsubscribe_started.wait(), timeout=1)
+    else:
+        await asyncio.sleep(0)
+        assert client.unsubscribe_calls == 0
+
+    await asyncio.wait_for(transport.close(), timeout=1)
+
+    assert await asyncio.wait_for(removing, timeout=1) is None
+    assert transport._subscriptions == {}
+    assert transport._subscription_setup_tasks == set()
+    assert transport._broker_operation_tasks == set()
 
 
 @pytest.mark.asyncio

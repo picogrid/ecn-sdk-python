@@ -11,7 +11,7 @@ tableOfContents: true
 >
 > Related guidance: [concepts/entities](/concepts/entities/), [quickstarts/sensor-publisher](/quickstarts/sensor-publisher/), [how-to/pli-entities](/how-to/pli-entities/), [how-to/tracks-detections](/how-to/tracks-detections/).
 >
-> Runnable examples: [publish_entity.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/publish_entity.py), [watch_detections.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/watch_detections.py), [watch_tracks.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/watch_tracks.py).
+> Runnable examples: [publish_entity.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/publish_entity.py), [watch_detections.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/watch_detections.py), [watch_tracks.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/watch_tracks.py).
 
 ```python
 from picogrid_ecn_client import Entities
@@ -23,7 +23,7 @@ Observe and publish typed entities through supported MQTT v5 families.
 class Entities: ...
 ```
 
-[Source · interfaces/entities.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/interfaces/entities.py#L31)
+[Source · interfaces/entities.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/interfaces/entities.py#L31)
 
 ## `watch`
 
@@ -64,7 +64,7 @@ async def watch(
 | ResourceLimitError | If the requested queue exceeds the configured limit. |
 | ValidationError | If an argument cannot form a supported watcher. |
 
-[Source · interfaces/entities.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/interfaces/entities.py#L37)
+[Source · interfaces/entities.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/interfaces/entities.py#L37)
 
 ## `publish`
 
@@ -97,4 +97,4 @@ async def publish(entity: Entity) -> PublicationReceipt
 | ResourceLimitError | If the encoded payload exceeds the byte limit. |
 | ValidationError | If the entity cannot be encoded for publication. |
 
-[Source · interfaces/entities.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/interfaces/entities.py#L88)
+[Source · interfaces/entities.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/interfaces/entities.py#L88)

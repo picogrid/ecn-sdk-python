@@ -48,9 +48,11 @@ Source: `src/picogrid_ecn_client/models/location.py`.
 | LOC-07  | `AngularVelocity`      | unresolved; the pinned source is a NED vector | `[roll, pitch, yaw]` radians per second | —                                 | wire           | unverified           |
 | LOC-08  | `Location.confidence`  | —                                             | dimensionless, `[0, 1]`                 | —                                 | wire           | unverified           |
 
-`LOC-07` names three rotational axes over a pinned vector whose frame is not established.
-The interpretation is recorded on the [limitations page](../compatibility/limitations.md)
-and no conversion consumes it.
+`LOC-07` exposes three rotational values whose roll/pitch/yaw interpretation remains
+unverified, as recorded on the
+[limitations page](../compatibility/limitations.md). No public conversion method
+consumes `AngularVelocity`; the protobuf decoder does rotate a canonical
+`CRS_ECEF` angular-velocity vector into NED before exposing those three values.
 
 These rows apply wherever a `Location` appears, whether as a dedicated location message or
 embedded in an entity or entity event.
@@ -69,10 +71,12 @@ Sources: `src/picogrid_ecn_client/models/location.py`,
 | CNV-64  | `Location.to_ecef_velocity` | NED to EPSG:4978 axes                | metres per second, both frames | not used                          | in-memory      | public-client policy |
 | CNV-65  | `GeodeticPosition` rotation | NED and EPSG:4978 axes, both ways    | metres per second, both frames | not used                          | in-memory      | public-client policy |
 
-No value in this section reaches the wire. Every ECEF quantity is produced on request from
-a decoded or locally constructed geodetic value and is never published, decoded, or cached
-as observed state. The conversions read their inputs and return new objects, so a
-`Location` is unchanged by converting it.
+The public conversion objects in this section do not themselves reach the wire.
+Canonical protobuf input may mark a point as EPSG:4978 and place x/y/z metres in the
+`latitude`/`longitude`/`altitude` fields; the decoder immediately converts those values
+through the pinned WGS-84 path into a geodetic `Location`. It does not cache an ECEF
+object as observed state. Explicit conversions read their inputs and return new objects,
+so a `Location` is unchanged by converting it.
 
 The ellipsoid is WGS-84 throughout: semi-major axis 6378137.0 m, inverse flattening
 298.257223563. The forward conversion is the standard closed form. The inverse applies the
@@ -141,27 +145,44 @@ rather than returning a value.
 
 Source: `src/picogrid_ecn_client/schemas/public/common.proto`, `LocationMessage`.
 
-| Row key | Value                       | CRS or frame                         | Axis order and units                                      | Altitude reference                | Representation | Evidence             |
-| ------- | --------------------------- | ------------------------------------ | --------------------------------------------------------- | --------------------------------- | -------------- | -------------------- |
-| PB-10   | `latitude`, field 1         | WGS-84 geographic, EPSG:4326         | `double`, decimal degrees                                 | —                                 | wire           | source-confirmed     |
-| PB-11   | `longitude`, field 2        | WGS-84 geographic, EPSG:4326         | `double`, decimal degrees                                 | —                                 | wire           | source-confirmed     |
-| PB-12   | `altitude`, field 3         | WGS-84 3D, EPSG:4979, where supplied | `float`, metres                                           | height above the WGS-84 ellipsoid | wire           | public-client policy |
-| PB-13   | `bearing`, field 4          | true north reference                 | `float`, degrees clockwise                                | —                                 | wire           | source-confirmed     |
-| PB-14   | `accuracy`, field 5         | horizontal, position frame           | `float`, metres, drms                                     | —                                 | wire           | public-client policy |
-| PB-15   | `recorded_at`, field 7      | —                                    | `google.protobuf.Timestamp`, UTC seconds and nanoseconds  | —                                 | wire           | source-confirmed     |
-| PB-16   | `velocity`, field 8         | local tangent plane, NED             | repeated `float`, `[north, east, down]` metres per second | —                                 | wire           | source-confirmed     |
-| PB-17   | `angular_velocity`, field 9 | unresolved                           | repeated `float`, `[roll, pitch, yaw]` radians per second | —                                 | wire           | unverified           |
-| PB-18   | `confidence`, field 10      | —                                    | `float`, dimensionless                                    | —                                 | wire           | unverified           |
+| Row key | Value                        | CRS or frame                              | Axis order and units                                      | Altitude reference                | Representation | Evidence             |
+| ------- | ---------------------------- | ----------------------------------------- | --------------------------------------------------------- | --------------------------------- | -------------- | -------------------- |
+| PB-10   | `latitude`, field 1          | EPSG:4326 or EPSG:4978                    | latitude degrees or ECEF x metres                         | —                                 | wire           | source-confirmed     |
+| PB-11   | `longitude`, field 2         | EPSG:4326 or EPSG:4978                    | longitude degrees or ECEF y metres                        | —                                 | wire           | source-confirmed     |
+| PB-12   | `altitude`, field 3          | EPSG:4979 or EPSG:4978, where supplied    | ellipsoidal height or ECEF z metres                       | height above WGS-84 when geodetic | wire           | source-confirmed     |
+| PB-13   | `bearing`, field 4           | true north reference                      | `float`, degrees clockwise                                | —                                 | wire           | source-confirmed     |
+| PB-14   | `accuracy`, field 5          | horizontal, position frame                | `float`, metres, drms                                     | —                                 | wire           | public-client policy |
+| PB-15   | `recorded_at`, field 7       | —                                         | `google.protobuf.Timestamp`, UTC seconds and nanoseconds  | —                                 | wire           | source-confirmed     |
+| PB-16   | `velocity`, field 8          | NED for EPSG:4326; ECEF for EPSG:4978     | repeated `float`, three metres-per-second components      | —                                 | wire           | source-confirmed     |
+| PB-17   | `angular_velocity`, field 9  | local or ECEF axes selected by CRS         | repeated `float`, three radians-per-second components     | —                                 | wire           | source-confirmed     |
+| PB-18   | `confidence`, field 10       | —                                         | `float`, dimensionless                                    | —                                 | wire           | unverified           |
+| PB-19   | `radius`, field 11           | position frame                            | `float`, metres                                           | —                                 | wire           | source-confirmed     |
+| PB-20   | `covariance`, field 12       | position or state frame                   | flattened 3x3, 6x6, or 9x9 repeated `float` matrix        | —                                 | wire           | source-confirmed     |
+| PB-21   | `orientation`, field 13      | selected by CRS                           | repeated `float` quaternion `[w, x, y, z]`                | —                                 | wire           | source-confirmed     |
+| PB-22   | `acceleration`, field 14     | NED for EPSG:4326; ECEF for EPSG:4978     | repeated `float`, three metres-per-second-squared values  | —                                 | wire           | source-confirmed     |
+| PB-23   | `crs`, field 15              | EPSG:4326/4979 or EPSG:4978                | `CRS_LLA` or `CRS_ECEF` enum                              | —                                 | wire           | source-confirmed     |
+| PB-24   | `geometry_type`, field 16    | geometry semantics                        | point, line string, or polygon enum                       | —                                 | wire           | source-confirmed     |
+| PB-25   | `coordinates`, field 17      | selected by CRS and geometry type         | repeated `double`; ordered coordinate sequence            | —                                 | wire           | source-confirmed     |
 
-Latitude and longitude are `double`; every other numeric field is single-precision
-`float`. Altitude therefore carries less precision on the protobuf path than in the model.
-Latitude and longitude are also ordinary proto3 scalars, so a decoded zero cannot be
-distinguished from an omitted field.
+Fields 1 and 2 are ordinary proto3 `double` scalars. Their meaning depends on `crs`.
+For `CRS_ECEF`, field 3 is required and the decoder interprets fields 1 through 3 as
+x/y/z metres before converting to geodetic coordinates. An absent `crs` or explicit
+`CRS_LLA` interprets fields 1 and 2 as latitude and longitude; a present
+`CRS_UNSPECIFIED` or unknown number is rejected. An omitted scalar zero cannot be
+distinguished from an explicit zero.
 
-`PB-15` is a nested message rather than a scalar, so its presence is tracked. The producer
-always emits it. A dedicated location message that omits it fails decode; a location
-embedded in an entity event inherits the envelope timestamp instead. A decoded timestamp is
-always UTC-aware, and one outside the representable datetime range is rejected.
+The public model retains fields 1 through 10. It accepts canonical messages carrying
+fields 11 through 17 without rejecting them, but does not expose those extended fields.
+For `CRS_ECEF`, the decoder consumes `crs` to convert the position to geodetic
+coordinates and rotates velocity and angular-velocity components from ECEF axes into
+the public model's NED frame. Protobuf publication from the public model emits the
+retained geodetic subset.
+
+`PB-15` is a nested message rather than a scalar, so its presence is tracked. The
+producer always emits it. A dedicated location message that omits it fails decode; a
+location embedded in an entity event inherits the envelope timestamp instead. A decoded
+timestamp is always UTC-aware, and one outside the representable datetime range is
+rejected.
 
 ## JSON wire
 

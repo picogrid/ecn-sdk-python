@@ -11,7 +11,7 @@ tableOfContents: true
 >
 > Related guidance: [reference/exceptions](/reference/exceptions/), [how-to/troubleshooting](/how-to/troubleshooting/).
 >
-> Runnable examples: [preflight.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/preflight.py).
+> Runnable examples: [preflight.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/preflight.py).
 
 ```python
 from picogrid_ecn_client import OutcomeUnknownError
@@ -23,7 +23,7 @@ Report a mutation that may have reached the broker or downstream handler.
 class OutcomeUnknownError(DeliveryError): ...
 ```
 
-[Source · exceptions.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/exceptions.py#L149)
+[Source · exceptions.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/exceptions.py#L149)
 
 **Hierarchy:** `ECNClientError → DeliveryError → OutcomeUnknownError`
 
@@ -66,4 +66,4 @@ def __init__(
 | --- | --- |
 | ValueError | If `delivery_phase` is not an uncertainty phase. |
 
-[Source · exceptions.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/exceptions.py#L161)
+[Source · exceptions.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/exceptions.py#L161)

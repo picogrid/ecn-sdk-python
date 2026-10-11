@@ -53,7 +53,9 @@ python examples/preflight.py
 ## Probe one exact subscription
 
 No subscription is installed by default. A caller may add an explicitly requested
-`SubscriptionProbe` with an exact integration and category or entity ID. A probe
+`SubscriptionProbe`. Entity probes use an exact integration and category. JSON
+location probes add an exact entity ID; protobuf location probes cover the exact
+integration-only topic because entity identity is carried in the payload. A probe
 subscribes, waits for SUBACK, unsubscribes, and disconnects.
 
 ```python
@@ -80,8 +82,9 @@ async def probe_one_track_family(client: ECNClient) -> None:
 
 ## Authorization scope
 
-Request a probe only for an approved integration and category or entity ID. A
-passing probe applies only to that subscription and does not authorize publication.
+Request a probe only for an approved integration and, where the topic shape contains
+one, category or entity ID. A passing probe applies only to that subscription and does
+not authorize publication.
 See [Security and credentials](../security/credentials.md).
 
 After preflight connects and authenticates, continue with an

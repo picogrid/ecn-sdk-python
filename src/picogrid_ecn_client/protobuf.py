@@ -5,8 +5,6 @@
 
 from __future__ import annotations
 
-from uuid import UUID
-
 from ._protocol import (
     build_location_protobuf_topic,
     decode_entity_protobuf,
@@ -86,18 +84,17 @@ def decode_entity_location_protobuf(
     payload: bytes,
     *,
     integration: str,
-    entity_id: UUID,
     maximum_payload_size: int = _DEFAULT_MAXIMUM_PAYLOAD_SIZE,
 ) -> LocationEvent:
     """Decode one entity-location update from the supported protobuf subset.
 
-    Typed integration and entity UUID context replaces a raw MQTT topic. Unknown
+    The integration comes from the two-segment ``entity_location_pb/{integration}``
+    MQTT topic. The entity UUID is decoded from the protobuf payload, and unknown
     protobuf fields are ignored.
 
     Args:
-        payload: Serialized protobuf payload.
-        integration: Topic-derived integration name.
-        entity_id: Topic-derived canonical entity UUID.
+        payload: Serialized protobuf payload containing the entity UUID and location.
+        integration: Integration name carried by the source topic.
         maximum_payload_size: Inclusive payload limit in bytes, from 1024 through
             16777216.
 
@@ -105,18 +102,14 @@ def decode_entity_location_protobuf(
         The decoded typed location event.
 
     Raises:
-        ProtocolError: If the payload is malformed or lacks required fields.
+        ProtocolError: If the payload is malformed, lacks required fields, or carries
+            an invalid entity UUID.
         ResourceLimitError: If the payload exceeds ``maximum_payload_size`` bytes.
         ValidationError: If an input or decoded public field is invalid.
     """
 
     _validate_inputs(payload, maximum_payload_size)
-    if not isinstance(entity_id, UUID):
-        raise ValidationError(
-            "entity_id must be a UUID",
-            operation="protobuf.decode",
-        )
-    topic = build_location_protobuf_topic(integration, entity_id)
+    topic = build_location_protobuf_topic(integration)
     return decode_location_protobuf(topic, payload, maximum_payload_size)
 
 

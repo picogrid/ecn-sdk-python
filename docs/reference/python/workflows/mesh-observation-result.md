@@ -11,7 +11,7 @@ tableOfContents: true
 >
 > Related guidance: [shipped-tooling](/shipped-tooling/).
 >
-> Runnable examples: [observe_mesh_data.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/observe_mesh_data.py).
+> Runnable examples: [observe_mesh_data.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/observe_mesh_data.py).
 
 ```python
 from picogrid_ecn_client.workflows import MeshObservationResult
@@ -27,7 +27,7 @@ MeshObservationResult(
 )
 ```
 
-[Source · workflows/observe.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/workflows/observe.py#L43)
+[Source · workflows/observe.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/workflows/observe.py#L43)
 
 ## Fields
 

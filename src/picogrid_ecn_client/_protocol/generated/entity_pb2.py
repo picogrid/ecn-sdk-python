@@ -26,7 +26,7 @@ from . import common_pb2 as picogrid__ecn__client_dot_schemas_dot_public_dot_com
 
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
-    b'\n/picogrid_ecn_client/schemas/public/entity.proto\x12\x10picogrid.open.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a/picogrid_ecn_client/schemas/public/common.proto"\xab\x01\n\x12\x45ntityEventMessage\x12/\n\x0brecorded_at\x18\x01 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12/\n\x06\x65ntity\x18\x02 \x01(\x0b\x32\x1f.picogrid.open.v1.EntityMessage\x12\x33\n\x08location\x18\x03 \x01(\x0b\x32!.picogrid.open.v1.LocationMessage"L\n\x15\x45ntityLocationMessage\x12\x33\n\x08location\x18\x02 \x01(\x0b\x32!.picogrid.open.v1.LocationMessageb\x06proto3'
+    b'\n/picogrid_ecn_client/schemas/public/entity.proto\x12\x10picogrid.open.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a/picogrid_ecn_client/schemas/public/common.proto"\xab\x01\n\x12\x45ntityEventMessage\x12/\n\x0brecorded_at\x18\x01 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12/\n\x06\x65ntity\x18\x02 \x01(\x0b\x32\x1f.picogrid.open.v1.EntityMessage\x12\x33\n\x08location\x18\x03 \x01(\x0b\x32!.picogrid.open.v1.LocationMessage"_\n\x15\x45ntityLocationMessage\x12\x11\n\tentity_id\x18\x01 \x01(\x0c\x12\x33\n\x08location\x18\x02 \x01(\x0b\x32!.picogrid.open.v1.LocationMessageb\x06proto3'
 )
 
 _globals = globals()
@@ -39,5 +39,5 @@ if not _descriptor._USE_C_DESCRIPTORS:
     _globals["_ENTITYEVENTMESSAGE"]._serialized_start = 152
     _globals["_ENTITYEVENTMESSAGE"]._serialized_end = 323
     _globals["_ENTITYLOCATIONMESSAGE"]._serialized_start = 325
-    _globals["_ENTITYLOCATIONMESSAGE"]._serialized_end = 401
+    _globals["_ENTITYLOCATIONMESSAGE"]._serialized_end = 420
 # @@protoc_insertion_point(module_scope)

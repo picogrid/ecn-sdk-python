@@ -11,7 +11,7 @@ tableOfContents: false
 >
 > Related guidance: [how-to/protobuf-decode](/how-to/protobuf-decode/), [reference/wire-formats](/reference/wire-formats/).
 >
-> Runnable examples: [decode_public_protobuf.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/decode_public_protobuf.py).
+> Runnable examples: [decode_public_protobuf.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/decode_public_protobuf.py).
 
 ```python
 from picogrid_ecn_client import decode_entity_event_protobuf
@@ -52,4 +52,4 @@ def decode_entity_event_protobuf(
 | ResourceLimitError | If the payload exceeds `maximum_payload_size` bytes. |
 | ValidationError | If an input or decoded public field is invalid. |
 
-[Source · protobuf.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/protobuf.py#L49)
+[Source · protobuf.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/protobuf.py#L47)

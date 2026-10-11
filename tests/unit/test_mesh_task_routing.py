@@ -29,6 +29,7 @@ from picogrid_ecn_client.models import (
 )
 
 ENTITY_ID = UUID("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa")
+SECOND_ENTITY_ID = UUID("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb")
 SOURCE_TERMINAL_ID = UUID("11111111-1111-4111-8111-111111111111")
 TARGET_TERMINAL_ID = UUID("22222222-2222-4222-8222-222222222222")
 OTHER_SOURCE_TERMINAL_ID = UUID("33333333-3333-4333-8333-333333333333")
@@ -175,6 +176,7 @@ def service(
     terminal_id: UUID | None,
     *,
     duplicate_cache_size: int = 1024,
+    task_id_factory: Callable[[], str] | None = None,
 ) -> TaskService:
     return TaskService(
         transport,
@@ -182,7 +184,7 @@ def service(
         terminal_id=terminal_id,
         duplicate_cache_size=duplicate_cache_size,
         clock=lambda: datetime(2026, 8, 7, tzinfo=UTC),
-        task_id_factory=lambda: "mesh-task",
+        task_id_factory=task_id_factory or (lambda: "mesh-task"),
     )
 
 
@@ -233,6 +235,85 @@ async def test_terminal_addressed_sender_serializes_source_and_matches_target_re
     result = await pending
     assert isinstance(result, TaskResult)
     assert result.data == Echo(message="synthetic")
+    assert transport.subscriptions == {}
+    await tasks.close()
+
+
+@pytest.mark.asyncio
+async def test_concurrent_routed_sends_use_per_entity_response_topics() -> None:
+    transport = RecordingTransport()
+    task_ids = iter(("mesh-task-one", "mesh-task-two"))
+    tasks = service(
+        transport,
+        SOURCE_TERMINAL_ID,
+        task_id_factory=lambda: next(task_ids),
+    )
+    first = asyncio.create_task(
+        tasks.send(
+            target_entity_id=ENTITY_ID,
+            target_integration="receiver",
+            target_terminal_id=TARGET_TERMINAL_ID,
+            command="echo",
+            request=Echo(message="first"),
+            result_model=Echo,
+            timeout=1,
+            mode=TaskMode.COMPLETE,
+        )
+    )
+    second = asyncio.create_task(
+        tasks.send(
+            target_entity_id=SECOND_ENTITY_ID,
+            target_integration="receiver",
+            target_terminal_id=TARGET_TERMINAL_ID,
+            command="echo",
+            request=Echo(message="second"),
+            result_model=Echo,
+            timeout=1,
+            mode=TaskMode.COMPLETE,
+        )
+    )
+    for _ in range(20):
+        if len(transport.published) == 2:
+            break
+        await asyncio.sleep(0)
+
+    second_request_topic = f"{TARGET_TERMINAL_ID}/task/receiver/{SECOND_ENTITY_ID}/echo"
+    second_response_topic = f"task/receiver/{SECOND_ENTITY_ID}/echo/response"
+    first_request = transport.decoded(ROUTED_REQUEST_TOPIC)[0]
+    second_request = transport.decoded(second_request_topic)[0]
+    assert [topic for topic, _callback in transport.subscriptions.values()] == [
+        RESPONSE_TOPIC,
+        second_response_topic,
+    ]
+
+    await transport.emit(
+        second_response_topic,
+        {
+            "status": "SUCCESS",
+            "source": str(TARGET_TERMINAL_ID),
+            "task_id": second_request["task_id"],
+            "payload": {"message": "second"},
+            "_response_type": "full",
+        },
+    )
+    second_result = await second
+    assert isinstance(second_result, TaskResult)
+    assert second_result.data == Echo(message="second")
+    assert not first.done()
+
+    await transport.emit(
+        RESPONSE_TOPIC,
+        {
+            "status": "SUCCESS",
+            "source": str(TARGET_TERMINAL_ID),
+            "task_id": first_request["task_id"],
+            "payload": {"message": "first"},
+            "_response_type": "full",
+        },
+    )
+    first_result = await first
+    assert isinstance(first_result, TaskResult)
+    assert first_result.data == Echo(message="first")
     assert transport.subscriptions == {}
     await tasks.close()
 
@@ -581,6 +662,8 @@ async def test_remote_handler_routes_response_to_source_and_exposes_uuid_context
             "_response_type": "full",
         }
     ]
+    legion_response_topic = f"{SOURCE_TERMINAL_ID}/task/response/receiver/echo"
+    assert transport.decoded(legion_response_topic) == []
     await tasks.close()
 
 
@@ -693,7 +776,7 @@ async def test_duplicate_key_keeps_identical_task_ids_independent_by_source() ->
             await asyncio.sleep(0)
 
     assert sources == [SOURCE_TERMINAL_ID, OTHER_SOURCE_TERMINAL_ID]
-    assert len(transport.decoded(f"{SOURCE_TERMINAL_ID}/{RESPONSE_TOPIC}")) == 1
+    assert len(transport.decoded(ROUTED_RESPONSE_TOPIC)) == 1
     assert len(transport.decoded(f"{OTHER_SOURCE_TERMINAL_ID}/{RESPONSE_TOPIC}")) == 1
     await tasks.close()
 

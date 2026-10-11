@@ -11,7 +11,7 @@ tableOfContents: false
 >
 > Related guidance: [shipped-tooling](/shipped-tooling/).
 >
-> Runnable examples: [check_clock.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/check_clock.py).
+> Runnable examples: [check_clock.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/check_clock.py).
 
 ```python
 from picogrid_ecn_client.workflows import check_clock
@@ -52,4 +52,4 @@ async def check_clock(
 | ClockToleranceError | If `max_offset_seconds` is exceeded. |
 | ValidationError | If a numeric argument is outside its supported range. |
 
-[Source · workflows/diagnostics.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/workflows/diagnostics.py#L55)
+[Source · workflows/diagnostics.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/workflows/diagnostics.py#L55)

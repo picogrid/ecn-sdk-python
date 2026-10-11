@@ -1381,7 +1381,7 @@ test('surfaces a resource-limited watcher while MQTT remains connected and disab
   await expect(page.locator('#task-policy')).toContainText('both bounded MQTT watchers');
 });
 
-test('renders every configured category with distinct glyphs and a complete legend', async ({
+test('renders every configured category with mapped glyphs and a complete legend', async ({
   page,
 }) => {
   const [configurationResponse, stateResponse] = await Promise.all([
@@ -1398,6 +1398,10 @@ test('renders every configured category with distinct glyphs and a complete lege
     ['SENSOR', '00000000-0000-4000-8000-000000000011', 34.08, -118.27],
     ['ALERT', '00000000-0000-4000-8000-000000000012', 34.07, -118.26],
     ['GEOMETRIC', '00000000-0000-4000-8000-000000000013', 34.06, -118.25],
+    ['WEATHER', '00000000-0000-4000-8000-000000000014', 34.05, -118.24],
+    ['ZONE', '00000000-0000-4000-8000-000000000015', 34.04, -118.23],
+    ['VEHICLE', '00000000-0000-4000-8000-000000000016', 34.03, -118.22],
+    ['UXV', '00000000-0000-4000-8000-000000000017', 34.02, -118.21],
   ].map(([category, entityId, latitude, longitude]) => ({
     ...template,
     key: `mock-sensor/${entityId}`,
@@ -1425,6 +1429,10 @@ test('renders every configured category with distinct glyphs and a complete lege
     sensor: 'N',
     alert: 'A',
     geometric: 'G',
+    weather: 'W',
+    zone: 'Z',
+    vehicle: 'V',
+    uxv: 'U',
     'location-only': 'L',
   };
   for (const [category, glyph] of Object.entries(expected)) {
@@ -1433,8 +1441,10 @@ test('renders every configured category with distinct glyphs and a complete lege
       page.locator(`.entity-marker.category-${category} .marker-category-label`),
     ).toHaveText(glyph);
   }
-  await expect(page.locator('#category-legend-items [data-legend-category]')).toHaveCount(8);
-  await expect(page.locator('#category-legend-items')).toContainText('Geometric');
+  await expect(page.locator('#category-legend-items [data-legend-category]')).toHaveCount(12);
+  for (const label of ['Geometric', 'Weather', 'Zone', 'Vehicle', 'UXV']) {
+    await expect(page.locator('#category-legend-items')).toContainText(label);
+  }
   await expect(page.locator('#affiliation-legend-items')).toContainText('Neutral');
   await expect(page.locator('[data-affiliation="NEUTRAL"]')).toHaveAttribute(
     'aria-label',

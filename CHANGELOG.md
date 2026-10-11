@@ -1,11 +1,53 @@
 # Changelog
 
 All notable changes to the Picogrid ECN SDK are recorded here under
-[Semantic Versioning](VERSIONING.md). The `0.1.0` entry records the first public
-release candidate baseline; it is not evidence that a package or release has been
-published.
+[Semantic Versioning](VERSIONING.md). Each heading names a release and its release
+date.
 
-## [0.1.0] - Unreleased
+## [0.2.0] - 2026-10-09
+
+### Breaking wire changes
+
+- Protobuf location topics change from
+  `entity_location_pb/{integration}/{entity_id}` to
+  `entity_location_pb/{integration}`. Entity identity now travels in the
+  `EntityLocationMessage.entity_id` payload field as exactly 16 raw UUID bytes, and
+  the subscription family changes from `entity_location_pb/+/+` to
+  `entity_location_pb/+`. Consumers that filtered protobuf locations by topic entity
+  segment must subscribe by integration and filter the decoded `LocationEvent` ID.
+- `decode_entity_location_protobuf(...)` no longer accepts an `entity_id` keyword;
+  remove that argument because the decoder reads identity from the payload.
+- `response` is now a reserved integration name, so client task topics stay
+  disjoint from the `task/response/...` namespace used for responses addressed to
+  Legion. Terminal-to-terminal task responses keep the `0.1.0` shape
+  `{source_terminal_id}/task/{integration}/{entity_id}/{command}/response`.
+- The protobuf snapshot converges to edge-sdk's category, affiliation, entity, and
+  location schema breadth. `EntityCategory` adds `WEATHER`, `ZONE`, `VEHICLE`, and
+  `UXV` (`GEOMETRIC` remains supported), while `Affiliation` adds `PENDING`,
+  `ASSUMED_FRIEND`, the five `EXERCISE_*` values, `JOKER`, `FAKER`, and
+  `NONE_SPECIFIED`. Callers with exhaustive enum handling must add these members.
+  Entity encode now duplicates the envelope timestamp into
+  `EntityMessage.recorded_at`; decode rejects a present embedded timestamp whose
+  seconds or nanoseconds differ from the envelope. Decode tolerates the extended
+  location geometry/motion fields, converts `CRS_ECEF` positions to geodetic
+  coordinates, and leaves those extended fields unexposed on public models.
+
+### Reliability and delivery
+
+- Closing a client, or leaving its `async with` block, no longer raises
+  `asyncio.CancelledError` when a task handler is registered. Transport close used to
+  cancel the handler's in-flight unsubscribe cleanup, and that cancellation reached
+  the caller even though the caller was never cancelled. Close already retires every
+  local subscription on a non-persistent session, so the removal now completes
+  quietly. Caller cancellation still propagates.
+
+### Testing
+
+- The versioned `ecn-wire-conformance` corpus (version 0.2) pins every fixture by
+  SHA-256, pins canonical JSON encodings where applicable, and fails CI on
+  unhashed corpus changes.
+
+## [0.1.0] - 2026-08-12
 
 ### SDK and API
 

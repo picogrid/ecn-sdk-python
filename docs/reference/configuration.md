@@ -68,7 +68,7 @@ Fields are grouped by purpose for faster lookup.
 | `mqtt_port` | required | Port from 1 through 65535; profile loading defaults to 8883 for mTLS and 8884 for bearer or local `legion-system-auth`, while environment loading defaults to 1883 for `none`. |
 | `ntp_host` | ECN `host` | Optional issued alternate endpoint for the ECN-relative clock diagnostic. |
 | `ntp_port` | 123 | UDP port from 1 through 65535 for the ECN-relative clock diagnostic. |
-| `integration_name` | required | 2-128 ASCII letters, digits, `_`, or `-`; starts and ends alphanumeric; `geolocation` is reserved case-insensitively. Also the client-ID prefix and offline mock bearer username. |
+| `integration_name` | required | 2-128 ASCII letters, digits, `_`, or `-`; starts and ends alphanumeric; `geolocation` and `response` are reserved case-insensitively. Also the client-ID prefix and offline mock bearer username. |
 | `terminal_id` | `None` | Canonical UUID of the connected ECN terminal, used only for terminal-derived task source and response routing. |
 | `auth` | required | `BearerTokenAuth`, `MTLSAuth`, or `NoAuth`. |
 | `tls` | verified TLS | `TLSConfig`; must be disabled with the reviewed-container-network attestation. |

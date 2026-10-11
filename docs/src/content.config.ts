@@ -14,8 +14,6 @@ export const collections = {
       pattern: [
         '{index,changelog,deployment-support,shipped-tooling}.{md,mdx}',
         '{compatibility,concepts,getting-started,how-to,integrations,operator,quickstarts,reference,security,walkthroughs}/**/*.{md,mdx}',
-        '!reference/evidence-status.md',
-        '!reference/original-ecn-integration-parity.md',
       ],
     }),
     schema: docsSchema(),

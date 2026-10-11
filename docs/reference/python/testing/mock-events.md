@@ -11,7 +11,7 @@ tableOfContents: true
 >
 > Related guidance: [getting-started/mock-setup](/getting-started/mock-setup/).
 >
-> Runnable examples: [preflight.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/preflight.py).
+> Runnable examples: [preflight.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/preflight.py).
 
 ```python
 from picogrid_ecn_client.testing import MockEvents
@@ -23,7 +23,7 @@ Expose synchronization events for deterministic asynchronous tests.
 class MockEvents: ...
 ```
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L118)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L118)
 
 ## `mqtt_connected`
 
@@ -33,7 +33,7 @@ Set when an MQTT v5 client connection is accepted.
 mqtt_connected: asyncio.Event
 ```
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L122)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L122)
 
 ## `mqtt_disconnected`
 
@@ -43,7 +43,7 @@ Set when an accepted MQTT v5 client disconnects.
 mqtt_disconnected: asyncio.Event
 ```
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L124)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L124)
 
 ## `message_received`
 
@@ -53,7 +53,7 @@ Set when the mock receives a client publication.
 message_received: asyncio.Event
 ```
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L126)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L126)
 
 ## `message_forwarded`
 
@@ -63,7 +63,7 @@ Set when the mock forwards a publication to subscribed clients.
 message_forwarded: asyncio.Event
 ```
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L128)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L128)
 
 ## `message_dropped`
 
@@ -73,7 +73,7 @@ Set when a configured drop suppresses publication forwarding.
 message_dropped: asyncio.Event
 ```
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L130)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L130)
 
 ## `malformed_message_sent`
 
@@ -83,7 +83,7 @@ Set when a configured malformed payload is forwarded.
 malformed_message_sent: asyncio.Event
 ```
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L132)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L132)
 
 ## `authentication_failed`
 
@@ -93,7 +93,7 @@ Set when synthetic authentication rejects a client.
 authentication_failed: asyncio.Event
 ```
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L134)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L134)
 
 ## `authorization_denied`
 
@@ -103,7 +103,7 @@ Set when a synthetic mock-only ACL label denies an operation.
 authorization_denied: asyncio.Event
 ```
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L136)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L136)
 
 ## `forced_disconnect`
 
@@ -113,7 +113,7 @@ Set when deterministic forced disconnection is requested.
 forced_disconnect: asyncio.Event
 ```
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L138)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L138)
 
 ## `connection_dropped`
 
@@ -123,7 +123,7 @@ Set when a transient connection drop consumes one configured attempt.
 connection_dropped: asyncio.Event
 ```
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L140)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L140)
 
 ## `acknowledgement_denied`
 
@@ -133,7 +133,7 @@ Set when an operation-specific negative acknowledgment is returned.
 acknowledgement_denied: asyncio.Event
 ```
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L142)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L142)
 
 ## `acknowledgement_reason_returned`
 
@@ -143,7 +143,7 @@ Set when one configured raw MQTT reason code is returned.
 acknowledgement_reason_returned: asyncio.Event
 ```
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L144)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L144)
 
 ## `malformed_protocol_response`
 
@@ -153,7 +153,7 @@ Set when the mock sends one deliberately malformed MQTT response.
 malformed_protocol_response: asyncio.Event
 ```
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L146)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L146)
 
 ## `publication_disconnected_before_send`
 
@@ -163,7 +163,7 @@ Set when clients are disconnected before a caller starts publication.
 publication_disconnected_before_send: asyncio.Event
 ```
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L148)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L148)
 
 ## `publication_disconnected_qos0_before_completion`
 
@@ -173,7 +173,7 @@ Set when a QoS 0 PUBLISH is interrupted after its fixed header.
 publication_disconnected_qos0_before_completion: asyncio.Event
 ```
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L150)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L150)
 
 ## `publication_disconnected_before_puback`
 
@@ -183,7 +183,7 @@ Set when a processed QoS 1 publication is disconnected before PUBACK.
 publication_disconnected_before_puback: asyncio.Event
 ```
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L154)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L154)
 
 ## `publication_disconnected_after_puback`
 
@@ -193,7 +193,7 @@ Set when a QoS 1 publisher is disconnected immediately after PUBACK.
 publication_disconnected_after_puback: asyncio.Event
 ```
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L156)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L156)
 
 ## `reset`
 
@@ -203,4 +203,4 @@ Clear every synchronization event without replacing event objects.
 def reset() -> None
 ```
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L159)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L159)

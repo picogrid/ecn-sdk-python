@@ -9,7 +9,7 @@ tableOfContents: false
 
 > Related guidance: [concepts/locations](/concepts/locations/), [how-to/observe-location](/how-to/observe-location/), [how-to/pli-entities](/how-to/pli-entities/).
 >
-> Runnable examples: [publish_location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/publish_location.py), [get_ecn_location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/get_ecn_location.py).
+> Runnable examples: [publish_location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/publish_location.py), [get_ecn_location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/get_ecn_location.py).
 
 | Symbol | Summary |
 | --- | --- |

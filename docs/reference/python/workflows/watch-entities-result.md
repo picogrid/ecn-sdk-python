@@ -11,7 +11,7 @@ tableOfContents: true
 >
 > Related guidance: [shipped-tooling](/shipped-tooling/).
 >
-> Runnable examples: [watch_detections.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/watch_detections.py), [watch_tracks.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/watch_tracks.py).
+> Runnable examples: [watch_detections.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/watch_detections.py), [watch_tracks.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/watch_tracks.py).
 
 ```python
 from picogrid_ecn_client.workflows import WatchEntitiesResult
@@ -23,7 +23,7 @@ Entity events retained by a watch.
 WatchEntitiesResult(*, events: tuple[EntityEvent, ...])
 ```
 
-[Source · workflows/observe.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/workflows/observe.py#L27)
+[Source · workflows/observe.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/workflows/observe.py#L27)
 
 ## Fields
 

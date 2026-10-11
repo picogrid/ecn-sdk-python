@@ -11,7 +11,7 @@ tableOfContents: true
 >
 > Related guidance: [concepts/locations](/concepts/locations/), [how-to/observe-location](/how-to/observe-location/), [how-to/pli-entities](/how-to/pli-entities/).
 >
-> Runnable examples: [publish_location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/publish_location.py), [get_ecn_location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/get_ecn_location.py).
+> Runnable examples: [publish_location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/publish_location.py), [get_ecn_location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/get_ecn_location.py).
 
 ```python
 from picogrid_ecn_client import Location
@@ -35,7 +35,7 @@ Location(
 )
 ```
 
-[Source · models/location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/models/location.py#L204)
+[Source · models/location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/models/location.py#L204)
 
 ## Fields
 
@@ -78,7 +78,7 @@ def to_geodetic(*, assume_zero_ellipsoidal_height: bool = False) -> GeodeticPosi
 | --- | --- |
 | ValidationError | If altitude is missing and the caller did not assume zero ellipsoidal height. |
 
-[Source · models/location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/models/location.py#L332)
+[Source · models/location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/models/location.py#L332)
 
 ## `to_ecef`
 
@@ -106,7 +106,7 @@ def to_ecef(*, assume_zero_ellipsoidal_height: bool = False) -> ECEFPosition
 | --- | --- |
 | ValidationError | If altitude is missing and the caller did not assume zero ellipsoidal height. |
 
-[Source · models/location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/models/location.py#L356)
+[Source · models/location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/models/location.py#L356)
 
 ## `to_ecef_velocity`
 
@@ -128,4 +128,4 @@ def to_ecef_velocity() -> ECEFVelocity
 | --- | --- |
 | ValidationError | If the location carries no velocity, with code `missing_velocity`. |
 
-[Source · models/location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/models/location.py#L380)
+[Source · models/location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/models/location.py#L380)

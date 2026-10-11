@@ -24,7 +24,7 @@ use the typed SDK services rather than constructing topics:
 entity/{integration}/{entity_id}/{category}
 entity_pb/{integration}/{category}
 entity_location/{integration}/{entity_id}
-entity_location_pb/{integration}/{entity_id}
+entity_location_pb/{integration}
 task/{integration}/{entity_id}/{command}
 task/{integration}/{entity_id}/{command}/response
 {target_terminal_id}/task/{integration}/{entity_id}/{command}
@@ -33,12 +33,16 @@ task/{integration}/{entity_id}/{command}/response
 
 ## Bounded topic access
 
-Builders restrict UUIDs and topic segments to a conservative safe grammar. Watchers
-derive exact or fixed-depth filters from typed arguments. The SDK exposes neither
-arbitrary topics nor a multi-level wildcard. Terminal-prefixed task topics are exact
-publication routes only. ECN infrastructure removes the terminal prefix before
-delivery, so the SDK subscribes only to the exact unprefixed request or response
-topic.
+Builders restrict UUIDs and topic segments to a conservative safe grammar.
+`response` is a reserved integration name so client task topics cannot be confused
+with the `task/response/...` namespace used for responses addressed to Legion. Watchers derive exact or
+fixed-depth filters from typed arguments. Protobuf location subscriptions use
+`entity_location_pb/+`; entity identity travels as 16 raw UUID bytes in the payload
+and is filtered after decode. The SDK exposes neither arbitrary topics nor a
+multi-level wildcard. Terminal-prefixed task topics are exact publication routes
+only. ECN infrastructure removes the terminal prefix before delivery, so the SDK
+subscribes only to the exact unprefixed request or response topic, for local and
+routed exchanges alike.
 
 See [wire formats](../reference/wire-formats.md) for payloads and
 [Compatibility and limitations](../compatibility/limitations.md) for external

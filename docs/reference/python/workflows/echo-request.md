@@ -11,7 +11,7 @@ tableOfContents: true
 >
 > Related guidance: [shipped-tooling](/shipped-tooling/).
 >
-> Runnable examples: [dispatch_mesh_task.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/dispatch_mesh_task.py), [dispatch_task.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/dispatch_task.py), [receive_mesh_task.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/receive_mesh_task.py), [receive_task.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/receive_task.py).
+> Runnable examples: [dispatch_mesh_task.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/dispatch_mesh_task.py), [dispatch_task.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/dispatch_task.py), [receive_mesh_task.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/receive_mesh_task.py), [receive_task.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/receive_task.py).
 
 ```python
 from picogrid_ecn_client.workflows import EchoRequest
@@ -23,7 +23,7 @@ Bounded request body used by the public task workflow examples.
 EchoRequest(*, message: str)
 ```
 
-[Source · workflows/tasks.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/workflows/tasks.py#L28)
+[Source · workflows/tasks.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/workflows/tasks.py#L28)
 
 ## Fields
 

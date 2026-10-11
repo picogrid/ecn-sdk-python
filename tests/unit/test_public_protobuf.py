@@ -48,9 +48,8 @@ def test_public_location_protobuf_decoder_returns_typed_event() -> None:
         recorded_at=RECORDED_AT,
     )
     event = decode_entity_location_protobuf(
-        encode_location_protobuf(location, 64 * 1024),
+        encode_location_protobuf(location, ENTITY_ID, 64 * 1024),
         integration="synthetic-vendor",
-        entity_id=ENTITY_ID,
     )
     assert event.entity_id == ENTITY_ID
     assert event.location == location
@@ -72,12 +71,3 @@ def test_public_location_protobuf_decoder_returns_typed_event() -> None:
 def test_public_protobuf_decoder_rejects_invalid_inputs(arguments: object) -> None:
     with pytest.raises(ValidationError):
         decode_entity_event_protobuf(**arguments)  # type: ignore[arg-type]
-
-
-def test_public_location_decoder_requires_uuid() -> None:
-    with pytest.raises(ValidationError, match="UUID"):
-        decode_entity_location_protobuf(
-            b"",
-            integration="synthetic",
-            entity_id="not-a-uuid",  # type: ignore[arg-type]
-        )

@@ -5,8 +5,9 @@ sidebar:
   order: 5
 ---
 
-Tasks use one exact request topic and its `/response` suffix. Registration is only
-an MQTT subscription; it does not advertise commands or mutate platform
+Tasks use one exact request topic and its `/response` suffix, for local and
+cross-terminal exchanges alike. Registration
+is only an MQTT subscription; it does not advertise commands or mutate platform
 configuration.
 
 ## Local and cross-terminal tasking
@@ -22,11 +23,16 @@ literal local or a canonical UUID source and exposes the latter through
 `TaskRequestContext.source`.
 
 Passing a `target_terminal_id` different from the configured source terminal
-dispatches one exact terminal-addressed request. The response subscription remains
-the ordinary unprefixed `/response` topic because ECN infrastructure performs the
-prefix routing. Explicit self-targeting is rejected; omit `target_terminal_id` to
-select the unprefixed same-ECN request. Route
-availability, fan-out policy, and authorization are deployment properties, not SDK
+dispatches one exact terminal-addressed request. The executor publishes its response
+as `{source_terminal_id}/task/{integration}/{entity_id}/{command}/response`. ECN
+infrastructure consumes the route prefix and delivers
+`task/{integration}/{entity_id}/{command}/response`, which the requester subscribes to
+exactly. The `task/response/{integration}/{command}` shape is reserved for responses
+addressed to Legion, and `response` is reserved as an integration name to keep client
+task topics disjoint from it. Explicit
+self-targeting is rejected; omit `target_terminal_id` to select the unprefixed
+same-ECN request. Route availability, fan-out policy, and authorization are
+deployment properties, not SDK
 discovery results.
 
 Legacy hostname-valued task sources are not part of this public identity contract.

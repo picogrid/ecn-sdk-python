@@ -11,7 +11,7 @@ tableOfContents: false
 >
 > Related guidance: [shipped-tooling](/shipped-tooling/).
 >
-> Runnable examples: [convert_location_to_ecef.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/convert_location_to_ecef.py).
+> Runnable examples: [convert_location_to_ecef.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/convert_location_to_ecef.py).
 
 ```python
 from picogrid_ecn_client.workflows import convert_location_to_ecef
@@ -35,4 +35,4 @@ def convert_location_to_ecef(location: Location) -> ConvertLocationToECEFResult
 | --- | --- |
 | ConvertLocationToECEFResult | The ECEF position and, when present on `location`, its rotated velocity. |
 
-[Source · workflows/geodesy.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/workflows/geodesy.py#L28)
+[Source · workflows/geodesy.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/workflows/geodesy.py#L28)

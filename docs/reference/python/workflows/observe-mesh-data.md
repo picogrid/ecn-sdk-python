@@ -11,7 +11,7 @@ tableOfContents: false
 >
 > Related guidance: [shipped-tooling](/shipped-tooling/).
 >
-> Runnable examples: [observe_mesh_data.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/observe_mesh_data.py).
+> Runnable examples: [observe_mesh_data.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/observe_mesh_data.py).
 
 ```python
 from picogrid_ecn_client.workflows import observe_mesh_data
@@ -51,4 +51,4 @@ async def observe_mesh_data(
 | ValidationError | If `limit` is negative, `integrations` is empty, or an integration name is empty. |
 | ECNClientError | If either stream cannot be opened or consumed. |
 
-[Source · workflows/observe.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/workflows/observe.py#L207)
+[Source · workflows/observe.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/workflows/observe.py#L207)

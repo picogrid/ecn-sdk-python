@@ -81,8 +81,8 @@ confirmation. Install the client and operator wheels from the same inspected rel
 <!-- x-release-please-start-version -->
 ```bash
 python -m pip install \
-  ./picogrid_ecn_client-0.1.0-py3-none-any.whl \
-  ./picogrid_ecn_operator_app-0.1.0-py3-none-any.whl
+  ./picogrid_ecn_client-0.2.0-py3-none-any.whl \
+  ./picogrid_ecn_operator_app-0.2.0-py3-none-any.whl
 picogrid-ecn operator --demo
 ```
 <!-- x-release-please-end -->

@@ -5,7 +5,7 @@
       "draft": true,
       "include-component-in-tag": false,
       "include-v-in-tag": true,
-      "initial-version": "0.1.0",
+      "initial-version": "0.2.0",
       "package-name": "picogrid-ecn-client",
       "release-type": "python",
       "extra-files": [

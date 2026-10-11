@@ -11,7 +11,7 @@ tableOfContents: true
 >
 > Related guidance: [getting-started/mock-setup](/getting-started/mock-setup/).
 >
-> Runnable examples: [preflight.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/preflight.py).
+> Runnable examples: [preflight.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/preflight.py).
 
 ```python
 from picogrid_ecn_client.testing import MockECN
@@ -23,7 +23,7 @@ Run a deterministic MQTT v5 test broker.
 class MockECN: ...
 ```
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L214)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L214)
 
 Use `MockECN` with `async with` to manage its asynchronous lifecycle.
 
@@ -60,7 +60,7 @@ def __init__(
 | --- | --- |
 | ValueError | If the endpoint, packet bound, token, or mock ACL label is invalid. |
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L223)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L223)
 
 ## `events`
 
@@ -70,7 +70,7 @@ Synchronization events for this mock instance.
 events: MockEvents
 ```
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L267)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L267)
 
 ## `scenario`
 
@@ -80,7 +80,7 @@ Mutable deterministic controls for this mock instance.
 scenario: MockScenario
 ```
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L265)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L265)
 
 ## `host`
 
@@ -90,7 +90,7 @@ Return the read-only validated loopback host the listener is bound to.
 host: str
 ```
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L280)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L280)
 
 ## `mqtt_port`
 
@@ -100,7 +100,7 @@ Return the bound MQTT listener port.
 mqtt_port: int
 ```
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L289)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L289)
 
 ## `is_running`
 
@@ -110,7 +110,7 @@ Return whether the MQTT listener is running.
 is_running: bool
 ```
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L294)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L294)
 
 ## `active_connection_count`
 
@@ -120,7 +120,7 @@ Return the number of currently accepted MQTT client connections.
 active_connection_count: int
 ```
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L299)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L299)
 
 ## `active_task_count`
 
@@ -130,7 +130,7 @@ Return the number of live asynchronous mock broker tasks.
 active_task_count: int
 ```
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L304)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L304)
 
 ## `entity_state`
 
@@ -140,7 +140,7 @@ Return a defensive snapshot of entities observed by the mock.
 entity_state: Mapping[str, Mapping[str, Any]]
 ```
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L309)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L309)
 
 ## `location_state`
 
@@ -150,7 +150,7 @@ Return a defensive snapshot of locations observed by the mock.
 location_state: Mapping[str, Mapping[str, Any]]
 ```
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L315)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L315)
 
 ## `start`
 
@@ -166,7 +166,7 @@ async def start() -> None
 | --- | --- |
 | OSError | If the configured port is occupied or the operating system otherwise refuses the loopback or explicitly allowed external bind. |
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L320)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L320)
 
 ## `close`
 
@@ -176,7 +176,7 @@ Close the listener and all accepted clients idempotently.
 async def close() -> None
 ```
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L335)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L335)
 
 ## `client_config`
 
@@ -212,7 +212,7 @@ def client_config(
 | RuntimeError | If the mock has not been started. |
 | ValueError | If an external listener does not allow unauthenticated clients or lacks an explicit container-network attestation. |
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L355)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L355)
 
 ## `set_delay`
 
@@ -235,7 +235,7 @@ def set_delay(seconds: float, *, operation: str = 'all') -> None
 | --- | --- |
 | ValueError | If the delay or operation is invalid. |
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L420)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L420)
 
 ## `drop_next_messages`
 
@@ -257,7 +257,7 @@ def drop_next_messages(count: int = 1) -> None
 | --- | --- |
 | ValueError | If `count` is negative. |
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L440)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L440)
 
 ## `malform_next_messages`
 
@@ -279,7 +279,7 @@ def malform_next_messages(count: int = 1) -> None
 | --- | --- |
 | ValueError | If `count` is negative. |
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L453)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L453)
 
 ## `set_authorization_failure`
 
@@ -302,7 +302,7 @@ def set_authorization_failure(operation: str, *, enabled: bool = True) -> None
 | --- | --- |
 | ValueError | If `operation` is not a supported mock label. |
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L466)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L466)
 
 ## `drop_next_connections`
 
@@ -324,7 +324,7 @@ def drop_next_connections(count: int = 1) -> None
 | --- | --- |
 | ValueError | If `count` is outside the supported fault bound. |
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L486)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L486)
 
 ## `reject_next_authentications`
 
@@ -346,7 +346,7 @@ def reject_next_authentications(count: int = 1) -> None
 | --- | --- |
 | ValueError | If `count` is outside the supported fault bound. |
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L498)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L498)
 
 ## `deny_next_acknowledgements`
 
@@ -369,7 +369,7 @@ def deny_next_acknowledgements(acknowledgement: str, count: int = 1) -> None
 | --- | --- |
 | ValueError | If the acknowledgement family or count is unsupported. |
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L510)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L510)
 
 ## `return_next_acknowledgement_reason`
 
@@ -397,7 +397,7 @@ def return_next_acknowledgement_reason(
 | --- | --- |
 | ValueError | If the family, reason code, or count is unsupported. |
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L524)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L524)
 
 ## `malform_next_protocol_responses`
 
@@ -420,7 +420,7 @@ def malform_next_protocol_responses(response: str, count: int = 1) -> None
 | --- | --- |
 | ValueError | If the response family or count is unsupported. |
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L552)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L552)
 
 ## `disconnect_next_publications`
 
@@ -443,7 +443,7 @@ def disconnect_next_publications(phase: str, count: int = 1) -> None
 | --- | --- |
 | ValueError | If the phase or count is unsupported. |
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L568)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L568)
 
 ## `disconnect_before_publish`
 
@@ -453,7 +453,7 @@ Disconnect live clients before the caller begins a publication.
 async def disconnect_before_publish() -> None
 ```
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L587)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L587)
 
 ## `reset_scenario`
 
@@ -463,7 +463,7 @@ Reset fault controls and synchronization events in place.
 def reset_scenario() -> None
 ```
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L593)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L593)
 
 ## `disconnect_clients`
 
@@ -473,4 +473,4 @@ Disconnect all live clients while leaving the listener available.
 async def disconnect_clients() -> None
 ```
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L598)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L598)

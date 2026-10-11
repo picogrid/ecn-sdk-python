@@ -11,7 +11,7 @@ tableOfContents: true
 >
 > Related guidance: [reference/exceptions](/reference/exceptions/), [how-to/troubleshooting](/how-to/troubleshooting/).
 >
-> Runnable examples: [preflight.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/preflight.py).
+> Runnable examples: [preflight.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/preflight.py).
 
 ```python
 from picogrid_ecn_client import DeliveryError
@@ -23,7 +23,7 @@ Report a definite or uncertain mutation delivery phase without implying retry sa
 class DeliveryError(ECNClientError): ...
 ```
 
-[Source · exceptions.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/exceptions.py#L90)
+[Source · exceptions.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/exceptions.py#L90)
 
 **Hierarchy:** `ECNClientError → DeliveryError`
 
@@ -66,7 +66,7 @@ def __init__(
 | --- | --- |
 | ValueError | If a supplied task identifier is empty or exceeds its bound. |
 
-[Source · exceptions.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/exceptions.py#L95)
+[Source · exceptions.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/exceptions.py#L95)
 
 ## `delivery_phase`
 
@@ -76,7 +76,7 @@ Strongest safe delivery fact established before failure.
 delivery_phase
 ```
 
-[Source · exceptions.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/exceptions.py#L127)
+[Source · exceptions.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/exceptions.py#L127)
 
 ## `task_id`
 
@@ -86,7 +86,7 @@ Generated task correlation identifier, when applicable.
 task_id
 ```
 
-[Source · exceptions.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/exceptions.py#L129)
+[Source · exceptions.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/exceptions.py#L129)
 
 ## `operation_id`
 
@@ -96,4 +96,4 @@ Generated publication operation identifier, when applicable.
 operation_id
 ```
 
-[Source · exceptions.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/exceptions.py#L131)
+[Source · exceptions.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/exceptions.py#L131)

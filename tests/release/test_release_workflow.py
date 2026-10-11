@@ -142,6 +142,183 @@ def _job_block(workflow: str, job: str) -> str:
     return rest[: nxt.start()] if nxt else rest
 
 
+def _step_block(workflow: str, step: str) -> str:
+    marker = f"      - name: {step}\n"
+    start = workflow.index(marker) + len(marker)
+    rest = workflow[start:]
+    nxt = re.search(r"\n      - name:", rest)
+    return rest[: nxt.start()] if nxt else rest
+
+
+def test_dco_workflow_runs_only_in_public_distribution_repository() -> None:
+    workflow = (REPOSITORY / ".github" / "workflows" / "dco.yml").read_text(encoding="utf-8")
+    dco_job = _job_block(workflow, "dco")
+
+    assert "    if: ${{ github.repository == 'picogrid/ecn-sdk-python' }}\n" in dco_job
+    assert "github.actor" not in workflow
+    assert "github.triggering_actor" not in workflow
+    assert "author_association" not in workflow
+    assert "organization" not in workflow
+    assert "membership" not in workflow
+
+
+def test_dco_workflow_executes_only_the_trusted_base_checker() -> None:
+    workflow = (REPOSITORY / ".github" / "workflows" / "dco.yml").read_text(encoding="utf-8")
+    checkout = _step_block(workflow, "Check out the trusted base history")
+    fetch = _step_block(workflow, "Fetch the immutable head history as data")
+    checker_execution = _step_block(workflow, "Check DCO sign-offs")
+
+    assert workflow.count("uses: actions/checkout@") == 1
+    assert "ref: ${{ env.DCO_BASE }}" in checkout
+    assert "ref: ${{ env.DCO_HEAD }}" not in checkout
+    assert "path: repository" in checkout
+    assert "fetch-depth: 0" in checkout
+    assert "persist-credentials: false" in checkout
+    assert "trusted-base" not in workflow
+    assert "working-directory: repository" in fetch
+    assert 'git fetch --no-tags origin "$DCO_HEAD"' in fetch
+    assert "working-directory: repository" in checker_execution
+    assert "python scripts/check_dco.py" in checker_execution
+    assert "make check-dco" not in checker_execution
+
+
+def test_dco_workflow_rejects_bot_pull_request_events_in_the_named_step() -> None:
+    workflow = (REPOSITORY / ".github" / "workflows" / "dco.yml").read_text(encoding="utf-8")
+    rejection_step = _step_block(workflow, "Reject bot-authored pull requests")
+
+    assert "github.event.pull_request.user.type == 'Bot'" in rejection_step
+    assert "exit 1" in rejection_step
+
+
+def test_dco_workflow_uses_only_required_workflow_compatible_triggers() -> None:
+    workflow = (REPOSITORY / ".github" / "workflows" / "dco.yml").read_text(encoding="utf-8")
+
+    assert "\n  pull_request:\n" in workflow
+    assert "\n  merge_group:\n" in workflow
+    assert "pull_request_target" not in workflow
+    assert "workflow_dispatch" not in workflow
+    assert "inputs." not in workflow
+    assert "zizmor: ignore[dangerous-triggers]" not in workflow
+
+
+def test_dco_workflow_uses_only_event_derived_commit_ranges() -> None:
+    workflow = (REPOSITORY / ".github" / "workflows" / "dco.yml").read_text(encoding="utf-8")
+
+    assert (
+        "${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.merge_group.base_sha }}"
+        in workflow
+    )
+    assert (
+        "${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.event.merge_group.head_sha }}"
+        in workflow
+    )
+    assert "github.sha" not in workflow
+    assert (
+        "${{ github.event_name == 'merge_group' && github.event.merge_group.head_sha || '' }}"
+        in workflow
+    )
+    rejection_step = _step_block(workflow, "Reject bot-authored pull requests")
+    assert "github.event_name == 'pull_request'" in rejection_step
+    assert "pull_request_target" not in rejection_step
+
+
+def test_pull_request_template_uses_repository_qualified_public_links() -> None:
+    template = (REPOSITORY / ".github" / "pull_request_template.md").read_text(encoding="utf-8")
+
+    contributing_url = "https://github.com/picogrid/ecn-sdk-python/blob/main/CONTRIBUTING.md"
+    vulnerability_url = (
+        "https://github.com/picogrid/ecn-sdk-python/blob/main/VULNERABILITY_REPORTING.md"
+    )
+    assert template.count(f"[CONTRIBUTING.md]({contributing_url})") == 2
+    assert template.count(f"[VULNERABILITY_REPORTING.md]({vulnerability_url})") == 1
+
+
+def test_public_pull_requests_are_proposals_routed_through_private_upstream(
+    tmp_path: Path,
+) -> None:
+    public_repository = tmp_path / "public"
+    public_repository.mkdir()
+    for relative in ("CONTRIBUTING.md", ".github/pull_request_template.md"):
+        source = REPOSITORY / relative
+        destination = public_repository / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(source.read_bytes())
+
+    assert not (public_repository / "DECISIONS.md").exists()
+    contributing = (public_repository / "CONTRIBUTING.md").read_text(encoding="utf-8")
+    template = (public_repository / ".github" / "pull_request_template.md").read_text(
+        encoding="utf-8"
+    )
+
+    for document in (contributing, template):
+        normalized = " ".join(document.split()).casefold()
+        assert "inbound contribution proposal" in normalized
+        assert "never merged directly" in normalized
+        assert "private engineering upstream" in normalized
+        assert "new public candidate" in normalized
+        assert "qualified public export-candidate pull requests" in normalized
+        assert "may be merged" in normalized
+        assert "does not routinely require a contributor license agreement (cla)" in normalized
+        assert "copyright assignment" in normalized
+        assert "applicable contributor or rightsholder retains ownership" in normalized
+
+    normalized_contributing = " ".join(contributing.split()).casefold()
+    assert "normal public promotion path" in normalized_contributing
+
+
+def test_accepted_proposal_evidence_is_bound_to_the_reviewed_head() -> None:
+    for relative in ("CONTRIBUTING.md", ".github/pull_request_template.md"):
+        document = (REPOSITORY / relative).read_text(encoding="utf-8")
+        normalized = " ".join(document.split()).casefold()
+        assert "accepted proposal head sha" in normalized
+        assert "dco result" in normalized
+        assert "before private reproduction" in normalized
+        assert "later head change" in normalized
+        assert "rerun" in normalized
+        assert "updated export mapping" in normalized
+
+
+def test_contributor_policy_names_counsel_and_prospective_ruleset_gates() -> None:
+    contributing = (REPOSITORY / "CONTRIBUTING.md").read_text(encoding="utf-8")
+    intake = contributing.split("### Intake status", 1)[1].split(
+        "### Developer Certificate of Origin 1.1", 1
+    )[0]
+    normalized = " ".join(intake.split()).casefold()
+
+    assert "counsel approval" in normalized
+    assert ".github/workflows/dco.yml" in normalized
+    assert "trusted public `main`" in normalized
+    assert "pull-request and merge-group head shas" in normalized
+    assert "hosted evidence" in normalized
+
+
+def test_contributor_policy_requires_both_non_bypassable_intake_checks() -> None:
+    contributing = (REPOSITORY / "CONTRIBUTING.md").read_text(encoding="utf-8")
+    intake = contributing.split("### Intake status", 1)[1].split(
+        "### Developer Certificate of Origin 1.1", 1
+    )[0]
+    normalized = " ".join(intake.split()).casefold()
+
+    assert ".github/workflows/dco.yml" in normalized
+    assert "trusted public `main`" in normalized
+    assert "pull-request and merge-group head shas" in normalized
+    assert "license-policy checker" in normalized
+    assert "loaded and executed from trusted public `main` against the proposed tree" in normalized
+    assert "pull-request heads" in normalized
+    assert "merge-group heads if merge queue is enabled" in normalized
+    assert "no general bypass" in normalized
+    assert "ruleset configuration and hosted proof are pending" in normalized
+
+
+def test_contributor_policy_calls_the_event_user_the_pull_request_author() -> None:
+    contributing = (REPOSITORY / "CONTRIBUTING.md").read_text(encoding="utf-8")
+
+    for document in (contributing,):
+        normalized = " ".join(document.split()).casefold()
+        assert "pull request author is a bot" in normalized
+        assert "event actor is a bot" not in normalized
+
+
 def test_downstream_jobs_survive_the_skipped_release_please() -> None:
     # release-please is always skipped on the public distribution repository,
     # and GitHub Actions propagates that skip transitively through the needs
@@ -172,8 +349,8 @@ def test_downstream_jobs_survive_the_skipped_release_please() -> None:
         assert "needs.resolve-release.result == 'success'" in _job_block(workflow, job), job
 
 
-def test_heavy_runner_is_limited_to_trusted_main_jobs() -> None:
-    expected = "${{ github.ref == 'refs/heads/main' && vars.HEAVY_RUNNER || 'ubuntu-latest' }}"
+def test_heavy_runner_covers_private_builds_and_trusted_public_main_jobs() -> None:
+    expected = "${{ (github.repository != 'picogrid/ecn-sdk-python' || github.ref == 'refs/heads/main') && vars.HEAVY_RUNNER || 'ubuntu-latest' }}"
 
     for name in ("documentation.yml", "release.yml", "verify.yml"):
         workflow = (REPOSITORY / ".github" / "workflows" / name).read_text(encoding="utf-8")
@@ -183,8 +360,14 @@ def test_heavy_runner_is_limited_to_trusted_main_jobs() -> None:
     release_workflow = (REPOSITORY / ".github" / "workflows" / "release.yml").read_text(
         encoding="utf-8"
     )
-    worker_count = "${{ github.ref == 'refs/heads/main' && vars.HEAVY_RUNNER && '4' || '1' }}"
+    worker_count = "${{ (github.repository != 'picogrid/ecn-sdk-python' || github.ref == 'refs/heads/main') && vars.HEAVY_RUNNER && '4' || '1' }}"
     assert f"PLAYWRIGHT_WORKERS: {worker_count}" in release_workflow
+    assert f"VERIFY_RELEASE_JOBS: {worker_count}" in release_workflow
+
+    verify_workflow = (REPOSITORY / ".github" / "workflows" / "verify.yml").read_text(
+        encoding="utf-8"
+    )
+    assert f"VERIFY_RELEASE_JOBS: {worker_count}" in verify_workflow
 
     # RELEASING.md is the internal release custody runbook and is excluded from
     # the public export, so only assert its contents when the file is present.

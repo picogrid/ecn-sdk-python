@@ -11,7 +11,7 @@ tableOfContents: true
 >
 > Related guidance: [concepts/tasks](/concepts/tasks/), [how-to/receive-local-tasks](/how-to/receive-local-tasks/), [how-to/dispatch-local-tasks](/how-to/dispatch-local-tasks/), [quickstarts/effector-handler](/quickstarts/effector-handler/).
 >
-> Runnable examples: [receive_task.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/receive_task.py), [dispatch_task.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/dispatch_task.py), [receive_mesh_task.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/receive_mesh_task.py), [dispatch_mesh_task.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/dispatch_mesh_task.py).
+> Runnable examples: [receive_task.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/receive_task.py), [dispatch_task.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/dispatch_task.py), [receive_mesh_task.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/receive_mesh_task.py), [dispatch_mesh_task.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/dispatch_mesh_task.py).
 
 ```python
 from picogrid_ecn_client import TaskStatus
@@ -23,7 +23,7 @@ Describe a task result's reported state.
 class TaskStatus(Enum): ...
 ```
 
-[Source · models/common.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/models/common.py#L196)
+[Source · models/common.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/models/common.py#L214)
 
 ## Members
 

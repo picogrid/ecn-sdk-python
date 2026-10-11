@@ -11,7 +11,7 @@ tableOfContents: false
 >
 > Related guidance: [reference/exceptions](/reference/exceptions/), [how-to/troubleshooting](/how-to/troubleshooting/).
 >
-> Runnable examples: [preflight.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/preflight.py).
+> Runnable examples: [preflight.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/preflight.py).
 
 ```python
 from picogrid_ecn_client import ProtocolError
@@ -23,6 +23,6 @@ Raised when received MQTT payloads violate the public protocol.
 class ProtocolError(ECNClientError): ...
 ```
 
-[Source · exceptions.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/exceptions.py#L212)
+[Source · exceptions.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/exceptions.py#L212)
 
 **Hierarchy:** `ECNClientError → ProtocolError`

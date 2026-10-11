@@ -11,7 +11,7 @@ tableOfContents: true
 >
 > Related guidance: [concepts/locations](/concepts/locations/), [how-to/observe-location](/how-to/observe-location/), [how-to/pli-entities](/how-to/pli-entities/).
 >
-> Runnable examples: [publish_location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/publish_location.py), [get_ecn_location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/get_ecn_location.py).
+> Runnable examples: [publish_location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/publish_location.py), [get_ecn_location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/get_ecn_location.py).
 
 ```python
 from picogrid_ecn_client import Locations
@@ -23,7 +23,7 @@ Observe and publish typed locations through supported MQTT v5 families.
 class Locations: ...
 ```
 
-[Source · interfaces/locations.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/interfaces/locations.py#L72)
+[Source · interfaces/locations.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/interfaces/locations.py#L72)
 
 ## `watch`
 
@@ -64,7 +64,7 @@ async def watch(
 | ResourceLimitError | If the requested queue exceeds the configured limit. |
 | ValidationError | If an argument cannot form a supported watcher. |
 
-[Source · interfaces/locations.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/interfaces/locations.py#L78)
+[Source · interfaces/locations.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/interfaces/locations.py#L78)
 
 ## `last_observed`
 
@@ -93,7 +93,7 @@ def last_observed(entity_id: UUID, *, integration: str | None = None) -> Locatio
 | --- | --- |
 | NotReadyError | If the client has not reached readiness. |
 
-[Source · interfaces/locations.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/interfaces/locations.py#L124)
+[Source · interfaces/locations.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/interfaces/locations.py#L124)
 
 ## `wait_for_update`
 
@@ -133,7 +133,7 @@ async def wait_for_update(
 | TimeoutError | If no matching future update arrives before the deadline. |
 | ValidationError | If `timeout` is not finite and positive. |
 
-[Source · interfaces/locations.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/interfaces/locations.py#L154)
+[Source · interfaces/locations.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/interfaces/locations.py#L154)
 
 ## `wait_for_terminal_geolocation`
 
@@ -166,7 +166,7 @@ async def wait_for_terminal_geolocation(*, timeout: float | None = None) -> Loca
 | TimeoutError | If no matching future update arrives before the deadline. |
 | ValidationError | If `timeout` is not finite and positive. |
 
-[Source · interfaces/locations.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/interfaces/locations.py#L198)
+[Source · interfaces/locations.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/interfaces/locations.py#L198)
 
 ## `publish`
 
@@ -200,4 +200,4 @@ async def publish(*, entity_id: UUID, location: Location) -> PublicationReceipt
 | ResourceLimitError | If the encoded payload exceeds the byte limit. |
 | ValidationError | If the location cannot be encoded for publication. |
 
-[Source · interfaces/locations.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/interfaces/locations.py#L237)
+[Source · interfaces/locations.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/interfaces/locations.py#L238)

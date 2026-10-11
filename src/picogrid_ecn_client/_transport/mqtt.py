@@ -2544,7 +2544,8 @@ class MQTTTransport:
             cleanup_task.result()
         except asyncio.CancelledError:
             current_task = asyncio.current_task()
-            if current_task is not None and current_task.cancelling() and not self._closing:
+            caller_cancelled = current_task is not None and current_task.cancelling() > 0
+            if caller_cancelled and not self._closing:
                 with contextlib.suppress(
                     asyncio.CancelledError,
                     ECNClientError,
@@ -2553,6 +2554,11 @@ class MQTTTransport:
                 ):
                     await asyncio.shield(cleanup_waiter)
                     cleanup_task.result()
+            if not caller_cancelled and self._closing and cleanup_task.cancelled():
+                # Transport close cancelled this cleanup. Close retires every local
+                # subscription and the session does not persist past disconnect, so
+                # the removal is complete and the caller was never cancelled.
+                return
             raise
 
     @staticmethod

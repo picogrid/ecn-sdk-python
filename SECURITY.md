@@ -10,8 +10,7 @@ Coordinate validation and disclosure privately with the maintainers.
 ## Supported versions
 
 Supported-version, compatibility, and deprecation policies are defined in
-[VERSIONING.md](VERSIONING.md). No public package or supported version has been published yet;
-these policies apply beginning with the first published release.
+[VERSIONING.md](VERSIONING.md).
 
 ## Responsible disclosure
 
@@ -135,8 +134,7 @@ Each published release must use separate two-build reproducibility checks and fi
 both wheels, prove that the operator wheel's embedded frontend is byte-equal to the separately
 inspected locked build, bind separate runtime and frontend SBOMs to the operator wheel, and include
 three-artifact checksums and provenance.
-No package has been published yet; when one is, verify
-downloaded artifacts before installation by following
+Verify downloaded artifacts before installation by following
 [VERIFYING_ARTIFACTS.md](VERIFYING_ARTIFACTS.md).
 
 The distribution is licensed under MPL-2.0 and is provided without warranty as stated in sections

@@ -11,7 +11,7 @@ tableOfContents: true
 >
 > Related guidance: [getting-started/preflight](/getting-started/preflight/), [how-to/troubleshooting](/how-to/troubleshooting/).
 >
-> Runnable examples: [preflight.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/preflight.py).
+> Runnable examples: [preflight.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/preflight.py).
 
 ```python
 from picogrid_ecn_client import DeliveryPhase
@@ -23,7 +23,7 @@ Record the strongest safe delivery fact established for one mutation.
 class DeliveryPhase(Enum): ...
 ```
 
-[Source · models/common.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/models/common.py#L103)
+[Source · models/common.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/models/common.py#L116)
 
 ## Members
 

@@ -69,9 +69,9 @@ With an authenticated GitHub CLI whose account may read this repository, verify 
 distribution against it:
 
 ```console
-gh attestation verify picogrid_ecn_client-0.1.0-py3-none-any.whl --repo picogrid/ecn-sdk-python # x-release-please-version
-gh attestation verify picogrid_ecn_operator_app-0.1.0-py3-none-any.whl --repo picogrid/ecn-sdk-python # x-release-please-version
-gh attestation verify picogrid_ecn_client-0.1.0.tar.gz --repo picogrid/ecn-sdk-python # x-release-please-version
+gh attestation verify picogrid_ecn_client-0.2.0-py3-none-any.whl --repo picogrid/ecn-sdk-python # x-release-please-version
+gh attestation verify picogrid_ecn_operator_app-0.2.0-py3-none-any.whl --repo picogrid/ecn-sdk-python # x-release-please-version
+gh attestation verify picogrid_ecn_client-0.2.0.tar.gz --repo picogrid/ecn-sdk-python # x-release-please-version
 ```
 
 The attestation subject digest must equal the checksum already verified. The local
@@ -105,8 +105,8 @@ embedded frontend report.
 After every check passes, install the exact wheel with normal dependency resolution:
 
 ```console
-python -m pip install ./picogrid_ecn_client-0.1.0-py3-none-any.whl # x-release-please-version
-python -m pip install ./picogrid_ecn_operator_app-0.1.0-py3-none-any.whl # x-release-please-version
+python -m pip install ./picogrid_ecn_client-0.2.0-py3-none-any.whl # x-release-please-version
+python -m pip install ./picogrid_ecn_operator_app-0.2.0-py3-none-any.whl # x-release-please-version
 picogrid-ecn operator --demo
 ```
 

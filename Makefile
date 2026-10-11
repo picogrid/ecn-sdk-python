@@ -1,9 +1,8 @@
 UV ?= uv
+PYTHON ?= python3
 SOURCE_DATE_EPOCH ?= 1735689600
-PUBLIC_EXPORT_DIR ?= build/public-export
-PUBLIC_EXPORT_RECORD ?= build/public-export-record.json
 
-.PHONY: check-deps check-license sync-deps generate-reference check-reference verify-types verify-release version-sync check-public-export public-export dry-run-cutover docs-install docs-check docs-smoke-local wheelhouse
+.PHONY: check-deps check-dco check-license sync-deps generate-reference check-reference verify-types verify-release version-sync docs-install docs-check docs-smoke-local wheelhouse
 
 docs-install:
 	npm --prefix docs ci
@@ -19,6 +18,14 @@ sync-deps:
 
 check-deps:
 	$(UV) run --python 3.11 --no-project --with packaging==26.3 python scripts/sync_dep_locks.py --check
+
+check-dco:
+	@test -n "$$DCO_BASE" || { echo "check-dco: DCO_BASE is required" >&2; exit 2; }
+	@test -n "$$DCO_HEAD" || { echo "check-dco: DCO_HEAD is required" >&2; exit 2; }
+	@set --; \
+	if test -n "$$DCO_EXCLUDE_HEAD"; then set -- --exclude-head "$$DCO_EXCLUDE_HEAD"; fi; \
+	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) -m scripts.check_dco \
+		--base "$$DCO_BASE" --head "$$DCO_HEAD" "$$@"
 
 # The gate is standard-library only, so it must not depend on resolving the
 # project environment: a license violation has to be reportable even then.
@@ -42,14 +49,7 @@ verify-release: check-deps check-license
 version-sync:
 	PYTHONDONTWRITEBYTECODE=1 $(UV) run --frozen python -m scripts.version_sync
 
-check-public-export:
-	PYTHONDONTWRITEBYTECODE=1 $(UV) run --python 3.11 --no-project --with packaging==26.3 python -m scripts.public_export --verify
-
-public-export:
-	PYTHONDONTWRITEBYTECODE=1 $(UV) run --python 3.11 --no-project --with packaging==26.3 python -m scripts.public_export --out "$(PUBLIC_EXPORT_DIR)" --record "$(PUBLIC_EXPORT_RECORD)" --clean
-
-dry-run-cutover:
-	PYTHONDONTWRITEBYTECODE=1 $(UV) run --python 3.11 --no-project --with packaging==26.3 python -m scripts.public_export --dry-run-cutover
+-include scripts/public-export.mk
 
 wheelhouse:
 	PYTHONDONTWRITEBYTECODE=1 $(UV) run --python 3.11 --no-project --with pip python -m scripts.build_wheelhouse

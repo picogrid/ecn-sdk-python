@@ -11,7 +11,7 @@ tableOfContents: true
 >
 > Related guidance: [reference/exceptions](/reference/exceptions/), [how-to/troubleshooting](/how-to/troubleshooting/).
 >
-> Runnable examples: [preflight.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/preflight.py).
+> Runnable examples: [preflight.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/preflight.py).
 
 ```python
 from picogrid_ecn_client import ClockToleranceError
@@ -23,7 +23,7 @@ A valid measurement exceeded a caller-selected absolute offset.
 class ClockToleranceError(ClockError): ...
 ```
 
-[Source · exceptions.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/exceptions.py#L254)
+[Source · exceptions.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/exceptions.py#L254)
 
 **Hierarchy:** `ECNClientError → ClockError → ClockToleranceError`
 
@@ -41,7 +41,7 @@ def __init__(report: ClockReport) -> None
 | --- | --- | --- | --- |
 | report | ClockReport | — | Completed measurement whose absolute offset plus local capture uncertainty exceeded `max_offset_seconds`. |
 
-[Source · exceptions.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/exceptions.py#L259)
+[Source · exceptions.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/exceptions.py#L259)
 
 ## `report`
 
@@ -51,4 +51,4 @@ Measurement that failed the tolerance check.
 report
 ```
 
-[Source · exceptions.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/exceptions.py#L267)
+[Source · exceptions.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/exceptions.py#L267)

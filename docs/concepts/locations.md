@@ -48,10 +48,14 @@ longitude alone. `GeodeticPosition.to_ned_velocity` rotates an `ECEFVelocity` ba
 north/east/down at that position, making the velocity rotation available in both
 directions.
 
-The ECN carries geodetic coordinates only. These conversions are local to the client,
-they leave the `Location` unchanged, and no ECEF value is published or decoded. Axis
-order, tolerances, the supported domain, and the polar and antimeridian conventions are
-in the [coordinate reference matrix](../reference/coordinate-reference.md).
+The public model always exposes geodetic coordinates. Canonical protobuf input can
+instead mark a point as EPSG:4978 and carry ECEF x/y/z metres in the
+`latitude`/`longitude`/`altitude` wire fields; the decoder converts that point to WGS-84
+latitude, longitude, and ellipsoidal height before constructing `Location`. Public
+publication remains geodetic. Explicit conversions are local to the client, return new
+objects, and leave the `Location` unchanged. Axis order, tolerances, the supported
+domain, and the polar and antimeridian conventions are in the
+[coordinate reference matrix](../reference/coordinate-reference.md).
 
 ## Position uncertainty
 

@@ -285,6 +285,19 @@ def test_profile_names_and_identity_fields_are_validated(tmp_path: Path) -> None
     assert load_profile("canonical", environment)["terminal_id"] == terminal_id.lower()
 
 
+@pytest.mark.parametrize("integration_name", ["response", "RESPONSE"])
+def test_profile_rejects_reserved_response_integration(
+    tmp_path: Path,
+    integration_name: str,
+) -> None:
+    with pytest.raises(ConfigurationError, match="integration name is invalid"):
+        save_profile(
+            "reserved",
+            _profile() | {"integration_name": integration_name},
+            _environment(tmp_path),
+        )
+
+
 @pytest.mark.parametrize(
     "host",
     [".", "..", "...", ".bad", "bad..example", "bad..", f"{'x' * 64}.example"],

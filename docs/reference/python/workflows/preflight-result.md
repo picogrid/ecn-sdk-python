@@ -11,7 +11,7 @@ tableOfContents: true
 >
 > Related guidance: [shipped-tooling](/shipped-tooling/).
 >
-> Runnable examples: [preflight.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/preflight.py).
+> Runnable examples: [preflight.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/preflight.py).
 
 ```python
 from picogrid_ecn_client.workflows import PreflightResult
@@ -23,7 +23,7 @@ Structured result of the public connectivity preflight.
 PreflightResult(*, report: PreflightReport)
 ```
 
-[Source · workflows/diagnostics.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/workflows/diagnostics.py#L15)
+[Source · workflows/diagnostics.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/workflows/diagnostics.py#L15)
 
 ## Fields
 

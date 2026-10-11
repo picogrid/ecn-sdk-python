@@ -11,7 +11,7 @@ tableOfContents: true
 >
 > Related guidance: [shipped-tooling](/shipped-tooling/).
 >
-> Runnable examples: [publish_location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/publish_location.py).
+> Runnable examples: [publish_location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/publish_location.py).
 
 ```python
 from picogrid_ecn_client.workflows import PublishLocationResult
@@ -23,7 +23,7 @@ Published location and its broker acknowledgement.
 PublishLocationResult(*, entity_id: UUID, location: Location, receipt: PublicationReceipt)
 ```
 
-[Source · workflows/publish.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/workflows/publish.py#L39)
+[Source · workflows/publish.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/workflows/publish.py#L39)
 
 ## Fields
 

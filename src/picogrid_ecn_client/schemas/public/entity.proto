@@ -15,5 +15,6 @@ message EntityEventMessage {
 }
 
 message EntityLocationMessage {
+  bytes entity_id = 1;
   LocationMessage location = 2;
 }

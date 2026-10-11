@@ -11,7 +11,7 @@ tableOfContents: true
 >
 > Related guidance: [shipped-tooling](/shipped-tooling/).
 >
-> Runnable examples: [decode_public_protobuf.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/decode_public_protobuf.py).
+> Runnable examples: [decode_public_protobuf.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/decode_public_protobuf.py).
 
 ```python
 from picogrid_ecn_client.workflows import DecodePublicProtobufResult
@@ -23,7 +23,7 @@ Validated entity event decoded from public protobuf bytes.
 DecodePublicProtobufResult(*, event: EntityEvent)
 ```
 
-[Source · workflows/protobuf.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/workflows/protobuf.py#L18)
+[Source · workflows/protobuf.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/workflows/protobuf.py#L18)
 
 ## Fields
 

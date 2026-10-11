@@ -9,7 +9,7 @@ tableOfContents: false
 
 > Related guidance: [shipped-tooling](/shipped-tooling/).
 >
-> Runnable examples: [preflight.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/preflight.py), [publish_entity.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/publish_entity.py), [watch_tracks.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/watch_tracks.py), [dispatch_task.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/dispatch_task.py).
+> Runnable examples: [preflight.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/preflight.py), [publish_entity.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/publish_entity.py), [watch_tracks.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/watch_tracks.py), [dispatch_task.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/dispatch_task.py).
 
 | Symbol | Summary |
 | --- | --- |

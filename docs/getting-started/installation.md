@@ -16,7 +16,7 @@ The recommended stable installation path uses the public PyPI release:
 ```bash
 python3.14 -m venv .venv-ecn-sdk       # or python3.11 / python3.12 / python3.13
 . .venv-ecn-sdk/bin/activate
-python -m pip install picogrid-ecn-client==0.1.0  # x-release-please-version
+python -m pip install picogrid-ecn-client==0.2.0  # x-release-please-version
 python -c "import picogrid_ecn_client; print(picogrid_ecn_client.__version__)"
 ```
 
@@ -29,7 +29,7 @@ If you have a distributed wheel file in the current directory, verify its SHA-25
 ```bash
 python3.14 -m venv .venv-ecn-sdk       # or python3.11 / python3.12 / python3.13
 . .venv-ecn-sdk/bin/activate
-python -m pip install ./picogrid_ecn_client-0.1.0-py3-none-any.whl  # x-release-please-version
+python -m pip install ./picogrid_ecn_client-0.2.0-py3-none-any.whl  # x-release-please-version
 python -c "import picogrid_ecn_client; print(picogrid_ecn_client.__version__)"
 ```
 
@@ -84,7 +84,7 @@ Install the resulting pair together:
 
 <!-- x-release-please-start-version -->
 ```bash
-python -m pip install ./picogrid_ecn_client-0.1.0-py3-none-any.whl ./picogrid_ecn_operator_app-0.1.0-py3-none-any.whl # x-release-please-version
+python -m pip install ./picogrid_ecn_client-0.2.0-py3-none-any.whl ./picogrid_ecn_operator_app-0.2.0-py3-none-any.whl # x-release-please-version
 picogrid-ecn operator --demo
 ```
 <!-- x-release-please-end -->
@@ -120,7 +120,7 @@ python -c "import importlib.metadata; print(importlib.metadata.version('picogrid
 Upgrade the package to a specific version while preserving the virtual environment:
 
 ```bash
-python -m pip install --upgrade picogrid-ecn-client==0.1.0  # x-release-please-version
+python -m pip install --upgrade picogrid-ecn-client==0.2.0  # x-release-please-version
 ```
 
 ### Uninstall the SDK

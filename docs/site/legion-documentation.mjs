@@ -25,13 +25,19 @@
  */
 
 const approvedOrigin = 'https://docs.picogrid.com';
-const defaultPath = '/reference/start';
+// Spelled out in full: the release export scan admits the legion path only
+// directly behind this host, never as a bare path literal.
+const defaultTarget = 'https://docs.picogrid.com/legion/';
 const label = 'Legion API';
 const segmentPattern = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 // Reference material lives under one of these roots. An allowlist rather than a
 // list of authentication routes to refuse: a blacklist admits every endpoint
 // nobody thought of, and the decision requires this to fail closed.
-const documentationRoots = new Set(['docs', 'guides', 'reference']);
+//
+// `legion` is the current mount, built from the legion-docs repo. `reference` is
+// retained because the ReadMe site it names is still served on this host, so a
+// build can still be pointed back at it while that remains true.
+const documentationRoots = new Set(['legion', 'docs', 'guides', 'reference']);
 const versionPattern = /^[A-Za-z0-9][A-Za-z0-9. _-]{0,31}$/;
 // A dot segment, single or double, literal or percent-encoded. `URL` normalizes
 // these away, so the raw target has to be refused before it is parsed or the
@@ -102,7 +108,7 @@ export function resolveLegionDocumentation({ environment = process.env } = {}) {
   }
 
   return {
-    href: approvedTarget(injectedTarget || `${approvedOrigin}${defaultPath}`),
+    href: approvedTarget(injectedTarget || defaultTarget),
     label,
     origin: approvedOrigin,
     // What a reader sees on hover, so a versioned build says which Legion

@@ -76,12 +76,34 @@ async def test_minimal_mock_does_not_invent_terminal_route_and_cleans_up(
                 )
             assert caught.value.delivery_phase is DeliveryPhase.RESPONSE_PENDING
             assert caught.value.task_id is not None
+
+            # The mock intentionally does not implement Legion's terminal-prefix
+            # routing. An unprefixed request still exercises the receiver's routed
+            # response because its envelope carries the source terminal identity.
+            with pytest.raises(OutcomeUnknownError) as executed:
+                await sender.tasks.send(
+                    target_entity_id=TARGET_ENTITY_ID,
+                    target_integration="mesh-receiver",
+                    command="echo",
+                    request=Echo(message="execute on receiver"),
+                    result_model=Echo,
+                    timeout=0.05,
+                )
+            assert executed.value.delivery_phase is DeliveryPhase.RESPONSE_PENDING
             await receiver.tasks.unregister(registration)
 
-        assert contexts == []
-        assert len(publications) == 1
-        topic, payload = publications[0]
-        assert topic == f"{TARGET_TERMINAL_ID}/task/mesh-receiver/{TARGET_ENTITY_ID}/echo"
-        assert json.loads(payload)["task_id"] == caught.value.task_id
+        assert len(contexts) == 1
+        routed_request_topic = f"{TARGET_TERMINAL_ID}/task/mesh-receiver/{TARGET_ENTITY_ID}/echo"
+        routed_request_payload = next(
+            payload for topic, payload in publications if topic == routed_request_topic
+        )
+        assert json.loads(routed_request_payload)["task_id"] == caught.value.task_id
+
+        routed_response_topic = (
+            f"{SOURCE_TERMINAL_ID}/task/mesh-receiver/{TARGET_ENTITY_ID}/echo/response"
+        )
+        published_topics = {topic for topic, _payload in publications}
+        assert routed_response_topic in published_topics
+        assert not any("/task/response/" in topic for topic in published_topics)
         assert mock.active_connection_count == 0
         assert mock.active_task_count == 0

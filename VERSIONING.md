@@ -14,8 +14,8 @@ distribution requires a separately approved project and trusted-publisher bindin
 The Python distribution uses Semantic Versioning. The package version in project
 metadata and the public `__version__` value agree.
 
-No public package or supported version has been released yet.
-`0.1.0` identifies the current release candidate only. <!-- x-release-please-version -->
+The first public release was `0.1.0`. The current `0.x` alpha release is
+`0.2.0`. <!-- x-release-please-version -->
 
 ## What counts as compatibility
 

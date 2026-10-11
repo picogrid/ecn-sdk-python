@@ -51,6 +51,7 @@ from scripts.release_checks import (
     inspect_wheel,
     load_documentation_base_path,
     load_policy,
+    scan_publication_content,
     scan_secret_and_address_content,
     sha256_file,
     validate_public_brand_assets,
@@ -95,6 +96,19 @@ _UNCONDITIONAL_RISK_MARKERS = (
     "validation-capture",
     "validation_capture",
 )
+_ASSISTANT_ARTIFACT_NAMES = frozenset(
+    {
+        ".claude",
+        ".codex",
+        ".cursor",
+        "agents.md",
+        "claude.md",
+        "codex.md",
+        "copilot-instructions.md",
+        "gemini.md",
+    }
+)
+_EXPECTED_INTERNAL_ASSISTANT_ARTIFACT_PATHS = frozenset({Path("AGENTS.md")})
 _ARCHIVE_SUFFIXES = (".7z", ".rar", ".tar", ".tar.gz", ".tgz", ".zip")
 _GENERATED_REPORT_FILES = frozenset(
     {
@@ -353,6 +367,10 @@ def _ignored_path_categories(
     categories: set[str] = set()
     if any(marker in lowered for marker in _UNCONDITIONAL_RISK_MARKERS):
         categories.add("validation-or-internal-capture-name")
+    if path not in _EXPECTED_INTERNAL_ASSISTANT_ARTIFACT_PATHS and any(
+        part.casefold() in _ASSISTANT_ARTIFACT_NAMES for part in path.parts
+    ):
+        categories.add("assistant-artifact-name")
     if _is_stale_project_output(path):
         categories.add("stale-project-output")
     if lowered.endswith(_ARCHIVE_SUFFIXES) and not _is_expected_ignored_path(path):
@@ -429,7 +447,7 @@ def _scan_ignored_generated_content(
         if any(marker in data.lower() for marker in _RETIRED_GENERATED_CONTENT_MARKERS):
             raise VerificationError("ignored generated output failed retired protocol marker scan")
         try:
-            scan_secret_and_address_content(
+            scan_publication_content(
                 relative.as_posix(),
                 data,
                 policy,
@@ -1110,7 +1128,7 @@ def _inspect_static_site(
             else frozenset()
         )
         try:
-            scan_secret_and_address_content(
+            scan_publication_content(
                 f"site-dist/{relative}",
                 data,
                 policy,
@@ -1134,7 +1152,7 @@ def _inspect_static_site(
     mount = f"{documentation_base_path}/"
     _require_root_redirect_targets(root_redirect, mount)
     try:
-        validate_public_brand_assets(brand_contents, policy)
+        validate_public_brand_assets(brand_contents, policy, surface="documentation")
     except ArtifactPolicyError as exc:
         raise VerificationError(str(exc)) from None
     return {
@@ -1206,7 +1224,7 @@ def _inspect_generated_web_tree(
         if relative.startswith("brand/"):
             brand_contents[relative] = data
         try:
-            scan_secret_and_address_content(
+            scan_publication_content(
                 f"{label}/{relative}",
                 data,
                 policy,
@@ -1225,7 +1243,7 @@ def _inspect_generated_web_tree(
     if not files:
         raise VerificationError(f"{label} output is empty")
     try:
-        validate_public_brand_assets(brand_contents, policy)
+        validate_public_brand_assets(brand_contents, policy, surface="operator")
     except ArtifactPolicyError as exc:
         raise VerificationError(f"{label} {exc}") from None
     return {
@@ -3158,10 +3176,11 @@ def _inspect_operator_screenshot(
     if not data.startswith(b"\x89PNG\r\n\x1a\n"):
         raise VerificationError("operator publication screenshot is not a PNG")
     try:
-        scan_secret_and_address_content(path.as_posix(), data, policy)
+        scan_publication_content(path.as_posix(), data, policy)
     except ArtifactPolicyError as exc:
-        raise VerificationError("operator publication screenshot failed secret scan") from exc
-
+        raise VerificationError(
+            "operator publication screenshot failed publication content scan"
+        ) from exc
     cursor = 8
     chunk_types: list[str] = []
     width = height = 0
@@ -3753,6 +3772,13 @@ def _git_value(arguments: Sequence[str], environment: Mapping[str, str]) -> str:
     ).strip()
 
 
+def _require_clean_release_worktree(status: str) -> None:
+    """Refuse to verify artifacts that cannot be attributed to one commit."""
+
+    if status:
+        raise VerificationError("release verification requires a clean Git worktree")
+
+
 def _release_tag(environment: Mapping[str, str], project_version: str) -> str:
     """Name the tag this candidate publishes as, or nothing.
 
@@ -3886,7 +3912,7 @@ def _write_final_reports(
                 "artifact-allowlist-denylist-content-secret-inspection",
                 "exact-final-dist-client-wheel-operator-wheel-and-sdist-inventory",
                 "generated-report-allowlist-secret-address-and-path-inspection",
-                "released-docs-links-snippets-commands-parity-and-example-coverage",
+                "released-docs-links-snippets-commands-and-example-coverage",
                 "clean-two-build-static-site-check-and-promotion",
                 "documented-dependency-resolving-wheel-install-command",
                 "runtime-vulnerability-audit",
@@ -3908,8 +3934,6 @@ def _write_final_reports(
                 key: probe[key]
                 for key in (
                     "import_origin",
-                    "private_sdk_available",
-                    "private_sdk_imported",
                     "project_name",
                     "project_version",
                     "python",
@@ -3923,8 +3947,6 @@ def _write_final_reports(
                 key: python_312_probe[key]
                 for key in (
                     "import_origin",
-                    "private_sdk_available",
-                    "private_sdk_imported",
                     "project_name",
                     "project_version",
                     "python",
@@ -3935,8 +3957,6 @@ def _write_final_reports(
                 key: python_313_probe[key]
                 for key in (
                     "import_origin",
-                    "private_sdk_available",
-                    "private_sdk_imported",
                     "project_name",
                     "project_version",
                     "python",
@@ -3947,8 +3967,6 @@ def _write_final_reports(
                 key: python_314_probe[key]
                 for key in (
                     "import_origin",
-                    "private_sdk_available",
-                    "private_sdk_imported",
                     "project_name",
                     "project_version",
                     "python",
@@ -3972,7 +3990,7 @@ def _inspect_generated_report_entries(entries: Sequence[Path], policy: dict[str,
         if any(marker in data.lower() for marker in _RETIRED_GENERATED_CONTENT_MARKERS):
             raise VerificationError("generated release report failed retired protocol marker scan")
         try:
-            scan_secret_and_address_content(
+            scan_publication_content(
                 f"reports/generated/{path.name}",
                 data,
                 policy,
@@ -4109,7 +4127,11 @@ def verify_release(source_date_epoch: int) -> None:
     uv_lock_digest = sha256_file(REPOSITORY / "uv.lock")
     git_commit = _git_value(("rev-parse", "HEAD"), environment)
     git_tag = _release_tag(environment, str(policy["project_version"]))
-    git_worktree_dirty = bool(_git_value(("status", "--porcelain"), environment))
+    git_worktree_status = _git_value(
+        ("status", "--porcelain", "--untracked-files=all"), environment
+    )
+    _require_clean_release_worktree(git_worktree_status)
+    git_worktree_dirty = False
     _require_verification_inputs_unchanged(verified_inputs_digest, environment)
     python_312_interpreter = _find_python_minor("3.12", uv, environment)
     python_313_interpreter = _find_python_minor("3.13", uv, environment)

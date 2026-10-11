@@ -39,9 +39,8 @@ jobs:
         with:
           results_file: results.sarif
           results_format: sarif
-          # Publish only from the public distribution repository, and only once
-          # the cutover step that authorizes publication sets the opt-in
-          # variable there. The byte-identical private copy never publishes.
+          # Publish only from the canonical public repository after the explicit
+          # publication opt-in is enabled.
           publish_results: >-
             ${{ github.repository == 'picogrid/ecn-sdk-python'
             && vars.SCORECARD_PUBLISH_ENABLED == 'true' }}

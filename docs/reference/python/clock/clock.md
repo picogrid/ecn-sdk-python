@@ -11,7 +11,7 @@ tableOfContents: true
 >
 > Related guidance: [how-to/check-clock](/how-to/check-clock/), [how-to/troubleshooting](/how-to/troubleshooting/).
 >
-> Runnable examples: [check_clock.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/check_clock.py).
+> Runnable examples: [check_clock.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/check_clock.py).
 
 ```python
 from picogrid_ecn_client import Clock
@@ -23,7 +23,7 @@ Measure the configured ECN's time relative to the local process clock.
 class Clock: ...
 ```
 
-[Source · interfaces/clock.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/interfaces/clock.py#L30)
+[Source · interfaces/clock.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/interfaces/clock.py#L30)
 
 ## `measure`
 
@@ -57,7 +57,7 @@ async def measure(*, samples: int = 3, timeout: float | None = None) -> ClockRep
 | ClockProtocolError | If no usable NTP response is obtained. |
 | ValidationError | If `samples` or `timeout` is out of range. |
 
-[Source · interfaces/clock.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/interfaces/clock.py#L36)
+[Source · interfaces/clock.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/interfaces/clock.py#L36)
 
 ## `require_within`
 
@@ -98,4 +98,4 @@ async def require_within(
 | ClockProtocolError | If no usable NTP response is obtained. |
 | ValidationError | If an argument is out of range. |
 
-[Source · interfaces/clock.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/interfaces/clock.py#L66)
+[Source · interfaces/clock.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/interfaces/clock.py#L66)

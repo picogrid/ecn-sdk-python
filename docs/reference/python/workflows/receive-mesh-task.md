@@ -11,7 +11,7 @@ tableOfContents: false
 >
 > Related guidance: [shipped-tooling](/shipped-tooling/).
 >
-> Runnable examples: [receive_mesh_task.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/receive_mesh_task.py).
+> Runnable examples: [receive_mesh_task.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/receive_mesh_task.py).
 
 ```python
 from picogrid_ecn_client.workflows import receive_mesh_task
@@ -57,4 +57,4 @@ async def receive_mesh_task(
 | ValidationError | If `terminal_id` mismatches, `task_limit` is negative, a request arrives from a source other than a canonical source terminal, or a request arrives after the configured limit has been accepted. |
 | ECNClientError | If registration, request handling, or cleanup fails. |
 
-[Source · workflows/tasks.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/workflows/tasks.py#L237)
+[Source · workflows/tasks.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/workflows/tasks.py#L237)
