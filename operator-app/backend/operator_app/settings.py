@@ -206,7 +206,7 @@ def _uuid_allowlist(environment: Mapping[str, str], name: str) -> frozenset[UUID
 
 
 def _integration(value: str, *, variable: str) -> str:
-    if _INTEGRATION.fullmatch(value) is None or value.casefold() == "geolocation":
+    if _INTEGRATION.fullmatch(value) is None or value.casefold() in {"geolocation", "response"}:
         raise SettingsError(f"{variable} contains an invalid integration name")
     return value
 

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "picogrid-ecn-client"
-version = "0.1.0"
+version = "0.2.0"
 description = "Typed Python SDK for connecting authorized sensors, effectors, and operator tools to Picogrid ECNs"
 readme = "README.md"
 requires-python = ">=3.11,<3.15"
@@ -82,7 +82,6 @@ asyncio_mode = "strict"
 asyncio_default_fixture_loop_scope = "function"
 markers = [
   "contract: reusable public protocol contract tests",
-  "differential: optional comparison with an installed private SDK",
   "e2e: full offline workflow tests",
   "integration: opt-in tests against an authorized ECN",
   "performance: conservative public-client performance guardrails",

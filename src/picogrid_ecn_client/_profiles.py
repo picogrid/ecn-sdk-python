@@ -404,7 +404,8 @@ def _validate_port(value: object, *, kind: str) -> int:
 def _validate_special_fields(data: ProfileData, *, allow_no_auth: bool) -> None:
     integration = data.get("integration_name")
     if isinstance(integration, str) and (
-        _INTEGRATION_NAME.fullmatch(integration) is None or integration.casefold() == "geolocation"
+        _INTEGRATION_NAME.fullmatch(integration) is None
+        or integration.casefold() in {"geolocation", "response"}
     ):
         raise ConfigurationError("ECN profile integration name is invalid")
 

@@ -137,7 +137,7 @@ def test_fixed_topic_builders_and_parsers_round_trip() -> None:
     entity_json = build_entity_topic("vendor-a", ENTITY_ID, EntityCategory.TRACK)
     entity_pb = build_entity_protobuf_topic("vendor-a", EntityCategory.DETECTION)
     location_json = build_location_topic("vendor-a", ENTITY_ID)
-    location_pb = build_location_protobuf_topic("vendor-a", ENTITY_ID)
+    location_pb = build_location_protobuf_topic("vendor-a")
     task = build_task_request_topic("vendor-a", ENTITY_ID, "slew")
     response = build_task_response_topic("vendor-a", ENTITY_ID, "slew")
 
@@ -145,7 +145,8 @@ def test_fixed_topic_builders_and_parsers_round_trip() -> None:
     assert parse_entity_topic(entity_json).entity_id == ENTITY_ID
     assert parse_entity_topic(entity_pb).protobuf is True
     assert parse_location_topic(location_json).protobuf is False
-    assert parse_location_topic(location_pb).entity_id == ENTITY_ID
+    assert location_pb == "entity_location_pb/vendor-a"
+    assert parse_location_topic(location_pb).entity_id is None
     assert parse_task_topic(task).response is False
     assert parse_task_topic(response).response is True
     assert parse_protocol_topic(response) == parse_task_topic(response)
@@ -158,7 +159,7 @@ def test_topic_builders_emit_canonical_lowercase_uuid_text() -> None:
         == canonical
     )
     assert build_location_topic("vendor-a", LETTERED_ENTITY_ID).split("/")[2] == canonical
-    assert build_location_protobuf_topic("vendor-a", LETTERED_ENTITY_ID).split("/")[2] == canonical
+    assert build_location_protobuf_topic("vendor-a") == "entity_location_pb/vendor-a"
     assert (
         build_task_request_topic("vendor-a", LETTERED_ENTITY_ID, "slew").split("/")[2] == canonical
     )
@@ -184,7 +185,10 @@ def test_terminal_addressed_task_topics_are_publish_only_and_round_trip() -> Non
     assert request == f"{TERMINAL_ID}/task/vendor-a/{ENTITY_ID}/slew"
     assert response == f"{TERMINAL_ID}/task/vendor-a/{ENTITY_ID}/slew/response"
     assert parse_task_topic(request).route_terminal_id == TERMINAL_ID
-    assert parse_task_topic(response).response is True
+    parsed_response = parse_task_topic(response)
+    assert parsed_response.response is True
+    assert parsed_response.entity_id == ENTITY_ID
+    assert parsed_response.route_terminal_id == TERMINAL_ID
     assert validate_publish_topic(request) == request
     assert validate_publish_topic(response) == response
     for topic_filter in (request, response):
@@ -192,9 +196,59 @@ def test_terminal_addressed_task_topics_are_publish_only_and_round_trip() -> Non
             validate_subscription_filter(topic_filter)
 
 
+def test_task_response_builder_covers_local_and_routed_shapes() -> None:
+    local = build_task_response_topic("vendor-a", ENTITY_ID, "slew")
+    routed = build_task_response_topic(
+        "vendor-a",
+        ENTITY_ID,
+        "slew",
+        route_terminal_id=TERMINAL_ID,
+    )
+
+    assert local == f"task/vendor-a/{ENTITY_ID}/slew/response"
+    assert routed == f"{TERMINAL_ID}/{local}"
+    for topic, route_terminal_id in ((local, None), (routed, TERMINAL_ID)):
+        parsed = parse_task_topic(topic)
+        assert parsed.entity_id == ENTITY_ID
+        assert parsed.response is True
+        assert parsed.route_terminal_id == route_terminal_id
+
+
+def test_removed_wire_topic_shapes_are_rejected() -> None:
+    old_location = f"entity_location_pb/vendor-a/{ENTITY_ID}"
+    # The Legion response shape is not a terminal-to-terminal task topic.
+    legion_response = "task/response/vendor-a/slew"
+    routed_legion_response = f"{TERMINAL_ID}/task/response/vendor-a/slew"
+
+    for topic in (old_location, legion_response, routed_legion_response):
+        with pytest.raises(ProtocolError):
+            parse_protocol_topic(topic)
+        with pytest.raises(ValidationError):
+            validate_publish_topic(topic)
+
+
+def test_response_is_reserved_as_a_literal_integration() -> None:
+    with pytest.raises(ValidationError):
+        build_location_protobuf_topic("response")
+
+    for topic in (
+        f"entity/response/{ENTITY_ID}/track",
+        "entity_location_pb/response",
+    ):
+        with pytest.raises(ProtocolError):
+            parse_protocol_topic(topic)
+
+    for topic_filter in (
+        "entity/response/+/track",
+        "entity_location_pb/response",
+    ):
+        with pytest.raises(ValidationError):
+            validate_subscription_filter(topic_filter)
+
+
 @pytest.mark.parametrize(
     "integration",
-    ["x", "-leading", "trailing-", "contains.dot", "geolocation"],
+    ["x", "-leading", "trailing-", "contains.dot", "geolocation", "response"],
 )
 def test_topic_builders_reject_integrations_outside_pinned_grammar(
     integration: str,
@@ -208,7 +262,6 @@ def test_topic_builders_reject_integrations_outside_pinned_grammar(
     [
         f"entity/vendor-a/{str(LETTERED_ENTITY_ID).upper()}/track",
         f"entity_location/vendor-a/{str(LETTERED_ENTITY_ID).upper()}",
-        f"entity_location_pb/vendor-a/{str(LETTERED_ENTITY_ID).upper()}",
         f"task/vendor-a/{str(LETTERED_ENTITY_ID).upper()}/slew",
         f"task/vendor-a/{str(LETTERED_ENTITY_ID).upper()}/slew/response",
     ],
@@ -246,7 +299,7 @@ def test_lazy_subscription_builders_use_narrowest_caller_filters() -> None:
     )
     assert build_location_subscription_filters({ENTITY_ID}, {"vendor-a"}) == (
         f"entity_location/vendor-a/{ENTITY_ID}",
-        f"entity_location_pb/vendor-a/{ENTITY_ID}",
+        "entity_location_pb/vendor-a",
     )
     assert build_entity_subscription_filters(set(), set()) == (
         ENTITY_JSON_SUBSCRIPTION,
@@ -258,7 +311,7 @@ def test_lazy_subscription_builders_use_narrowest_caller_filters() -> None:
     )
     assert build_location_subscription_filters(set(), {"terminal-geolocation"}) == (
         "entity_location/terminal-geolocation/+",
-        "entity_location_pb/terminal-geolocation/+",
+        "entity_location_pb/terminal-geolocation",
     )
     assert build_entity_subscription_filters({EntityCategory.GEOMETRIC}, {"vendor-a"}) == (
         "entity/vendor-a/+/geometric",
@@ -283,11 +336,13 @@ def test_protobuf_geometric_topic_is_supported_without_a_numeric_category_field(
     "topic_filter",
     [
         "#",
+        "entity_location_pb/+/+",
         "+/entity/#",
         "entity/#",
         "entity/+/+/#",
         "task/#",
         "task/vendor-a/#",
+        "task/response/vendor-a/slew",
         "private/entity/#",
         "administration/#",
     ],
@@ -305,7 +360,7 @@ def test_broad_or_internal_subscriptions_are_rejected(topic_filter: str) -> None
         "entity/vendor.with.dot/+/track",
         "entity_pb/geolocation/track",
         f"entity_location/a/{ENTITY_ID}",
-        f"entity_location_pb/vendor.with.dot/{ENTITY_ID}",
+        "entity_location_pb/vendor.with.dot",
     ],
 )
 def test_subscription_filters_reject_literal_integrations_outside_pinned_grammar(

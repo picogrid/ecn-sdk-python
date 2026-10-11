@@ -817,9 +817,10 @@ class ECNClient:
                 frozenset({probe.integration}),
             )
             return next(value for value in filters if value.startswith("entity/"))
-        assert probe.entity_id is not None
         if probe.wire_format is WireFormat.PROTOBUF:
-            return build_location_protobuf_topic(probe.integration, probe.entity_id)
+            assert probe.entity_id is None
+            return build_location_protobuf_topic(probe.integration)
+        assert probe.entity_id is not None
         return build_location_topic(probe.integration, probe.entity_id)
 
     def _build_services(self) -> None:
@@ -845,11 +846,12 @@ class ECNClient:
             location: Location,
         ) -> tuple[str, bytes, int]:
             if self._config.wire_format is WireFormat.PROTOBUF:
-                topic = build_location_protobuf_topic(integration, entity_id)
+                topic = build_location_protobuf_topic(integration)
             else:
                 topic = build_location_topic(integration, entity_id)
             payload = encode_location_payload(
                 location,
+                entity_id,
                 self._config.wire_format,
                 self._config.maximum_payload_size,
             )

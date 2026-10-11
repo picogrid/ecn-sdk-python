@@ -9,7 +9,7 @@ tableOfContents: false
 
 > Related guidance: [how-to/protobuf-decode](/how-to/protobuf-decode/), [reference/wire-formats](/reference/wire-formats/).
 >
-> Runnable examples: [decode_public_protobuf.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/decode_public_protobuf.py).
+> Runnable examples: [decode_public_protobuf.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/decode_public_protobuf.py).
 
 | Symbol | Summary |
 | --- | --- |

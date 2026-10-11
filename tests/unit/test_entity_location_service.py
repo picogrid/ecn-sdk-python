@@ -363,10 +363,11 @@ async def test_watcher_counts_rejected_inbound_payloads(kind: str) -> None:
 
 
 @pytest.mark.asyncio
-async def test_location_watch_is_exact_and_updates_only_local_observed_state() -> None:
+async def test_location_watch_narrows_protobuf_events_after_decode() -> None:
     transport = FakeTransport()
     service = make_service(transport)
     entity_id = UUID(int=1)
+    other_entity_id = UUID(int=2)
     assert service.last_observed_location(entity_id, integration=None) is None
 
     stream = await service.watch_locations(
@@ -378,11 +379,31 @@ async def test_location_watch_is_exact_and_updates_only_local_observed_state() -
     filters = {topic_filter for topic_filter, _callback in transport.callbacks.values()}
     assert filters == {
         f"entity_location/demo/{entity_id}",
-        f"entity_location_pb/demo/{entity_id}",
+        "entity_location_pb/demo",
     }
 
-    await transport.deliver("unused", f"entity_location/demo/{entity_id}", b"{}")
+    def decode_location(_topic: str, payload: bytes) -> LocationEvent:
+        decoded_entity_id = UUID(bytes=payload)
+        location = Location(
+            latitude=1,
+            longitude=2,
+            recorded_at=datetime(2026, 1, 1, tzinfo=UTC),
+        )
+        return LocationEvent(
+            entity_id=decoded_entity_id,
+            integration="demo",
+            timestamp=location.recorded_at,
+            location=location,
+        )
+
+    service._decode_location = decode_location
+    await transport.deliver("unused", "entity_location_pb/demo", other_entity_id.bytes)
+    assert stream._queue.empty()
+    assert service.last_observed_location(other_entity_id, integration=None) is None
+
+    await transport.deliver("unused", "entity_location_pb/demo", entity_id.bytes)
     event = await anext(stream)
+    assert event.entity_id == entity_id
     assert service.last_observed_location(entity_id, integration=None) == event.location
     assert service.last_observed_location(entity_id, integration="demo") == event.location
     assert service.last_observed_location(entity_id, integration="other") is None

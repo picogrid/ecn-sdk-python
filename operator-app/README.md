@@ -20,8 +20,8 @@ operator wheel already contains the compiled browser application; Node.js, npm, 
 repository clone, and a second development server are not runtime dependencies.
 
 ```console
-python -m pip install /path/to/picogrid_ecn_client-0.1.0-py3-none-any.whl # x-release-please-version
-python -m pip install /path/to/picogrid_ecn_operator_app-0.1.0-py3-none-any.whl # x-release-please-version
+python -m pip install /path/to/picogrid_ecn_client-0.2.0-py3-none-any.whl # x-release-please-version
+python -m pip install /path/to/picogrid_ecn_operator_app-0.2.0-py3-none-any.whl # x-release-please-version
 picogrid-ecn operator --demo
 picogrid-ecn-operator --demo
 ```

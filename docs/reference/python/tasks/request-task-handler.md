@@ -11,7 +11,7 @@ tableOfContents: true
 >
 > Related guidance: [concepts/tasks](/concepts/tasks/), [how-to/receive-local-tasks](/how-to/receive-local-tasks/), [how-to/dispatch-local-tasks](/how-to/dispatch-local-tasks/), [quickstarts/effector-handler](/quickstarts/effector-handler/).
 >
-> Runnable examples: [receive_task.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/receive_task.py), [dispatch_task.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/dispatch_task.py), [receive_mesh_task.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/receive_mesh_task.py), [dispatch_mesh_task.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/dispatch_mesh_task.py).
+> Runnable examples: [receive_task.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/receive_task.py), [dispatch_task.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/dispatch_task.py), [receive_mesh_task.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/receive_mesh_task.py), [dispatch_mesh_task.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/dispatch_mesh_task.py).
 
 ```python
 from picogrid_ecn_client import RequestTaskHandler
@@ -23,7 +23,7 @@ Handle a validated task request without dispatch context.
 class RequestTaskHandler(Protocol[RequestT_contra, ResultT_co]): ...
 ```
 
-[Source · interfaces/tasks.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/interfaces/tasks.py#L29)
+[Source · interfaces/tasks.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/interfaces/tasks.py#L29)
 
 ## `__call__`
 
@@ -48,4 +48,4 @@ def __call__(
 | --- | --- |
 | Coroutine[Any, Any, ResultT_co \| TaskResult[ResultT_co] \| Mapping[str, JsonValue] \| None] | A coroutine resolving to a result model, task result, JSON mapping, or `None`. Registration rejects non-async callables, so the protocol requires a coroutine rather than any awaitable. |
 
-[Source · interfaces/tasks.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/interfaces/tasks.py#L52)
+[Source · interfaces/tasks.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/interfaces/tasks.py#L52)

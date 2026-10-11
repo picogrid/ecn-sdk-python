@@ -11,7 +11,7 @@ tableOfContents: false
 >
 > Related guidance: [how-to/protobuf-decode](/how-to/protobuf-decode/), [reference/wire-formats](/reference/wire-formats/).
 >
-> Runnable examples: [decode_public_protobuf.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/decode_public_protobuf.py).
+> Runnable examples: [decode_public_protobuf.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/decode_public_protobuf.py).
 
 ```python
 from picogrid_ecn_client import decode_entity_location_protobuf
@@ -24,7 +24,6 @@ def decode_entity_location_protobuf(
     payload: bytes,
     *,
     integration: str,
-    entity_id: UUID,
     maximum_payload_size: int = 1048576,
 ) -> LocationEvent
 ```
@@ -33,9 +32,8 @@ def decode_entity_location_protobuf(
 
 | Name | Type | Default | Description |
 | --- | --- | --- | --- |
-| payload | bytes | — | Serialized protobuf payload. |
-| integration | str | — | Topic-derived integration name. |
-| entity_id | UUID | — | Topic-derived canonical entity UUID. |
+| payload | bytes | — | Serialized protobuf payload containing the entity UUID and location. |
+| integration | str | — | Integration name carried by the source topic. |
 | maximum_payload_size | int | 1048576 | Inclusive payload limit in bytes, from 1024 through 16777216. |
 
 ## Returns
@@ -48,8 +46,8 @@ def decode_entity_location_protobuf(
 
 | Exception | Description |
 | --- | --- |
-| ProtocolError | If the payload is malformed or lacks required fields. |
+| ProtocolError | If the payload is malformed, lacks required fields, or carries an invalid entity UUID. |
 | ResourceLimitError | If the payload exceeds `maximum_payload_size` bytes. |
 | ValidationError | If an input or decoded public field is invalid. |
 
-[Source · protobuf.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/protobuf.py#L85)
+[Source · protobuf.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/protobuf.py#L83)

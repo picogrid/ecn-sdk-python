@@ -269,7 +269,7 @@ def test_source_links_use_manifest_template(tmp_path: Path) -> None:
     )
 
     assert (
-        "https://example.invalid/src/picogrid_ecn_client/config.py?version=0.1.0#L"
+        "https://example.invalid/src/picogrid_ecn_client/config.py?version=0.2.0#L"
         in build.pages["reference/python/configuration/load-config"]
     )
 

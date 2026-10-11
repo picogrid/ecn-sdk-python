@@ -35,8 +35,8 @@ Provide:
   `legion-system-auth` authentication, unless the endpoint owner provided a different
   port;
 - an integration name of 2 through 128 ASCII letters, digits, underscores, or
-  hyphens, starting and ending with a letter or digit (`geolocation` is reserved,
-  case-insensitively); and
+  hyphens, starting and ending with a letter or digit (`geolocation` and `response`
+  are reserved case-insensitively); and
 - exactly one credentialed authentication method.
 
 Verified TLS is the default. Plaintext or unverified TLS still requires the explicit

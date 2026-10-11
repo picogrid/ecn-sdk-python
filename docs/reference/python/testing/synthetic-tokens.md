@@ -11,7 +11,7 @@ tableOfContents: true
 >
 > Related guidance: [getting-started/mock-setup](/getting-started/mock-setup/).
 >
-> Runnable examples: [preflight.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/preflight.py).
+> Runnable examples: [preflight.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/preflight.py).
 
 ```python
 from picogrid_ecn_client.testing import FULL_ACCESS_TOKEN
@@ -35,7 +35,7 @@ Synthetic token with every mock-only ACL label for offline tests.
 FULL_ACCESS_TOKEN: str
 ```
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L35)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L35)
 
 ## `READ_ONLY_TOKEN`
 
@@ -45,7 +45,7 @@ Synthetic token with mock-only entity and location read labels.
 READ_ONLY_TOKEN: str
 ```
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L37)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L37)
 
 ## `NO_ACCESS_TOKEN`
 
@@ -55,4 +55,4 @@ Synthetic token with no mock-only ACL labels.
 NO_ACCESS_TOKEN: str
 ```
 
-[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/testing/mock_ecn.py#L39)
+[Source · testing/mock_ecn.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/testing/mock_ecn.py#L39)

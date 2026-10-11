@@ -11,7 +11,7 @@ tableOfContents: true
 >
 > Related guidance: [concepts/tasks](/concepts/tasks/), [how-to/receive-local-tasks](/how-to/receive-local-tasks/), [how-to/dispatch-local-tasks](/how-to/dispatch-local-tasks/), [quickstarts/effector-handler](/quickstarts/effector-handler/).
 >
-> Runnable examples: [receive_task.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/receive_task.py), [dispatch_task.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/dispatch_task.py), [receive_mesh_task.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/receive_mesh_task.py), [dispatch_mesh_task.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/dispatch_mesh_task.py).
+> Runnable examples: [receive_task.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/receive_task.py), [dispatch_task.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/dispatch_task.py), [receive_mesh_task.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/receive_mesh_task.py), [dispatch_mesh_task.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/dispatch_mesh_task.py).
 
 ```python
 from picogrid_ecn_client import Tasks
@@ -23,7 +23,7 @@ Register typed handlers and dispatch typed requests.
 class Tasks: ...
 ```
 
-[Source · interfaces/tasks.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/interfaces/tasks.py#L147)
+[Source · interfaces/tasks.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/interfaces/tasks.py#L147)
 
 ## `register`
 
@@ -76,7 +76,7 @@ async def register(
 | AuthorizationError | If the broker rejects the request-topic subscription. |
 | ConnectionError | If the transport fails while subscribing. |
 
-[Source · interfaces/tasks.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/interfaces/tasks.py#L175)
+[Source · interfaces/tasks.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/interfaces/tasks.py#L175)
 
 ## `unregister`
 
@@ -101,7 +101,7 @@ async def unregister(registration: TaskRegistration) -> None
 | ProtocolError | If the broker returns a malformed UNSUBACK. |
 | ConnectionError | If the transport fails while unsubscribing. |
 
-[Source · interfaces/tasks.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/interfaces/tasks.py#L220)
+[Source · interfaces/tasks.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/interfaces/tasks.py#L220)
 
 ## `send`
 
@@ -214,4 +214,4 @@ async def send(
 | ProtocolError | If the response SUBACK or a definite PUBACK result violates the supported acknowledgment contract. |
 | DeliveryError | If response-subscription or publication setup fails before request send begins. A mismatch in `expected_connection_generation` raises this error with phase `NOT_SENT` before publication. The error carries the generated task ID. |
 
-[Source · interfaces/tasks.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/interfaces/tasks.py#L313)
+[Source · interfaces/tasks.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/interfaces/tasks.py#L313)

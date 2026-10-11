@@ -35,8 +35,37 @@ from scripts.sync_dep_locks import canonical_root_requirement, requirement_name
 
 POLICY_PATH = Path(__file__).parents[2] / "scripts" / "release-policy.json"
 _CANONICAL_LICENSE_TEXT = POLICY_PATH.parents[1].joinpath("LICENSE").read_bytes()
-_PRIVATE_IMPORT_CANARY = b"import picogrid_" + b"edge_sdk._internal\n"
-_PRIVATE_API_PATH_CANARY = b'path = "/internal/' + b'status"\n'
+_NONPUBLIC_IMPORT_CANARY = b"import picogrid_" + b"example_sdk._internal\n"
+_UNAPPROVED_REPOSITORY_CANARY = b"https://github.com/picogrid/" + b"unpublished-sdk\n"
+_UNAPPROVED_SSH_REPOSITORY_CANARY = b"git@github.com:picogrid/" + b"unpublished-sdk.git\n"
+_UNAPPROVED_PORT_REPOSITORY_CANARY = b"https://github.com:443/picogrid/" + b"unpublished-sdk.git\n"
+_UNAPPROVED_SSH_PORT_REPOSITORY_CANARY = (
+    b"ssh://git@github.com:22/picogrid/" + b"unpublished-sdk.git\n"
+)
+_PRIVATE_API_PATH_CANARY = b'path = "/' + b'internal/status"\n'
+_PUBLIC_LEGION_DOCS_URL = b"https://docs.picogrid.com/" + b"legion/\n"
+_LOOKALIKE_LEGION_DOCS_CANARY = b"https:" + b"//evil.docs." + b"picogrid." + b"com/" + b"legion/\n"
+_FOREIGN_AUTHORITY_LEGION_DOCS_CANARY = (
+    b"https:" + b"//evil." + b"com//docs." + b"picogrid." + b"com/" + b"legion/\n"
+)
+_EMBEDDED_LEGION_DOCS_URL_CANARY = (
+    b"https://github.com/" + b"https://docs.picogrid.com/" + b"legion/\n"
+)
+_BARE_LEGION_PATH_CANARY = b'href="/' + b'legion/"\n'
+_PATH_CASE_LEGION_DOCS_CANARY = b"https://docs.picogrid.com/" + b"Legion/\n"
+_BACKSLASH_EMBEDDED_LEGION_DOCS_CANARY = (
+    b"https://github.com/go\\" + b"https://docs.picogrid.com/" + b"legion/\n"
+)
+_QUERY_EMBEDDED_LEGION_DOCS_CANARY = (
+    b"https://github.com/?next=" + b"https://docs.picogrid.com/" + b"legion/\n"
+)
+_FRAGMENT_EMBEDDED_LEGION_DOCS_CANARY = (
+    b"https://github.com/#" + b"https://docs.picogrid.com/" + b"legion/\n"
+)
+_PRIVATE_PATH_BEHIND_LEGION_DOCS_CANARY = b"https://docs.picogrid.com/" + b"legion/" + b"admin/\n"
+_PRIVATE_STATUS_BEHIND_LEGION_DOCS_CANARY = (
+    b"https://docs.picogrid.com/" + b"legion/" + b"internal/status\n"
+)
 _PRIVATE_KEY_CANARY = b"-----BEGIN " + b"PRIVATE KEY-----\n"
 _IPV4_CANARY = b"connect to 192.0.2." + b"10\n"
 _IPV6_CANARY = b"connect to 2001:db8:" + b":1\n"
@@ -61,7 +90,7 @@ def _metadata(policy: dict[str, Any]) -> bytes:
     return (
         "Metadata-Version: 2.4\n"
         "Name: picogrid-ecn-client\n"
-        "Version: 0.1.0\n"
+        f"Version: {release_checks._normalize_version(str(policy['project_version']))}\n"
         f"License-Expression: {policy['license_expression']}\n"
         f"Requires-Python: {policy['requires_python']}\n"
         "Project-URL: Changelog, https://github.com/picogrid/ecn-sdk-python/blob/main/CHANGELOG.md\n"
@@ -87,7 +116,7 @@ def _topic_source() -> bytes:
     return b"""ENTITY_JSON_SUBSCRIPTION = "entity/+/+/+"
 ENTITY_PROTOBUF_SUBSCRIPTION = "entity_pb/+/+"
 LOCATION_JSON_SUBSCRIPTION = "entity_location/+/+"
-LOCATION_PROTOBUF_SUBSCRIPTION = "entity_location_pb/+/+"
+LOCATION_PROTOBUF_SUBSCRIPTION = "entity_location_pb/+"
 """
 
 
@@ -96,7 +125,8 @@ def _wheel_contents(policy: dict[str, Any]) -> dict[str, bytes]:
     contents["picogrid_ecn_client/_protocol/topics.py"] = _topic_source()
     contents["picogrid_ecn_client/_transport/mqtt.py"] = _MQTT_TRANSPORT_SOURCE
     contents["picogrid_ecn_client/testing/_mqtt.py"] = _MQTT_MOCK_SOURCE
-    prefix = "picogrid_ecn_client-0.1.0.dist-info/"
+    version = release_checks._normalize_version(str(policy["project_version"]))
+    prefix = f"picogrid_ecn_client-{version}.dist-info/"
     for name in policy["wheel_dist_info_files"]:
         contents[f"{prefix}{name}"] = b""
     contents[f"{prefix}METADATA"] = _metadata(policy)
@@ -112,7 +142,8 @@ def _write_wheel(path: Path, contents: dict[str, bytes]) -> None:
 
 
 def _sdist_contents(policy: dict[str, Any]) -> dict[str, bytes]:
-    root = "picogrid_ecn_client-0.1.0"
+    version = release_checks._normalize_version(str(policy["project_version"]))
+    root = f"picogrid_ecn_client-{version}"
     contents = {
         f"{root}/LICENSE": _CANONICAL_LICENSE_TEXT,
         f"{root}/MANIFEST.in": ("\n".join(_publication_manifest_lines(policy)) + "\n").encode(),
@@ -131,13 +162,16 @@ def _sdist_contents(policy: dict[str, Any]) -> dict[str, bytes]:
     contents[f"{root}/operator-app/LICENSE"] = _CANONICAL_LICENSE_TEXT
     repository = POLICY_PATH.parents[1]
     contents[f"{root}/scripts/release-policy.json"] = POLICY_PATH.read_bytes()
-    for name in policy["public_brand_assets"]:
-        contents[f"{root}/docs/site/public/{name}"] = (
-            repository / "docs" / "site" / "public" / name
-        ).read_bytes()
-        contents[f"{root}/operator-app/frontend/public/{name}"] = (
-            repository / "operator-app" / "frontend" / "public" / name
-        ).read_bytes()
+    for name, spec in policy["public_brand_assets"].items():
+        surfaces = spec.get("surfaces", ["documentation", "operator"])
+        if "documentation" in surfaces:
+            contents[f"{root}/docs/site/public/{name}"] = (
+                repository / "docs" / "site" / "public" / name
+            ).read_bytes()
+        if "operator" in surfaces:
+            contents[f"{root}/operator-app/frontend/public/{name}"] = (
+                repository / "operator-app" / "frontend" / "public" / name
+            ).read_bytes()
     for name in policy["wheel_package_files"]:
         contents[f"{root}/src/{name}"] = b""
     contents[f"{root}/src/picogrid_ecn_client/_protocol/topics.py"] = _topic_source()
@@ -205,20 +239,6 @@ def _documentation_fixture(tmp_path: Path) -> tuple[Path, dict[str, Any]]:
     (repository / "docs" / "README.md").write_text(
         """# Maintainer documentation index
 
-[Original parity](reference/original-parity.md)
-""",
-        encoding="utf-8",
-    )
-    (repository / "docs" / "reference").mkdir()
-    (repository / "docs" / "reference" / "original-parity.md").write_text(
-        """# Original parity
-
-| Row key | Original workflow or item | Public equivalent | Disposition | Verification | Safety or migration difference |
-|---|---|---|---|---|---|
-| RUNTIME-CLIENT | Original client | Public client | supported | offline-only | Typed public API |
-| WORKFLOW-LOCATION | Authoritative query | Observed cache | changed semantics | offline-only | Non-authoritative state |
-| WORKFLOW-SEARCH | Server search | No SDK equivalent | explicitly deferred | staging pending | No confirmed public wire |
-
 ```python
 await client.close()
 ```
@@ -240,8 +260,8 @@ uv run python examples/alpha.py --check
         """# Installation
 
 ```console
-python -m pip install ./picogrid_ecn_client-0.1.0-py3-none-any.whl
-python -m pip install ./picogrid_ecn_client-0.1.0-py3-none-any.whl ./picogrid_ecn_operator_app-0.1.0-py3-none-any.whl
+python -m pip install ./picogrid_ecn_client-0.2.0-py3-none-any.whl
+python -m pip install ./picogrid_ecn_client-0.2.0-py3-none-any.whl ./picogrid_ecn_operator_app-0.2.0-py3-none-any.whl
 ```
 """,
         encoding="utf-8",
@@ -281,18 +301,11 @@ python -m pip install ./picogrid_ecn_client-0.1.0-py3-none-any.whl ./picogrid_ec
             "documentation_maintainer_index": "docs/README.md",
             "documentation_deferred_how_tos": [],
             "documentation_deferred_how_to_examples": {},
-            "documentation_parity_matrix": "docs/reference/original-parity.md",
-            "parity_required_row_keys": [
-                "RUNTIME-CLIENT",
-                "WORKFLOW-LOCATION",
-                "WORKFLOW-SEARCH",
-            ],
             "sdist_documentation_files": [
                 "docs/README.md",
                 "docs/getting-started/installation.md",
                 "docs/how-to/run.md",
                 "docs/index.md",
-                "docs/reference/original-parity.md",
             ],
             "sdist_auxiliary_files": ["SUPPORT.md"],
             "sdist_example_files": [
@@ -305,52 +318,6 @@ python -m pip install ./picogrid_ecn_client-0.1.0-py3-none-any.whl ./picogrid_ec
             ],
         }
     )
-    inventory_items = [
-        {
-            "row_key": row_key,
-            "source_path_sha256": hashlib.sha256(row_key.encode("utf-8")).hexdigest(),
-        }
-        for row_key in ("RUNTIME-CLIENT", "WORKFLOW-LOCATION")
-    ]
-    mapping_sha256 = hashlib.sha256(
-        json.dumps(
-            inventory_items,
-            sort_keys=True,
-            separators=(",", ":"),
-        ).encode("utf-8")
-    ).hexdigest()
-    synthetic_digest = "0" * 64
-    inventory = {
-        "reference_commit": "0" * 40,
-        "reference_tree": "1" * 40,
-        "total_file_count": 7,
-        "sorted_path_list_sha256": synthetic_digest,
-        "direct_file_count": 2,
-        "direct_sorted_path_list_sha256": synthetic_digest,
-        "mapping_sha256": mapping_sha256,
-        "aggregate": {
-            "row_key": "WORKFLOW-SEARCH",
-            "descendant_count": 5,
-            "sorted_path_list_sha256": synthetic_digest,
-        },
-        "items": inventory_items,
-    }
-    inventory_path = repository / "scripts" / "original-guide-inventory.json"
-    inventory_path.parent.mkdir()
-    inventory_path.write_text(json.dumps(inventory), encoding="utf-8")
-    policy["original_guide_inventory"] = {
-        "aggregate_descendant_count": 5,
-        "aggregate_row_key": "WORKFLOW-SEARCH",
-        "aggregate_sorted_path_list_sha256": synthetic_digest,
-        "direct_file_count": 2,
-        "direct_sorted_path_list_sha256": synthetic_digest,
-        "file": "scripts/original-guide-inventory.json",
-        "mapping_sha256": mapping_sha256,
-        "reference_commit": "0" * 40,
-        "reference_tree": "1" * 40,
-        "sorted_path_list_sha256": synthetic_digest,
-        "total_file_count": 7,
-    }
     (repository / "MANIFEST.in").write_text(
         "\n".join(
             f"include {name}"
@@ -368,8 +335,8 @@ python -m pip install ./picogrid_ecn_client-0.1.0-py3-none-any.whl ./picogrid_ec
 
 def test_valid_wheel_and_sdist_match_exact_allowlists(tmp_path: Path) -> None:
     policy = load_policy(POLICY_PATH)
-    wheel = tmp_path / "picogrid_ecn_client-0.1.0-py3-none-any.whl"
-    sdist = tmp_path / "picogrid_ecn_client-0.1.0.tar.gz"
+    wheel = tmp_path / "picogrid_ecn_client-0.2.0-py3-none-any.whl"
+    sdist = tmp_path / "picogrid_ecn_client-0.2.0.tar.gz"
     _write_wheel(wheel, _wheel_contents(policy))
     _write_sdist(sdist, _sdist_contents(policy))
 
@@ -418,7 +385,7 @@ def test_wheel_rejects_retired_document_reference_in_markdown(tmp_path: Path) ->
     contents = _wheel_contents(policy)
     retired_name = policy["retired_document_references"][0]
     contents[markdown_member] = f"See {retired_name.swapcase()} for details.\n".encode()
-    wheel = tmp_path / "picogrid_ecn_client-0.1.0-py3-none-any.whl"
+    wheel = tmp_path / "picogrid_ecn_client-0.2.0-py3-none-any.whl"
     _write_wheel(wheel, contents)
 
     with pytest.raises(
@@ -431,10 +398,10 @@ def test_wheel_rejects_retired_document_reference_in_markdown(tmp_path: Path) ->
 def test_sdist_rejects_retired_document_reference_in_markdown(tmp_path: Path) -> None:
     policy = load_policy(POLICY_PATH)
     contents = _sdist_contents(policy)
-    markdown_member = "picogrid_ecn_client-0.1.0/README.md"
+    markdown_member = "picogrid_ecn_client-0.2.0/README.md"
     retired_name = policy["retired_document_references"][1]
     contents[markdown_member] = f"See {retired_name.swapcase()} for details.\n".encode()
-    sdist = tmp_path / "picogrid_ecn_client-0.1.0.tar.gz"
+    sdist = tmp_path / "picogrid_ecn_client-0.2.0.tar.gz"
     _write_sdist(sdist, contents)
 
     with pytest.raises(
@@ -446,12 +413,12 @@ def test_sdist_rejects_retired_document_reference_in_markdown(tmp_path: Path) ->
 
 def test_sdist_rejects_retired_document_reference_in_mdx(tmp_path: Path) -> None:
     policy = load_policy(POLICY_PATH)
-    markdown_member = "picogrid_ecn_client-0.1.0/docs/index.mdx"
+    markdown_member = "picogrid_ecn_client-0.2.0/docs/index.mdx"
     policy["sdist_documentation_files"].append("docs/index.mdx")
     contents = _sdist_contents(policy)
     retired_name = policy["retired_document_references"][2]
     contents[markdown_member] = f"See {retired_name.swapcase()} for details.\n".encode()
-    sdist = tmp_path / "picogrid_ecn_client-0.1.0.tar.gz"
+    sdist = tmp_path / "picogrid_ecn_client-0.2.0.tar.gz"
     _write_sdist(sdist, contents)
 
     with pytest.raises(
@@ -465,10 +432,10 @@ def test_wheel_rejects_license_text_digest_mismatch(tmp_path: Path) -> None:
     policy = load_policy(POLICY_PATH)
     expected_digest = policy["license_text_sha256"]
     contents = _wheel_contents(policy)
-    license_member = "picogrid_ecn_client-0.1.0.dist-info/licenses/LICENSE"
+    license_member = "picogrid_ecn_client-0.2.0.dist-info/licenses/LICENSE"
     replacement = b"truncated license text\n"
     contents[license_member] = replacement
-    wheel = tmp_path / "picogrid_ecn_client-0.1.0-py3-none-any.whl"
+    wheel = tmp_path / "picogrid_ecn_client-0.2.0-py3-none-any.whl"
     _write_wheel(wheel, contents)
 
     with pytest.raises(ArtifactPolicyError, match="digest mismatch") as error:
@@ -482,8 +449,8 @@ def test_wheel_rejects_license_text_digest_mismatch(tmp_path: Path) -> None:
 @pytest.mark.parametrize(
     "license_member",
     [
-        "picogrid_ecn_client-0.1.0/LICENSE",
-        "picogrid_ecn_client-0.1.0/operator-app/LICENSE",
+        "picogrid_ecn_client-0.2.0/LICENSE",
+        "picogrid_ecn_client-0.2.0/operator-app/LICENSE",
     ],
 )
 def test_sdist_rejects_license_text_digest_mismatch(
@@ -495,7 +462,7 @@ def test_sdist_rejects_license_text_digest_mismatch(
     contents = _sdist_contents(policy)
     replacement = b"replacement license text\n"
     contents[license_member] = replacement
-    sdist = tmp_path / "picogrid_ecn_client-0.1.0.tar.gz"
+    sdist = tmp_path / "picogrid_ecn_client-0.2.0.tar.gz"
     _write_sdist(sdist, contents)
 
     with pytest.raises(ArtifactPolicyError, match="digest mismatch") as error:
@@ -509,29 +476,23 @@ def test_sdist_rejects_license_text_digest_mismatch(
 def test_sdist_limits_generated_url_exception_to_release_policy(tmp_path: Path) -> None:
     policy = load_policy(POLICY_PATH)
     contents = _sdist_contents(policy)
-    root = "picogrid_ecn_client-0.1.0"
+    root = "picogrid_ecn_client-0.2.0"
     placeholder = policy["generated_site_placeholder_urls"][0].encode()
     contents[f"{root}/README.md"] += b"\n" + placeholder + b"\n"
-    sdist = tmp_path / "picogrid_ecn_client-0.1.0.tar.gz"
+    sdist = tmp_path / "picogrid_ecn_client-0.2.0.tar.gz"
     _write_sdist(sdist, contents)
 
     with pytest.raises(ArtifactPolicyError, match="unapproved operational hostname"):
         inspect_sdist(sdist, policy)
 
 
-@pytest.mark.parametrize(
-    "source_prefix",
-    ("docs/site/public", "operator-app/frontend/public"),
-)
-def test_sdist_rejects_changed_public_brand_asset(
-    tmp_path: Path,
-    source_prefix: str,
-) -> None:
+def test_sdist_rejects_changed_public_brand_asset(tmp_path: Path) -> None:
     policy = load_policy(POLICY_PATH)
     contents = _sdist_contents(policy)
-    root = "picogrid_ecn_client-0.1.0"
-    contents[f"{root}/{source_prefix}/brand/picogrid-app-icon-512.png"] += b"changed"
-    sdist = tmp_path / "picogrid_ecn_client-0.1.0.tar.gz"
+    root = "picogrid_ecn_client-0.2.0"
+    relative = f"{root}/docs/site/public/brand/picogrid-nav-texture.png"
+    contents[relative] += b"changed"
+    sdist = tmp_path / "picogrid_ecn_client-0.2.0.tar.gz"
     _write_sdist(sdist, contents)
 
     with pytest.raises(ArtifactPolicyError, match="public brand asset hash changed"):
@@ -540,9 +501,9 @@ def test_sdist_rejects_changed_public_brand_asset(
 
 def test_wheel_metadata_rejects_relative_long_description_link(tmp_path: Path) -> None:
     policy = load_policy(POLICY_PATH)
-    wheel = tmp_path / "picogrid_ecn_client-0.1.0-py3-none-any.whl"
+    wheel = tmp_path / "picogrid_ecn_client-0.2.0-py3-none-any.whl"
     contents = _wheel_contents(policy)
-    metadata = "picogrid_ecn_client-0.1.0.dist-info/METADATA"
+    metadata = "picogrid_ecn_client-0.2.0.dist-info/METADATA"
     contents[metadata] += b"\n[Broken package link](docs/index.md)\n"
     _write_wheel(wheel, contents)
 
@@ -570,11 +531,11 @@ def test_release_please_bootstrap_targets_the_unpublished_candidate() -> None:
     )
 
     assert manifest == {}
-    assert config["packages"]["."]["initial-version"] == policy["project_version"]
+    assert config["packages"]["."]["initial-version"] == "0.2.0"
     assert operator_manifest["project"]["version"] == policy["project_version"]
-    assert operator_package["version"] == policy["project_version"]
-    assert operator_lock["version"] == policy["project_version"]
-    assert operator_lock["packages"][""]["version"] == policy["project_version"]
+    assert operator_package["version"] == config["packages"]["."]["initial-version"]
+    assert operator_lock["version"] == operator_package["version"]
+    assert operator_lock["packages"][""]["version"] == operator_package["version"]
     extra_files = config["packages"]["."]["extra-files"]
     configured_updates = {(entry["path"], entry.get("jsonpath")) for entry in extra_files}
     assert {
@@ -589,7 +550,7 @@ def test_release_please_bootstrap_targets_the_unpublished_candidate() -> None:
 def test_sdist_scan_allows_reviewed_public_web_and_dependency_syntax(tmp_path: Path) -> None:
     policy = load_policy(POLICY_PATH)
     contents = _sdist_contents(policy)
-    root = "picogrid_ecn_client-0.1.0"
+    root = "picogrid_ecn_client-0.2.0"
     contents[f"{root}/docs/package-lock.json"] = b"""{
   "path": "node_modules/@astrojs/internal-helpers",
   "resolved": "https://registry.npmjs.org/@astrojs/internal-helpers/-/internal-helpers.tgz"
@@ -599,7 +560,7 @@ def test_sdist_scan_allows_reviewed_public_web_and_dependency_syntax(tmp_path: P
         b'<svg xmlns="http://www.w3.org/2000/svg"></svg>\n'
     )
     contents[f"{root}/operator-app/frontend/src/styles.css"] = b"dialog::backdrop {}\n"
-    sdist = tmp_path / "picogrid_ecn_client-0.1.0.tar.gz"
+    sdist = tmp_path / "picogrid_ecn_client-0.2.0.tar.gz"
     _write_sdist(sdist, contents)
 
     inspect_sdist(sdist, policy)
@@ -642,7 +603,6 @@ def test_release_documentation_inventory_ignores_the_workspace_tooling(
         "docs/getting-started/installation.md",
         "docs/how-to/run.md",
         "docs/index.md",
-        "docs/reference/original-parity.md",
     )
 
 
@@ -708,7 +668,7 @@ def test_readme_surface_contract_rejects_indented_code_block(tmp_path: Path) -> 
         inspect_documentation(repository, policy)
 
 
-def test_release_documentation_is_exact_linked_parseable_and_parity_accounted(
+def test_release_documentation_is_exact_linked_and_parseable(
     tmp_path: Path,
 ) -> None:
     repository, policy = _documentation_fixture(tmp_path)
@@ -720,7 +680,6 @@ def test_release_documentation_is_exact_linked_parseable_and_parity_accounted(
         "docs/getting-started/installation.md",
         "docs/how-to/run.md",
         "docs/index.md",
-        "docs/reference/original-parity.md",
     )
     assert inspection.example_files == (
         "examples/__init__.py",
@@ -732,7 +691,6 @@ def test_release_documentation_is_exact_linked_parseable_and_parity_accounted(
     )
     assert inspection.python_snippets == 2
     assert inspection.command_blocks == 3
-    assert inspection.parity_rows == 3
     assert inspection.supported_how_tos == 1
 
 
@@ -792,7 +750,7 @@ npm run build
         encoding="utf-8",
     )
 
-    assert inspect_documentation(repository, policy).parity_rows == 3
+    assert inspect_documentation(repository, policy) is not None
 
     (operator / "unreviewed.ts").write_text("export {};\n", encoding="utf-8")
     with pytest.raises(ArtifactPolicyError, match="operator application inventory mismatch"):
@@ -801,9 +759,9 @@ npm run build
 
 def test_release_documentation_rejects_broken_relative_links(tmp_path: Path) -> None:
     repository, policy = _documentation_fixture(tmp_path)
-    matrix = repository / "docs" / "reference" / "original-parity.md"
-    matrix.write_text(
-        matrix.read_text(encoding="utf-8") + "\n[Missing](../concepts/missing.md)\n",
+    index = repository / "docs" / "index.md"
+    index.write_text(
+        index.read_text(encoding="utf-8") + "\n[Missing](concepts/missing.md)\n",
         encoding="utf-8",
     )
 
@@ -813,9 +771,9 @@ def test_release_documentation_rejects_broken_relative_links(tmp_path: Path) -> 
 
 def test_release_documentation_rejects_invalid_python_snippets(tmp_path: Path) -> None:
     repository, policy = _documentation_fixture(tmp_path)
-    matrix = repository / "docs" / "reference" / "original-parity.md"
-    matrix.write_text(
-        matrix.read_text(encoding="utf-8") + "\n```python\nif )\n```\n",
+    maintainer_index = repository / "docs" / "README.md"
+    maintainer_index.write_text(
+        maintainer_index.read_text(encoding="utf-8") + "\n```python\nif )\n```\n",
         encoding="utf-8",
     )
 
@@ -825,9 +783,9 @@ def test_release_documentation_rejects_invalid_python_snippets(tmp_path: Path) -
 
 def test_release_documentation_rejects_invalid_command_syntax(tmp_path: Path) -> None:
     repository, policy = _documentation_fixture(tmp_path)
-    matrix = repository / "docs" / "reference" / "original-parity.md"
-    matrix.write_text(
-        matrix.read_text(encoding="utf-8") + "\n```console\nif then\n```\n",
+    maintainer_index = repository / "docs" / "README.md"
+    maintainer_index.write_text(
+        maintainer_index.read_text(encoding="utf-8") + "\n```console\nif then\n```\n",
         encoding="utf-8",
     )
 
@@ -842,7 +800,7 @@ def test_release_documentation_rejects_nonresolving_offline_install_command(
     installation = repository / "docs" / "getting-started" / "installation.md"
     installation.write_text(
         installation.read_text(encoding="utf-8").replace(
-            "python -m pip install ./picogrid_ecn_client-0.1.0-py3-none-any.whl",
+            "python -m pip install ./picogrid_ecn_client-0.2.0-py3-none-any.whl",
             "python -m pip install --no-index --find-links dist picogrid-ecn-client",
         ),
         encoding="utf-8",
@@ -862,17 +820,17 @@ def test_release_documentation_accepts_source_built_wheel_install_path(
     installation = repository / "docs" / "getting-started" / "installation.md"
     installation.write_text(
         installation.read_text(encoding="utf-8").replace(
-            "python -m pip install ./picogrid_ecn_client-0.1.0-py3-none-any.whl",
+            "python -m pip install ./picogrid_ecn_client-0.2.0-py3-none-any.whl",
             "python -m pip install build\n"
             "python -m build --wheel\n"
-            "python -m pip install ./dist/picogrid_ecn_client-0.1.0-py3-none-any.whl\n"
-            "python -m pip install ./picogrid_ecn_client-0.1.0-py3-none-any.whl",
+            "python -m pip install ./dist/picogrid_ecn_client-0.2.0-py3-none-any.whl\n"
+            "python -m pip install ./picogrid_ecn_client-0.2.0-py3-none-any.whl",
             1,
         ),
         encoding="utf-8",
     )
 
-    assert inspect_documentation(repository, policy).parity_rows == 3
+    assert inspect_documentation(repository, policy) is not None
 
 
 def test_release_documentation_rejects_unvetted_install_command(
@@ -882,8 +840,8 @@ def test_release_documentation_rejects_unvetted_install_command(
     installation = repository / "docs" / "getting-started" / "installation.md"
     installation.write_text(
         installation.read_text(encoding="utf-8").replace(
-            "python -m pip install ./picogrid_ecn_client-0.1.0-py3-none-any.whl",
-            "python -m pip install ./picogrid_ecn_client-0.1.0-py3-none-any.whl\n"
+            "python -m pip install ./picogrid_ecn_client-0.2.0-py3-none-any.whl",
+            "python -m pip install ./picogrid_ecn_client-0.2.0-py3-none-any.whl\n"
             "python -m pip install requests",
         ),
         encoding="utf-8",
@@ -903,9 +861,9 @@ def test_release_documentation_rejects_repeated_wheel_install_command(
     installation = repository / "docs" / "getting-started" / "installation.md"
     installation.write_text(
         installation.read_text(encoding="utf-8").replace(
-            "python -m pip install ./picogrid_ecn_client-0.1.0-py3-none-any.whl",
-            "python -m pip install ./picogrid_ecn_client-0.1.0-py3-none-any.whl\n"
-            "python -m pip install ./picogrid_ecn_client-0.1.0-py3-none-any.whl",
+            "python -m pip install ./picogrid_ecn_client-0.2.0-py3-none-any.whl",
+            "python -m pip install ./picogrid_ecn_client-0.2.0-py3-none-any.whl\n"
+            "python -m pip install ./picogrid_ecn_client-0.2.0-py3-none-any.whl",
         ),
         encoding="utf-8",
     )
@@ -924,7 +882,7 @@ def test_release_documentation_accepts_pypi_canonical_install_path(
     installation = repository / "docs" / "getting-started" / "installation.md"
     installation.write_text(
         installation.read_text(encoding="utf-8")
-        + "\n```bash\npython -m pip install picogrid-ecn-client==0.1.0\n```\n",
+        + "\n```bash\npython -m pip install picogrid-ecn-client==0.2.0\n```\n",
         encoding="utf-8",
     )
 
@@ -954,7 +912,7 @@ def test_release_documentation_accepts_pinned_upgrade_command(
     installation = repository / "docs" / "getting-started" / "installation.md"
     installation.write_text(
         installation.read_text(encoding="utf-8")
-        + "\n```bash\npython -m pip install --upgrade picogrid-ecn-client==0.1.0\n```\n",
+        + "\n```bash\npython -m pip install --upgrade picogrid-ecn-client==0.2.0\n```\n",
         encoding="utf-8",
     )
 
@@ -977,64 +935,6 @@ def test_release_documentation_rejects_unpinned_upgrade_command(
         ArtifactPolicyError,
         match="exact wheel with dependency resolution enabled",
     ):
-        inspect_documentation(repository, policy)
-
-
-def test_release_documentation_accepts_verified_staging_parity_state(
-    tmp_path: Path,
-) -> None:
-    repository, policy = _documentation_fixture(tmp_path)
-    matrix = repository / "docs" / "reference" / "original-parity.md"
-    matrix.write_text(
-        matrix.read_text(encoding="utf-8").replace(
-            "| RUNTIME-CLIENT | Original client | Public client | supported | offline-only |",
-            "| RUNTIME-CLIENT | Original client | Public client | supported | staging verified |",
-        ),
-        encoding="utf-8",
-    )
-
-    assert inspect_documentation(repository, policy).parity_rows == 3
-
-
-def test_release_documentation_rejects_unknown_parity_disposition(tmp_path: Path) -> None:
-    repository, policy = _documentation_fixture(tmp_path)
-    matrix = repository / "docs" / "reference" / "original-parity.md"
-    matrix.write_text(
-        matrix.read_text(encoding="utf-8").replace(
-            "| RUNTIME-CLIENT | Original client | Public client | supported |",
-            "| RUNTIME-CLIENT | Original client | Public client | maybe |",
-        ),
-        encoding="utf-8",
-    )
-
-    with pytest.raises(ArtifactPolicyError, match="invalid disposition"):
-        inspect_documentation(repository, policy)
-
-
-def test_release_documentation_requires_exact_parity_row_key_inventory(
-    tmp_path: Path,
-) -> None:
-    repository, policy = _documentation_fixture(tmp_path)
-    matrix = repository / "docs" / "reference" / "original-parity.md"
-    matrix.write_text(
-        matrix.read_text(encoding="utf-8").replace(
-            "| WORKFLOW-LOCATION | Authoritative query | Observed cache | changed semantics | offline-only | Non-authoritative state |\n",
-            "",
-        ),
-        encoding="utf-8",
-    )
-
-    with pytest.raises(ArtifactPolicyError, match="required row-key inventory"):
-        inspect_documentation(repository, policy)
-
-
-def test_release_documentation_requires_sorted_unique_policy_row_keys(
-    tmp_path: Path,
-) -> None:
-    repository, policy = _documentation_fixture(tmp_path)
-    policy["parity_required_row_keys"] = ["WORKFLOW-SEARCH", "WORKFLOW-SEARCH"]
-
-    with pytest.raises(ArtifactPolicyError, match="sorted and unique"):
         inspect_documentation(repository, policy)
 
 
@@ -1074,8 +974,8 @@ def test_release_documentation_inventories_example_environment_variables(
 
 def test_release_documentation_uses_publication_secret_scanner(tmp_path: Path) -> None:
     repository, policy = _documentation_fixture(tmp_path)
-    matrix = repository / "docs" / "reference" / "original-parity.md"
-    matrix.write_bytes(matrix.read_bytes() + b"\n" + _SLACK_TOKEN_CANARY)
+    maintainer_index = repository / "docs" / "README.md"
+    maintainer_index.write_bytes(maintainer_index.read_bytes() + b"\n" + _SLACK_TOKEN_CANARY)
 
     with pytest.raises(ArtifactPolicyError, match="provider token"):
         inspect_documentation(repository, policy)
@@ -1145,7 +1045,6 @@ def test_wheel_package_allowlist_matches_current_source_tree() -> None:
         if path.is_file() and (path.suffix == ".py" or path.name == "manifest.json")
     )
     documentation = inspect_documentation(repository, policy)
-    assert documentation.parity_rows == 88
     assert documentation.supported_how_tos == 11
 
 
@@ -1178,28 +1077,35 @@ def test_make_verify_release_selects_isolated_python_311() -> None:
 
 
 @pytest.mark.parametrize(
-    "target",
-    ("check-public-export", "public-export", "dry-run-cutover"),
-)
-def test_public_export_make_targets_install_packaging_dependency(target: str) -> None:
-    repository = Path(__file__).parents[2]
-
-    result = subprocess.run(
-        ["make", "--dry-run", target, "UV=uv"],
-        cwd=repository,
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-
-    assert "--no-project --with packaging==26.3 python -m scripts.public_export" in result.stdout
-
-
-@pytest.mark.parametrize(
     "payload, expected",
     [
-        (_PRIVATE_IMPORT_CANARY, "private SDK reference"),
+        (_NONPUBLIC_IMPORT_CANARY, "non-public SDK reference"),
+        (_UNAPPROVED_REPOSITORY_CANARY, "unapproved Picogrid repository URL"),
+        (_UNAPPROVED_SSH_REPOSITORY_CANARY, "unapproved Picogrid repository URL"),
+        (_UNAPPROVED_PORT_REPOSITORY_CANARY, "unapproved Picogrid repository URL"),
+        (_UNAPPROVED_SSH_PORT_REPOSITORY_CANARY, "unapproved Picogrid repository URL"),
         (_PRIVATE_API_PATH_CANARY, "private API path"),
+        (
+            b"https%3A%2F%2Fgithub.com%2Fpicogrid%2F" + b"unpublished-sdk",
+            "unapproved Picogrid repository URL",
+        ),
+        (b"%252F" + b"internal%252Fstatus", "private API path"),
+        (_LOOKALIKE_LEGION_DOCS_CANARY, "private API path"),
+        (_FOREIGN_AUTHORITY_LEGION_DOCS_CANARY, "private API path"),
+        (_EMBEDDED_LEGION_DOCS_URL_CANARY, "private API path"),
+        (_BARE_LEGION_PATH_CANARY, "private API path"),
+        (_PATH_CASE_LEGION_DOCS_CANARY, "private API path"),
+        (_BACKSLASH_EMBEDDED_LEGION_DOCS_CANARY, "private API path"),
+        (_QUERY_EMBEDDED_LEGION_DOCS_CANARY, "private API path"),
+        (_FRAGMENT_EMBEDDED_LEGION_DOCS_CANARY, "private API path"),
+        (_PRIVATE_PATH_BEHIND_LEGION_DOCS_CANARY, "private API path"),
+        (_PRIVATE_STATUS_BEHIND_LEGION_DOCS_CANARY, "private API path"),
+        (b"https://docs.picogrid.com/" + b"%6Cegion/", "private API path"),
+        (
+            b"https://docs.picogrid.com/" + b"legion/ https://docs.picogrid.com/" + b"%6Cegion/",
+            "private API path",
+        ),
+        (b"%252F" + b"legion%252F", "private API path"),
         (_PRIVATE_KEY_CANARY, "private key"),
         (_IPV4_CANARY, "non-loopback IPv4"),
         (_IPV6_CANARY, "non-loopback IPv6"),
@@ -1218,11 +1124,92 @@ def test_wheel_content_scan_rejects_prohibited_material(
     policy = load_policy(POLICY_PATH)
     contents = _wheel_contents(policy)
     contents["picogrid_ecn_client/client.py"] = payload
-    wheel = tmp_path / "picogrid_ecn_client-0.1.0-py3-none-any.whl"
+    wheel = tmp_path / "picogrid_ecn_client-0.2.0-py3-none-any.whl"
     _write_wheel(wheel, contents)
 
     with pytest.raises(ArtifactPolicyError, match=expected):
         inspect_wheel(wheel, policy)
+
+
+@pytest.mark.parametrize(
+    "repository",
+    [
+        b"https://github.com/picogrid/ecn-sdk-python.git\n",
+        b"git@github.com:picogrid/legion-system-auth.git\n",
+        b"https://github.com:443/picogrid/ecn-sdk-python.git\n",
+        b'https://github.com/picogrid/ecn-sdk-python\\n"',
+        b"ssh://git@github.com:22/picogrid/legion-system-auth.git\n",
+    ],
+)
+def test_wheel_content_scan_allows_approved_repository_git_urls(
+    tmp_path: Path,
+    repository: bytes,
+) -> None:
+    policy = load_policy(POLICY_PATH)
+    contents = _wheel_contents(policy)
+    contents["picogrid_ecn_client-0.2.0.dist-info/METADATA"] += repository
+    wheel = tmp_path / "picogrid_ecn_client-0.2.0-py3-none-any.whl"
+    _write_wheel(wheel, contents)
+
+    inspect_wheel(wheel, policy)
+
+
+def test_wheel_content_scan_allows_the_public_legion_documentation_url(tmp_path: Path) -> None:
+    policy = load_policy(POLICY_PATH)
+    contents = _wheel_contents(policy)
+    contents["picogrid_ecn_client-0.2.0.dist-info/METADATA"] += _PUBLIC_LEGION_DOCS_URL
+    wheel = tmp_path / "picogrid_ecn_client-0.2.0-py3-none-any.whl"
+    _write_wheel(wheel, contents)
+
+    inspect_wheel(wheel, policy)
+
+
+def test_publication_scan_allows_the_public_legion_documentation_link() -> None:
+    policy = load_policy(POLICY_PATH)
+
+    for href in (
+        b"https://docs.picogrid.com/" + b"legion/",
+        b"https://docs.picogrid.com/" + b"legion/getting-started/",
+    ):
+        release_checks.scan_publication_content(
+            "site-dist/index.html",
+            b'<a href="' + href + b'">Legion API</a>',
+            policy,
+        )
+
+    # Prose that also carries spellings the exemption pattern does not match
+    # (trailing comma, a different segment, upper-case host): the real link
+    # further on must still be exempt.
+    for prose in (
+        b"See https://docs.picogrid.com/legion, then https://docs.picogrid.com/" + b"legion/x.",
+        b"Old https://docs.picogrid.com/legion-v2/ new https://docs.picogrid.com/" + b"legion/",
+        b"HTTPS://DOCS.PICOGRID.COM/" + b"legion/",
+        b"LEGION_DOCS_URL=https://docs.picogrid.com/" + b"legion/",
+    ):
+        release_checks.scan_publication_content("README.md", prose, policy)
+
+
+def test_publication_scan_refuses_an_encoded_embedding_of_the_legion_docs_url() -> None:
+    policy = load_policy(POLICY_PATH)
+
+    # `&#47;` decodes to `/`, which turns the docs URL into a path segment of
+    # another approved host; the exemption must not spend itself on that copy.
+    with pytest.raises(ArtifactPolicyError, match="private API path"):
+        release_checks.scan_publication_content(
+            "site-dist/index.html",
+            b'<a href="https://github.com/&#47;https://docs.picogrid.com/' + b'legion/">x</a>',
+            policy,
+        )
+
+
+def test_content_scan_allows_the_public_documentation_package_name() -> None:
+    policy = load_policy(POLICY_PATH)
+
+    scan_secret_and_address_content(
+        "package-lock.json",
+        b'{"name":"picogrid-ecn-sdk-docs"}',
+        policy,
+    )
 
 
 @pytest.mark.parametrize(
@@ -1288,6 +1275,44 @@ def test_network_scan_decodes_percent_encoded_addresses(payload: bytes, expected
         scan_secret_and_address_content("generated.js", payload, policy)
 
 
+def test_publication_scan_decodes_html_entities() -> None:
+    policy = load_policy(POLICY_PATH)
+
+    with pytest.raises(ArtifactPolicyError, match="private API path"):
+        release_checks.scan_publication_content(
+            "site-dist/page.html",
+            b"&#x2f;internal&#x2f;status",
+            policy,
+        )
+
+    with pytest.raises(ArtifactPolicyError, match="private API path"):
+        release_checks.scan_publication_content(
+            "site-dist/page.html",
+            b"&#37;2Finternal&#37;2Fstatus",
+            policy,
+        )
+
+    with pytest.raises(ArtifactPolicyError, match="private API path"):
+        release_checks.scan_publication_content(
+            "site-dist/page.html",
+            b"&#37;252Finternal&#37;252Fstatus",
+            policy,
+        )
+
+    with pytest.raises(ArtifactPolicyError, match="private API path"):
+        release_checks.scan_publication_content(
+            "site-dist/page.html",
+            b"%2526%2523x2f%253Binternal%2526%2523x2f%253Bstatus",
+            policy,
+        )
+
+    release_checks.scan_publication_content(
+        "example.py",
+        b"&#x2f;internal&#x2f;status",
+        policy,
+    )
+
+
 @pytest.mark.parametrize(
     "name",
     ("frontend/main.ts", "frontend/style.css", "Dockerfile", ".env.example"),
@@ -1311,6 +1336,45 @@ def test_worktree_scan_rejects_secret_content_without_echoing_it(tmp_path: Path)
     assert "README.md" not in str(raised.value)
 
 
+@pytest.mark.parametrize(
+    "payload",
+    (
+        _NONPUBLIC_IMPORT_CANARY,
+        _UNAPPROVED_REPOSITORY_CANARY,
+        _PRIVATE_API_PATH_CANARY,
+    ),
+)
+def test_worktree_source_scan_allows_nonpublic_reference_fixtures(
+    tmp_path: Path,
+    payload: bytes,
+) -> None:
+    policy = load_policy(POLICY_PATH)
+    candidate = tmp_path / "fixture.py"
+    candidate.write_bytes(payload)
+
+    assert (
+        release_workflow._scan_worktree_paths(
+            tmp_path,
+            [Path("fixture.py")],
+            [],
+            policy,
+        )["git_visible_files_scanned"]
+        == 1
+    )
+
+
+def test_operator_screenshot_reports_publication_content_rejection(tmp_path: Path) -> None:
+    policy = load_policy(POLICY_PATH)
+    screenshot = tmp_path / "operator.png"
+    screenshot.write_bytes(b"\x89PNG\r\n\x1a\n" + b"\0" * 1_000 + _NONPUBLIC_IMPORT_CANARY)
+
+    with pytest.raises(
+        release_workflow.VerificationError,
+        match="operator publication screenshot failed publication content scan",
+    ):
+        release_workflow._inspect_operator_screenshot(screenshot, policy)
+
+
 def test_worktree_scan_rejects_unexpected_ignored_file_even_with_innocuous_name(
     tmp_path: Path,
 ) -> None:
@@ -1328,6 +1392,37 @@ def test_worktree_scan_rejects_unexpected_ignored_file_even_with_innocuous_name(
             [Path("ordinary.txt")],
             policy,
         )
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        Path(".claude/settings.local.json"),
+        Path("notes/CODEX.md"),
+        Path(".github/copilot-instructions.md"),
+    ],
+)
+def test_worktree_scan_rejects_assistant_artifact_names(path: Path) -> None:
+    policy = load_policy(POLICY_PATH)
+
+    with pytest.raises(
+        release_workflow.VerificationError,
+        match="assistant-artifact-name=1",
+    ):
+        release_workflow._scan_worktree_paths(Path("/unused"), [path], [], policy)
+
+
+def test_worktree_scan_allows_withheld_root_agents_file() -> None:
+    policy = load_policy(POLICY_PATH)
+
+    result = release_workflow._scan_worktree_paths(
+        Path("/unused"),
+        [Path("AGENTS.md")],
+        [],
+        policy,
+    )
+
+    assert result["git_visible_files_scanned"] == 0
 
 
 @pytest.mark.parametrize(
@@ -2024,15 +2119,15 @@ def test_operator_wheel_rejects_missing_or_changed_license_expression(
     tmp_path: Path, actual_expression: str | None
 ) -> None:
     policy = load_policy(POLICY_PATH)
-    wheel = tmp_path / "picogrid_ecn_operator_app-0.1.0-py3-none-any.whl"
-    metadata = "Metadata-Version: 2.4\nName: picogrid-ecn-operator-app\nVersion: 0.1.0\n"
+    wheel = tmp_path / "picogrid_ecn_operator_app-0.2.0-py3-none-any.whl"
+    metadata = "Metadata-Version: 2.4\nName: picogrid-ecn-operator-app\nVersion: 0.2.0\n"
     if actual_expression is not None:
         metadata += f"License-Expression: {actual_expression}\n"
     _write_wheel(
         wheel,
         {
-            "picogrid_ecn_operator_app-0.1.0.dist-info/METADATA": metadata.encode(),
-            "picogrid_ecn_operator_app-0.1.0.dist-info/licenses/LICENSE": (_CANONICAL_LICENSE_TEXT),
+            "picogrid_ecn_operator_app-0.2.0.dist-info/METADATA": metadata.encode(),
+            "picogrid_ecn_operator_app-0.2.0.dist-info/licenses/LICENSE": (_CANONICAL_LICENSE_TEXT),
         },
     )
 
@@ -2050,15 +2145,15 @@ def test_operator_wheel_rejects_missing_or_changed_license_expression(
 
 def test_operator_wheel_rejects_a_license_outside_its_own_dist_info(tmp_path: Path) -> None:
     policy = load_policy(POLICY_PATH)
-    wheel = tmp_path / "picogrid_ecn_operator_app-0.1.0-py3-none-any.whl"
+    wheel = tmp_path / "picogrid_ecn_operator_app-0.2.0-py3-none-any.whl"
     metadata = (
-        "Metadata-Version: 2.4\nName: picogrid-ecn-operator-app\nVersion: 0.1.0\n"
+        "Metadata-Version: 2.4\nName: picogrid-ecn-operator-app\nVersion: 0.2.0\n"
         f"License-Expression: {policy['license_expression']}\n"
     )
     _write_wheel(
         wheel,
         {
-            "picogrid_ecn_operator_app-0.1.0.dist-info/METADATA": metadata.encode(),
+            "picogrid_ecn_operator_app-0.2.0.dist-info/METADATA": metadata.encode(),
             "other-0.1.0.dist-info/licenses/LICENSE": _CANONICAL_LICENSE_TEXT,
         },
     )
@@ -2404,6 +2499,25 @@ def test_ignored_generated_content_scan_allows_stdlib_http_references(tmp_path: 
     }
 
 
+def test_ignored_generated_content_uses_publication_boundary_scanner(
+    tmp_path: Path,
+) -> None:
+    policy = load_policy(POLICY_PATH)
+    relative = Path("reports/generated/coverage.json")
+    candidate = tmp_path / relative
+    candidate.parent.mkdir(parents=True)
+    candidate.write_bytes(_NONPUBLIC_IMPORT_CANARY)
+
+    with pytest.raises(
+        release_workflow.VerificationError,
+        match="ignored generated report failed non-public SDK reference scan",
+    ) as raised:
+        release_workflow._scan_worktree_paths(tmp_path, [], [relative], policy)
+
+    assert relative.as_posix() not in str(raised.value)
+    assert _NONPUBLIC_IMPORT_CANARY.decode().strip() not in str(raised.value)
+
+
 def test_ignored_generated_report_content_uses_the_secret_scanner(tmp_path: Path) -> None:
     policy = load_policy(POLICY_PATH)
     relative = Path("reports/generated/coverage.json")
@@ -2527,6 +2641,18 @@ def test_generated_report_reset_rejects_symlinked_parent_without_deleting_target
     assert sentinel.read_text(encoding="utf-8") == "{}\n"
 
 
+def test_release_boundary_refuses_a_dirty_worktree() -> None:
+    with pytest.raises(
+        release_workflow.VerificationError,
+        match="release verification requires a clean Git worktree",
+    ):
+        release_workflow._require_clean_release_worktree(" M src/client.py")
+
+
+def test_release_boundary_accepts_a_clean_worktree() -> None:
+    assert release_workflow._require_clean_release_worktree("") is None
+
+
 def test_release_tag_accepts_the_policy_version() -> None:
     assert release_workflow._release_tag({"RELEASE_TAG": "  v0.1.0  "}, "0.1.0") == "v0.1.0"
 
@@ -2604,14 +2730,11 @@ def test_final_provenance_uses_captured_verified_input_materials(
         documentation_files=("docs/README.md",),
         example_files=("examples/demo.py",),
         link_count=1,
-        parity_rows=1,
         python_snippets=1,
         supported_how_tos=1,
     )
     probe = {
         "import_origin": "/isolated/site-packages/picogrid_ecn_client/__init__.py",
-        "private_sdk_available": False,
-        "private_sdk_imported": False,
         "project_name": "picogrid-ecn-client",
         "project_version": "0.1.0",
         "python": "3.11",
@@ -2706,7 +2829,7 @@ def test_wheel_allowlist_rejects_unreviewed_file(tmp_path: Path) -> None:
     policy = load_policy(POLICY_PATH)
     contents = _wheel_contents(policy)
     contents["picogrid_ecn_client/new_escape_hatch.py"] = b""
-    wheel = tmp_path / "picogrid_ecn_client-0.1.0-py3-none-any.whl"
+    wheel = tmp_path / "picogrid_ecn_client-0.2.0-py3-none-any.whl"
     _write_wheel(wheel, contents)
 
     with pytest.raises(ArtifactPolicyError, match="allowlist mismatch"):
@@ -2716,11 +2839,11 @@ def test_wheel_allowlist_rejects_unreviewed_file(tmp_path: Path) -> None:
 def test_wheel_metadata_rejects_dependency_bound_drift(tmp_path: Path) -> None:
     policy = load_policy(POLICY_PATH)
     contents = _wheel_contents(policy)
-    metadata = "picogrid_ecn_client-0.1.0.dist-info/METADATA"
+    metadata = "picogrid_ecn_client-0.2.0.dist-info/METADATA"
     contents[metadata] = contents[metadata].replace(
         _policy_requirement(policy, "aiomqtt"), b"aiomqtt>=1"
     )
-    wheel = tmp_path / "picogrid_ecn_client-0.1.0-py3-none-any.whl"
+    wheel = tmp_path / "picogrid_ecn_client-0.2.0-py3-none-any.whl"
     _write_wheel(wheel, contents)
 
     with pytest.raises(ArtifactPolicyError, match="runtime requirements changed"):
@@ -2730,11 +2853,11 @@ def test_wheel_metadata_rejects_dependency_bound_drift(tmp_path: Path) -> None:
 def test_sdist_metadata_rejects_dependency_bound_drift(tmp_path: Path) -> None:
     policy = load_policy(POLICY_PATH)
     contents = _sdist_contents(policy)
-    metadata = "picogrid_ecn_client-0.1.0/PKG-INFO"
+    metadata = "picogrid_ecn_client-0.2.0/PKG-INFO"
     contents[metadata] = contents[metadata].replace(
         _policy_requirement(policy, "protobuf"), b"protobuf>=1"
     )
-    sdist = tmp_path / "picogrid_ecn_client-0.1.0.tar.gz"
+    sdist = tmp_path / "picogrid_ecn_client-0.2.0.tar.gz"
     _write_sdist(sdist, contents)
 
     with pytest.raises(ArtifactPolicyError, match="runtime requirements changed"):
@@ -2746,9 +2869,9 @@ def test_sdist_rejects_manifest_that_drifts_from_exact_publication_inventory(
 ) -> None:
     policy = load_policy(POLICY_PATH)
     contents = _sdist_contents(policy)
-    root = "picogrid_ecn_client-0.1.0"
+    root = "picogrid_ecn_client-0.2.0"
     contents[f"{root}/MANIFEST.in"] = b"include docs/README.md\n"
-    sdist = tmp_path / "picogrid_ecn_client-0.1.0.tar.gz"
+    sdist = tmp_path / "picogrid_ecn_client-0.2.0.tar.gz"
     _write_sdist(sdist, contents)
 
     with pytest.raises(ArtifactPolicyError, match="exact publication inventory"):
@@ -2759,7 +2882,7 @@ def test_topic_filter_change_requires_policy_review(tmp_path: Path) -> None:
     policy = load_policy(POLICY_PATH)
     contents = _wheel_contents(policy)
     contents["picogrid_ecn_client/_protocol/topics.py"] += b'BROAD_SUBSCRIPTION = "#"\n'
-    wheel = tmp_path / "picogrid_ecn_client-0.1.0-py3-none-any.whl"
+    wheel = tmp_path / "picogrid_ecn_client-0.2.0-py3-none-any.whl"
     _write_wheel(wheel, contents)
 
     with pytest.raises(ArtifactPolicyError, match="subscription set changed"):
@@ -2770,7 +2893,7 @@ def test_unapproved_wildcard_literal_requires_policy_review(tmp_path: Path) -> N
     policy = load_policy(POLICY_PATH)
     contents = _wheel_contents(policy)
     contents["picogrid_ecn_client/_protocol/topics.py"] += b'BROAD = "task/+/#"\n'
-    wheel = tmp_path / "picogrid_ecn_client-0.1.0-py3-none-any.whl"
+    wheel = tmp_path / "picogrid_ecn_client-0.2.0-py3-none-any.whl"
     _write_wheel(wheel, contents)
 
     with pytest.raises(ArtifactPolicyError, match="unapproved MQTT wildcard"):
@@ -2781,7 +2904,7 @@ def test_runtime_http_remnant_is_rejected(tmp_path: Path) -> None:
     policy = load_policy(POLICY_PATH)
     contents = _wheel_contents(policy)
     contents["picogrid_ecn_client/client.py"] = b"import aio" + b"http\n"
-    wheel = tmp_path / "picogrid_ecn_client-0.1.0-py3-none-any.whl"
+    wheel = tmp_path / "picogrid_ecn_client-0.2.0-py3-none-any.whl"
     _write_wheel(wheel, contents)
 
     with pytest.raises(ArtifactPolicyError, match="retired runtime marker"):
@@ -2792,7 +2915,7 @@ def test_mqtt_transport_must_require_protocol_v5(tmp_path: Path) -> None:
     policy = load_policy(POLICY_PATH)
     contents = _wheel_contents(policy)
     contents["picogrid_ecn_client/_transport/mqtt.py"] = b"PROTOCOL = object()\n"
-    wheel = tmp_path / "picogrid_ecn_client-0.1.0-py3-none-any.whl"
+    wheel = tmp_path / "picogrid_ecn_client-0.2.0-py3-none-any.whl"
     _write_wheel(wheel, contents)
 
     with pytest.raises(ArtifactPolicyError, match="does not require protocol v5"):
@@ -2803,7 +2926,7 @@ def test_offline_mock_must_require_protocol_level_five(tmp_path: Path) -> None:
     policy = load_policy(POLICY_PATH)
     contents = _wheel_contents(policy)
     contents["picogrid_ecn_client/testing/_mqtt.py"] = b"protocol_level = packet[0]\n"
-    wheel = tmp_path / "picogrid_ecn_client-0.1.0-py3-none-any.whl"
+    wheel = tmp_path / "picogrid_ecn_client-0.2.0-py3-none-any.whl"
     _write_wheel(wheel, contents)
 
     with pytest.raises(ArtifactPolicyError, match="mock does not require MQTT protocol level 5"):
@@ -2837,7 +2960,7 @@ def test_sbom_sanitizer_removes_local_archive_reference(tmp_path: Path) -> None:
                         "externalReferences": [
                             {
                                 "type": "distribution",
-                                "url": "file:///private/tmp/candidate.whl",
+                                "url": "file:///tmp/candidate.whl",
                             },
                             {
                                 "type": "website",
@@ -2955,7 +3078,7 @@ def test_sbom_sanitizer_rejects_local_dependency_reference(tmp_path: Path) -> No
                         "externalReferences": [
                             {
                                 "type": "distribution",
-                                "url": "file:///private/tmp/dependency.whl",
+                                "url": "file:///tmp/dependency.whl",
                             }
                         ],
                     }
@@ -2986,9 +3109,9 @@ def test_candidate_artifacts_are_promoted_only_from_verified_inputs(
     repository = tmp_path / "repository"
     distribution = repository / "dist"
     distribution.mkdir(parents=True)
-    stale_wheel = distribution / "picogrid_ecn_client-0.1.0-py3-none-any.whl"
+    stale_wheel = distribution / "picogrid_ecn_client-0.2.0-py3-none-any.whl"
     _write_wheel(stale_wheel, _wheel_contents(policy))
-    stale_sdist = distribution / "picogrid_ecn_client-0.1.0.tar.gz"
+    stale_sdist = distribution / "picogrid_ecn_client-0.2.0.tar.gz"
     _write_sdist(stale_sdist, _sdist_contents(policy))
     unrelated = distribution / "another_project-1.0-py3-none-any.whl"
     unrelated.write_bytes(b"preserve")
@@ -3123,7 +3246,7 @@ def test_candidate_artifact_reset_inspects_archive_before_deletion(
     repository = tmp_path / "repository"
     distribution = repository / "dist"
     distribution.mkdir(parents=True)
-    candidate = distribution / "picogrid_ecn_client-0.1.0-py3-none-any.whl"
+    candidate = distribution / "picogrid_ecn_client-0.2.0-py3-none-any.whl"
     contents = _wheel_contents(policy)
     contents["picogrid_ecn_client/client.py"] = _PRIVATE_KEY_CANARY
     _write_wheel(candidate, contents)
@@ -3528,8 +3651,8 @@ def test_immutable_source_snapshot_rejects_policy_path_escape(
             "import picogrid_ecn_client.workflows._retention",
             "non-public client module",
         ),
-        ("import picogrid_edge_sdk", "non-public client module"),
-        ("from picogrid_edge_sdk import x", "non-public client module"),
+        ("import picogrid_" + "example_sdk", "non-public client module"),
+        ("from picogrid_" + "example_sdk import x", "non-public client module"),
     ],
 )
 def test_installed_example_import_scan_rejects_non_public_sdk_names(
@@ -3925,7 +4048,7 @@ def test_sdist_with_rc_version_normalized_to_canonical_form(tmp_path: Path) -> N
     new_root = "picogrid_ecn_client-0.1.0rc1"
     renamed = {}
     for key, value in contents.items():
-        new_key = key.replace(old_root, new_root)
+        new_key = key.replace(f"{old_root}/", f"{new_root}/")
         # Update PKG-INFO metadata version
         if key.endswith("/PKG-INFO") or key.endswith("-INFO"):
             value_str = value.decode("utf-8")

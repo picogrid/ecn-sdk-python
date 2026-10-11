@@ -25,9 +25,10 @@ python examples/get_ecn_location.py
 Set the common connection variables described in
 [authentication](../getting-started/authentication.md). The example subscribes only
 to `entity_location/terminal-geolocation/+` and
-`entity_location_pb/terminal-geolocation/+`. The single-level UUID wildcard is the
-fixed-depth segment needed to observe the broadcast without
-already knowing its canonical UUID. The returned event supplies that UUID. A timeout
+`entity_location_pb/terminal-geolocation`. The JSON filter's single-level UUID
+wildcard observes the broadcast without already knowing its canonical UUID. The
+protobuf topic has no entity segment: the returned event gets its UUID from the
+payload's exactly 16 raw UUID bytes. A timeout
 means no matching update was observed; it does not prove that no server-side state
 exists. For entity-specific observation, use `wait_for_update(entity_id, ...)` or a
 location watcher with the exact UUID.

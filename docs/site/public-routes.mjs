@@ -75,6 +75,4 @@ export const publicGuideRoutes = [
 
 export const maintainerOnlyDocumentationRoutes = [
   'readme',
-  'reference/evidence-status',
-  'reference/original-ecn-integration-parity',
 ];

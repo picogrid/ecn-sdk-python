@@ -1,0 +1,66 @@
+{
+  "canonical_encoding": "UTF-8 JSON with lexicographically sorted object keys, separators ',' and ':', non-ASCII characters preserved unescaped, and NaN or Infinity rejected. Integers render in shortest decimal form with no decimal point or exponent. Floating-point numbers render as the shortest decimal string that parses back to the same IEEE-754 binary64 value, with a trailing '.0' when the value is integral (36.0, never 36); no corpus payload requires exponent notation. 'canonical_sha256' is the SHA-256 of the vector payload re-encoded this way after a strict decode, and binds only implementations of this canonical encoder; implementations with a different JSON encoder must prove decode-equivalence instead of byte equality.",
+  "corpus": "ecn-wire-conformance",
+  "file_paths": "Keys of 'files' are POSIX paths relative to the corpus root, which is the parent directory of the directory containing this manifest.",
+  "files": {
+    "conformance/drop_policy.json": {
+      "family": "drop_policy",
+      "sha256": "57e30dc0657439635095f580f1303232eb740dd4f1aa17f9a3d5cdca35688f24"
+    },
+    "conformance/topic_grammar.json": {
+      "family": "topic_grammar",
+      "sha256": "57840353a59801aed58acbf500688fd6d356888210871310f3e9116c9935b871"
+    },
+    "protocol/detection_event.json": {
+      "canonical_sha256": "6bd58f612face350b86cc2705c2921f55b819f009c06a16bd9e2c8f7f6658ff5",
+      "family": "json_entity",
+      "sha256": "e935a4983af9460c9bd1945a4aac797d2d63f4c1ba0903c0dd36538bd0d96d4d"
+    },
+    "protocol/location_update.json": {
+      "canonical_sha256": "1544cf0315d1e134622518fb8afb636208d77d3e67ab67653fcfc95ba4a7f8c1",
+      "family": "json_location",
+      "sha256": "962d1b51e649c49486c616582169420ae54311823ae15c322e9ba0cb0d0abd7d"
+    },
+    "protocol/malformed_payload.json": {
+      "family": "malformed",
+      "sha256": "cb4b6bf9ae982eab77be698d7f28055f5a68f8d72b1e51b6763e22f0c5b327b5"
+    },
+    "protocol/task_acknowledgment.json": {
+      "canonical_sha256": "04f5801f6ecb1a79c898ee3e08f682f34b4c04a0c65f63b784997121940a01af",
+      "family": "task_envelope",
+      "sha256": "949d603f3be953821962f9c4af6b515e745bf51b7bacf8d108d691f2cc21d309"
+    },
+    "protocol/task_failure.json": {
+      "canonical_sha256": "a7682d99d06b56038975a19633ec15ca452e36f843fbb75897c9dcc6f4a2554a",
+      "family": "task_envelope",
+      "sha256": "948c58d8ec27507a4b9c83501e5fe3c8c5cf34c8ba829be424be80ef54aa36ee"
+    },
+    "protocol/task_request.json": {
+      "canonical_sha256": "acdbc119cde1323d9122449da1f240218ac8a20d27f889d73f1d79b00d721c1a",
+      "family": "task_envelope",
+      "sha256": "59920437afbdd5e73ec24cbfce48b9b505732963c06669657b27ee53e30529f8"
+    },
+    "protocol/task_success.json": {
+      "canonical_sha256": "d203a664db52efd9fa1edaeb3b685a80c448e9841ea46e046beb4122b5a9214a",
+      "family": "task_envelope",
+      "sha256": "d8beee453cb3c8ee2bb11077fc965a251158126c4fdbc3dff75519c7df3c098a"
+    },
+    "protocol/track_event.json": {
+      "canonical_sha256": "07c48e60b2507e988409fae93d5c169ecefbff8b7ecee990da315f6ef6143cd1",
+      "family": "json_entity",
+      "sha256": "5d047bf2218e95e79bb5b4851db8076a11536d99a91a7fb567cacd028f4e75f5"
+    },
+    "wgs84_ecef.json": {
+      "conformance_tolerances": {
+        "degenerate_latitude_abs_deg": 1e-07,
+        "degenerate_longitude_abs_deg": 1e-08,
+        "geodetic_to_ecef_position_abs_m": 1e-06,
+        "ned_velocity_to_ecef_abs_mps": 1e-09,
+        "ned_velocity_to_ecef_rel": 1e-12
+      },
+      "family": "geodesy",
+      "sha256": "dc7da4caa0af8b3a2c8915eb8f96fed630804361aa4d1ac85b31fd304371bef4"
+    }
+  },
+  "version": "0.2"
+}

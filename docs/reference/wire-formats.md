@@ -16,7 +16,7 @@ configuration; applications use typed SDK methods rather than constructing topic
 entity/{integration}/{entity_id}/{category}
 entity_pb/{integration}/{category}
 entity_location/{integration}/{entity_id}
-entity_location_pb/{integration}/{entity_id}
+entity_location_pb/{integration}
 task/{integration}/{entity_id}/{command}
 {target_terminal_id}/task/{integration}/{entity_id}/{command}
 task/{integration}/{entity_id}/{command}/response
@@ -24,7 +24,11 @@ task/{integration}/{entity_id}/{command}/response
 ```
 
 All connections use MQTT v5. Watchers install only known fixed-depth filters and
-never use a multi-level wildcard. Startup installs none.
+never use a multi-level wildcard. Protobuf location watchers use
+`entity_location_pb/+`; entity IDs do not narrow that family because they travel in
+the payload. Startup installs no subscriptions. `response` is reserved as an
+integration name so client task topics stay disjoint from the
+`task/response/{integration}/{command}` shape used for responses addressed to Legion.
 
 ## QoS and delivery
 
@@ -71,9 +75,11 @@ sea level, or a height the client may infer, and altitude-dependent operations a
 unavailable without one. Bearing is degrees clockwise from true north in `[0, 360)`;
 publishers normalize a wraparound value such as 360 before publication.
 
-For both JSON and protobuf, velocity is a three-value north/east/down vector in metres
-per second. Angular velocity uses roll/pitch/yaw radians per second. Its external axis
-interpretation is listed under [Compatibility and limitations](../compatibility/limitations.md).
+For JSON and ordinary geodetic protobuf locations with no CRS marker, `velocity`
+retains the public three-value north/east/down component semantics in metres per
+second. `angular_velocity` likewise retains its public NED-style component semantics
+in radians per second; its external roll/pitch/yaw interpretation is listed under
+[Compatibility and limitations](../compatibility/limitations.md).
 
 For both encodings, `accuracy` is horizontal position uncertainty in metres expressed as
 drms, `sqrt(sigma_north^2 + sigma_east^2)` over the one-sigma per-axis standard deviations
@@ -95,16 +101,31 @@ The installed schemas define the supported numeric wire fields for entity, entit
 event, location, and entity-location wrapper messages under the public package
 namespace.
 
-The protobuf entity ID lives in its payload, while the protobuf location entity ID
-lives in its topic. The SDK producer omits the optional entity category field and
-derives category from the topic. Inbound
-decode accepts a known matching category field; a future enum value becomes `OTHER`.
-Strict topic agreement means a future payload category on a known topic is rejected,
-and `OTHER` passes only when the topic category is also unknown. `OTHER` is
-decode-only. GEOMETRIC is supported without a numeric enum because the confirmed
-producer omits that optional field and derives category from the topic suffix.
-When a future numeric category field and a future textual suffix are both unknown,
-the SDK can establish only coarse unknown/`OTHER` compatibility.
+The protobuf entity and location IDs live in their payloads as exactly 16 raw UUID
+bytes. The SDK producer derives entity category from the topic. Inbound decode
+accepts a known matching category field; a future enum value becomes `OTHER`. Strict
+topic agreement means a future payload category on a known topic is rejected, and
+`OTHER` passes only when the topic category is also unknown. `OTHER` is decode-only.
+Known protobuf categories include WEATHER, GEOMETRIC, ZONE, VEHICLE, and UXV in
+addition to the original category set. The affiliation enum additionally includes
+PENDING, ASSUMED_FRIEND, EXERCISE_PENDING, EXERCISE_UNKNOWN, EXERCISE_FRIEND,
+EXERCISE_NEUTRAL, EXERCISE_ASSUMED_FRIEND, JOKER, FAKER, and NONE_SPECIFIED.
+
+`EntityMessage.recorded_at` duplicates the envelope timestamp. Encode writes both;
+decode rejects a present embedded timestamp unless its seconds and nanoseconds
+exactly match the envelope. `EntityMessage.classification_json` is retained on the
+wire but has no separate public-model field.
+
+The extended `LocationMessage` fields are radius, covariance, orientation,
+acceleration, CRS, geometry type, and coordinates. Decode tolerates and drops the
+geometry, covariance, orientation, acceleration, and radius values because public
+models do not expose them yet. For `CRS_ECEF`, the latitude, longitude, and altitude
+slots carry EPSG:4978 x/y/z metres; decode converts them to geodetic coordinates with
+the package's pinned WGS-84 math. In the same `CRS_ECEF` wire message, `velocity` and
+`angular_velocity` are ECEF x/y/z-axis vectors, not pre-rotated NED values. Decode
+rotates both vectors at that position into the public NED frame, so publishers must
+place ECEF-axis components on the wire. Encode does not set any extended location
+field.
 
 Unknown protobuf fields are preserved by the runtime and ignored by public decode.
 Generated message classes are not public API. The SDK emits required/default entity
@@ -158,30 +179,34 @@ ACK response:
 
 ACK sends no final response. Fire-and-forget sends no response. A literal-local
 request uses `source="local"` in its response. A configured same-terminal exchange
-uses that terminal UUID in both payloads while retaining the unprefixed response
-topic. A canonical remote source is accepted only when the handler
-has `ECNConfig.terminal_id`; the response is published through that exact source
-terminal prefix and carries the responding terminal UUID in its payload `source`.
-The originating dispatcher receives the ordinary unprefixed response and verifies
-that source against its requested target. The SDK publishes the ACK before invoking
-the handler so exactly one acknowledgement is observable before handler work begins.
-Legacy hostname-valued source aliases are deliberately excluded: public sources are
-only literal `local` or canonical terminal UUIDs. Remote dispatch therefore requires
-an exact `target_terminal_id`; an unprefixed configured-terminal request accepts only
+uses that terminal UUID in both payloads while retaining the unprefixed local
+`task/{integration}/{entity_id}/{command}/response` topic. A canonical remote source
+is accepted only when the handler has `ECNConfig.terminal_id`; the executor publishes
+the response through
+`{source_terminal_id}/task/{integration}/{entity_id}/{command}/response` and carries
+the responding terminal UUID in its payload `source`. ECN infrastructure consumes the
+route prefix, and the originating dispatcher receives
+`task/{integration}/{entity_id}/{command}/response` and verifies the payload source
+against its requested target. The SDK publishes the ACK before invoking the handler so exactly
+one acknowledgement is observable before handler work begins. Legacy
+hostname-valued source aliases are deliberately excluded: public sources are only
+literal `local` or canonical terminal UUIDs. Remote dispatch therefore requires an
+exact `target_terminal_id`; an unprefixed configured-terminal request accepts only
 the same-terminal response source.
 Byte identity is not claimed; the contract is the documented JSON fields, values,
 topic route, QoS, and single-response lifecycle.
 
 ## Coordinate values
 
-Location bytes are geodetic on both wire formats: decimal degrees of latitude and
-longitude, and metres of height above the WGS-84 ellipsoid where altitude is supplied.
-Velocity is a positional `[north, east, down]` array in metres per second.
-
-The client converts to and from EPSG:4978 Cartesian coordinates in memory, and the ECN
-neither accepts nor emits an ECEF value. There is no ECEF field on either wire format, no
-topic carries one, and a converted position is never written back into published or
-observed state. See the [coordinate reference matrix](coordinate-reference.md).
+JSON locations and ordinary protobuf locations are geodetic: decimal degrees of
+latitude and longitude, and metres of height above the WGS-84 ellipsoid where
+altitude is supplied. Velocity is a positional `[north, east, down]` array in metres
+per second. A protobuf location marked `CRS_ECEF` instead carries EPSG:4978 x/y/z
+metres in its latitude, longitude, and altitude slots; decode converts that position
+to the same public geodetic representation with the package's pinned WGS-84 math.
+Public in-memory conversion methods can also convert geodetic positions and
+velocities to and from EPSG:4978 without changing published or observed state. See
+the [coordinate reference matrix](coordinate-reference.md).
 
 ## Compatibility boundary
 

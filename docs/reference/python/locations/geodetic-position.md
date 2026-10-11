@@ -11,7 +11,7 @@ tableOfContents: true
 >
 > Related guidance: [concepts/locations](/concepts/locations/), [how-to/observe-location](/how-to/observe-location/), [how-to/pli-entities](/how-to/pli-entities/).
 >
-> Runnable examples: [publish_location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/publish_location.py), [get_ecn_location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/get_ecn_location.py).
+> Runnable examples: [publish_location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/publish_location.py), [get_ecn_location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/get_ecn_location.py).
 
 ```python
 from picogrid_ecn_client import GeodeticPosition
@@ -23,7 +23,7 @@ A WGS-84 position: degrees of latitude and longitude, metres of height.
 GeodeticPosition(*, latitude: float, longitude: float, altitude: float)
 ```
 
-[Source · models/location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/models/location.py#L131)
+[Source · models/location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/models/location.py#L131)
 
 ## Fields
 
@@ -41,7 +41,7 @@ Convert to EPSG:4978 Cartesian metres.
 def to_ecef() -> ECEFPosition
 ```
 
-[Source · models/location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/models/location.py#L166)
+[Source · models/location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/models/location.py#L166)
 
 ## `to_ecef_velocity`
 
@@ -63,7 +63,7 @@ def to_ecef_velocity(velocity: Velocity) -> ECEFVelocity
 | --- | --- |
 | ECEFVelocity | The same velocity expressed on EPSG:4978 axes. |
 
-[Source · models/location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/models/location.py#L172)
+[Source · models/location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/models/location.py#L172)
 
 ## `to_ned_velocity`
 
@@ -85,4 +85,4 @@ def to_ned_velocity(velocity: ECEFVelocity) -> Velocity
 | --- | --- |
 | Velocity | The same velocity expressed as north/east/down at this position. |
 
-[Source · models/location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/models/location.py#L188)
+[Source · models/location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/models/location.py#L188)

@@ -11,7 +11,7 @@ tableOfContents: true
 >
 > Related guidance: [reference/exceptions](/reference/exceptions/), [how-to/troubleshooting](/how-to/troubleshooting/).
 >
-> Runnable examples: [preflight.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/preflight.py).
+> Runnable examples: [preflight.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/preflight.py).
 
 ```python
 from picogrid_ecn_client import ECNClientError
@@ -23,7 +23,7 @@ Base exception for all failures crossing the public client boundary.
 class ECNClientError(Exception): ...
 ```
 
-[Source · exceptions.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/exceptions.py#L19)
+[Source · exceptions.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/exceptions.py#L19)
 
 **Hierarchy:** `ECNClientError`
 
@@ -54,7 +54,7 @@ def __init__(
 | details | Mapping[str, object] \| None | None | Optional detail values copied and redacted into strings. |
 | secrets | tuple[str, ...] | () | Additional exact values to remove from public text. |
 
-[Source · exceptions.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/exceptions.py#L25)
+[Source · exceptions.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/exceptions.py#L25)
 
 ## `message`
 
@@ -64,7 +64,7 @@ Redacted human-readable failure message.
 message: str
 ```
 
-[Source · exceptions.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/exceptions.py#L56)
+[Source · exceptions.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/exceptions.py#L56)
 
 ## `code`
 
@@ -74,7 +74,7 @@ Stable machine-readable failure code.
 code: str
 ```
 
-[Source · exceptions.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/exceptions.py#L57)
+[Source · exceptions.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/exceptions.py#L57)
 
 ## `operation`
 
@@ -84,7 +84,7 @@ Client operation that failed, when identified.
 operation: str | None
 ```
 
-[Source · exceptions.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/exceptions.py#L58)
+[Source · exceptions.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/exceptions.py#L58)
 
 ## `status_code`
 
@@ -94,7 +94,7 @@ Status value associated with the failure, when available.
 status_code: int | None
 ```
 
-[Source · exceptions.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/exceptions.py#L59)
+[Source · exceptions.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/exceptions.py#L59)
 
 ## `details`
 
@@ -104,7 +104,7 @@ Secret-safe string details associated with the failure.
 details: dict[str, str]
 ```
 
-[Source · exceptions.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/exceptions.py#L60)
+[Source · exceptions.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/exceptions.py#L60)
 
 ## `default_code`
 
@@ -114,4 +114,4 @@ Stable fallback code used when an instance does not provide one.
 default_code: str
 ```
 
-[Source · exceptions.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/exceptions.py#L22)
+[Source · exceptions.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/exceptions.py#L22)

@@ -11,7 +11,7 @@ tableOfContents: true
 >
 > Related guidance: [how-to/check-clock](/how-to/check-clock/), [how-to/troubleshooting](/how-to/troubleshooting/).
 >
-> Runnable examples: [check_clock.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/check_clock.py).
+> Runnable examples: [check_clock.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/check_clock.py).
 
 ```python
 from picogrid_ecn_client import ClockEndpoint
@@ -23,7 +23,7 @@ Configured ECN-relative NTP endpoint used for one measurement.
 ClockEndpoint(*, host: str, port: int = 123)
 ```
 
-[Source · models/clock.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/models/clock.py#L27)
+[Source · models/clock.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/models/clock.py#L27)
 
 ## Fields
 

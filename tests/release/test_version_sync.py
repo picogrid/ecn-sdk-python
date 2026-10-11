@@ -456,7 +456,7 @@ def test_milestone_mentions_do_not_hide_an_undeclared_current_claim(
 def test_a_shipped_policy_left_behind_by_a_bump_is_reported(
     repository: Path, relative: str
 ) -> None:
-    """The failure Codex reproduced: every automated source advances, a policy does not."""
+    """Report a policy file left behind when automated version sources advance."""
 
     for path, old, new in (
         ("pyproject.toml", 'version = "1.2.3"', 'version = "1.2.4"'),

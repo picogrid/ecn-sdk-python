@@ -9,7 +9,7 @@ tableOfContents: false
 
 > Related guidance: [how-to/check-clock](/how-to/check-clock/), [how-to/troubleshooting](/how-to/troubleshooting/).
 >
-> Runnable examples: [check_clock.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/check_clock.py).
+> Runnable examples: [check_clock.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/check_clock.py).
 
 | Symbol | Summary |
 | --- | --- |

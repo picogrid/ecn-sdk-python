@@ -25,6 +25,7 @@ from picogrid_ecn_client import (
     TimeoutError,
     WireFormat,
 )
+from picogrid_ecn_client._protocol.generated import entity_pb2
 from picogrid_ecn_client.testing import NO_ACCESS_TOKEN, MockECN
 
 
@@ -215,7 +216,7 @@ async def test_terminal_geolocation_wait_is_uuid_free_fixed_depth_and_cleans_up(
         waiting = asyncio.create_task(observer.locations.wait_for_terminal_geolocation(timeout=1))
         expected_filters = {
             "entity_location/terminal-geolocation/+",
-            "entity_location_pb/terminal-geolocation/+",
+            "entity_location_pb/terminal-geolocation",
         }
         await _wait_until(
             lambda: (
@@ -431,6 +432,30 @@ async def test_watcher_close_surfaces_negative_unsuback_and_client_still_cleans_
 
 @pytest.mark.asyncio
 @pytest.mark.e2e
+async def test_context_exit_with_registered_handler_closes_cleanly() -> None:
+    async with MockECN() as mock:
+        async with ECNClient(mock.client_config("task-close")) as client:
+
+            async def double(request: DoubleRequest) -> DoubleResult:
+                return DoubleResult(doubled=request.value * 2)
+
+            for command in ("double", "twice"):
+                await client.tasks.register(
+                    entity_id=uuid4(),
+                    command=command,
+                    request_model=DoubleRequest,
+                    result_model=DoubleResult,
+                    handler=double,
+                )
+
+        assert client.status.state is ClientState.CLOSED
+        assert client._mqtt_transport._subscriptions == {}
+
+    assert mock.active_connection_count == 0
+
+
+@pytest.mark.asyncio
+@pytest.mark.e2e
 async def test_task_unregister_negative_unsuback_allows_clean_reregistration() -> None:
     async with MockECN() as mock:
         client = ECNClient(mock.client_config("task-unregister"))
@@ -513,76 +538,82 @@ async def test_public_protobuf_end_to_end() -> None:
         )
         async with ECNClient(config) as client:
             entity_id = uuid4()
+            other_entity_id = uuid4()
             recorded_at = datetime.now(UTC)
-            embedded_location = Location(
-                latitude=33.0,
-                longitude=-117.0,
-                recorded_at=recorded_at,
-                source="synthetic-protobuf-entity",
-            )
-            entity = Entity(
-                id=entity_id,
-                integration="protobuf-client",
-                category=EntityCategory.DETECTION,
-                recorded_at=recorded_at,
-                type="synthetic",
-                name="Offline protobuf entity",
-                position=embedded_location,
-            )
-            entity_stream = await client.entities.watch(categories={EntityCategory.DETECTION})
-            location_stream = await client.locations.watch(entity_ids={entity_id})
-            await client.entities.publish(entity)
-            received = await asyncio.wait_for(anext(entity_stream), timeout=1)
-            assert received.entity.id == entity.id
-            assert received.entity.category is EntityCategory.DETECTION
-            assert client.locations.last_observed(entity_id) == embedded_location
-
             location = Location(
                 latitude=34.0,
                 longitude=-118.0,
                 altitude=100.0,
-                recorded_at=datetime.now(UTC),
+                recorded_at=recorded_at,
                 source="synthetic-protobuf-location",
             )
-            await client.locations.publish(entity_id=entity_id, location=location)
-            received_location = await asyncio.wait_for(anext(location_stream), timeout=1)
-            assert received_location.location == location
-            assert (
-                client.locations.last_observed(
-                    entity_id,
-                    integration="protobuf-client",
-                )
-                == location
+            stream = await client.locations.watch(
+                entity_ids={entity_id},
+                integrations={"protobuf-client"},
             )
-
-            next_location = location.model_copy(
-                update={"latitude": 35.0, "recorded_at": datetime.now(UTC)}
-            )
-            waiting = asyncio.create_task(
-                client.locations.wait_for_update(
-                    entity_id,
-                    integration="protobuf-client",
-                    timeout=1,
-                )
-            )
-            exact_filter = f"entity_location_pb/protobuf-client/{entity_id}"
+            topic = "entity_location_pb/protobuf-client"
             await _wait_until(
                 lambda: any(
-                    subscription.topic_filter == exact_filter
+                    subscription.topic_filter == topic
                     for subscription in client._mqtt_transport._subscriptions.values()
                 )
             )
-            await client.locations.publish(entity_id=entity_id, location=next_location)
-            assert await waiting == next_location
-            assert (
-                await asyncio.wait_for(anext(location_stream), timeout=1)
-            ).location == next_location
-            assert exact_filter not in {
-                subscription.topic_filter
-                for subscription in client._mqtt_transport._subscriptions.values()
-            }
 
-            await entity_stream.aclose()
-            await location_stream.aclose()
+            other_message = entity_pb2.EntityLocationMessage(entity_id=other_entity_id.bytes)
+            other_message.location.recorded_at.FromDatetime(recorded_at)
+            other_message.location.latitude = 35.0
+            other_message.location.longitude = -119.0
+            await client._mqtt_transport.publish(
+                topic,
+                other_message.SerializeToString(deterministic=True),
+                1,
+            )
+            with pytest.raises(asyncio.TimeoutError):
+                await asyncio.wait_for(anext(stream), timeout=0.05)
+
+            inbound_message = entity_pb2.EntityLocationMessage(entity_id=entity_id.bytes)
+            inbound_message.location.recorded_at.FromDatetime(recorded_at)
+            inbound_message.location.latitude = location.latitude
+            inbound_message.location.longitude = location.longitude
+            inbound_message.location.altitude = location.altitude
+            inbound_message.location.source = location.source
+            await client._mqtt_transport.publish(
+                topic,
+                inbound_message.SerializeToString(deterministic=True),
+                1,
+            )
+            received = await asyncio.wait_for(anext(stream), timeout=1)
+            assert received.entity_id == entity_id
+            assert received.integration == "protobuf-client"
+            assert received.timestamp == recorded_at
+            assert received.location == location
+
+            captured: list[tuple[str, bytes]] = []
+
+            async def capture(published_topic: str, payload: bytes) -> None:
+                captured.append((published_topic, payload))
+
+            capture_handle = await client._mqtt_transport.subscribe(topic, capture)
+            outbound_location = location.model_copy(
+                update={
+                    "latitude": 36.0,
+                    "longitude": -120.0,
+                    "recorded_at": datetime.now(UTC),
+                }
+            )
+            await client.locations.publish(entity_id=entity_id, location=outbound_location)
+            await _wait_until(lambda: bool(captured))
+            published_topic, published_payload = captured[-1]
+            assert published_topic == topic
+            published_message = entity_pb2.EntityLocationMessage.FromString(published_payload)
+            assert published_message.entity_id == entity_id.bytes
+            assert published_message.location.recorded_at.ToDatetime(tzinfo=UTC) == (
+                outbound_location.recorded_at
+            )
+            assert published_message.location.latitude == outbound_location.latitude
+            assert published_message.location.longitude == outbound_location.longitude
+            assert published_message.location.altitude == outbound_location.altitude
+            await client._mqtt_transport.unsubscribe(capture_handle)
+            await stream.aclose()
 
         await _wait_until(lambda: mock.active_connection_count == 0)

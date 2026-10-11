@@ -200,7 +200,8 @@ class ECNConfig(PublicModel):
     integration_name: IntegrationName = Field(
         description=(
             "Integration name of 2 through 128 allowed ASCII characters; starts and "
-            "ends alphanumeric and excludes reserved 'geolocation'."
+            "ends alphanumeric; 'geolocation' and 'response' are reserved "
+            "case-insensitively."
         )
     )
     terminal_id: UUID | None = Field(

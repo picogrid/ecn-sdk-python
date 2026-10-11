@@ -11,7 +11,7 @@ tableOfContents: false
 >
 > Related guidance: [shipped-tooling](/shipped-tooling/).
 >
-> Runnable examples: [watch_detections.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/watch_detections.py).
+> Runnable examples: [watch_detections.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/watch_detections.py).
 
 ```python
 from picogrid_ecn_client.workflows import watch_detections
@@ -51,4 +51,4 @@ async def watch_detections(
 | ValidationError | If `limit` is negative or `integration` is empty. |
 | ECNClientError | If the stream cannot be opened or consumed. |
 
-[Source · workflows/observe.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/workflows/observe.py#L163)
+[Source · workflows/observe.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/workflows/observe.py#L163)

@@ -13,6 +13,7 @@ from uuid import UUID
 from google.protobuf.message import DecodeError, Message
 from pydantic import ValidationError as PydanticValidationError
 
+from .._geodesy import ecef_to_geodetic, ecef_to_ned_velocity
 from ..exceptions import ProtocolError, ResourceLimitError, ValidationError
 from ..models import (
     Affiliation,
@@ -45,6 +46,11 @@ _CATEGORY_TO_PROTO = {
     EntityCategory.SYSTEM: common_pb2.ENTITY_CATEGORY_SYSTEM,
     EntityCategory.SENSOR: common_pb2.ENTITY_CATEGORY_SENSOR,
     EntityCategory.ALERT: common_pb2.ENTITY_CATEGORY_ALERT,
+    EntityCategory.WEATHER: common_pb2.ENTITY_CATEGORY_WEATHER,
+    EntityCategory.GEOMETRIC: common_pb2.ENTITY_CATEGORY_GEOMETRIC,
+    EntityCategory.ZONE: common_pb2.ENTITY_CATEGORY_ZONE,
+    EntityCategory.VEHICLE: common_pb2.ENTITY_CATEGORY_VEHICLE,
+    EntityCategory.UXV: common_pb2.ENTITY_CATEGORY_UXV,
 }
 _CATEGORY_FROM_PROTO = {value: key for key, value in _CATEGORY_TO_PROTO.items()}
 _STATUS_TO_PROTO = {
@@ -59,6 +65,16 @@ _AFFILIATION_TO_PROTO = {
     Affiliation.NEUTRAL: common_pb2.AFFILIATION_NEUTRAL,
     Affiliation.UNKNOWN: common_pb2.AFFILIATION_UNKNOWN,
     Affiliation.SUSPECT: common_pb2.AFFILIATION_SUSPECT,
+    Affiliation.PENDING: common_pb2.AFFILIATION_PENDING,
+    Affiliation.ASSUMED_FRIEND: common_pb2.AFFILIATION_ASSUMED_FRIEND,
+    Affiliation.EXERCISE_PENDING: common_pb2.AFFILIATION_EXERCISE_PENDING,
+    Affiliation.EXERCISE_UNKNOWN: common_pb2.AFFILIATION_EXERCISE_UNKNOWN,
+    Affiliation.EXERCISE_FRIEND: common_pb2.AFFILIATION_EXERCISE_FRIEND,
+    Affiliation.EXERCISE_NEUTRAL: common_pb2.AFFILIATION_EXERCISE_NEUTRAL,
+    Affiliation.EXERCISE_ASSUMED_FRIEND: (common_pb2.AFFILIATION_EXERCISE_ASSUMED_FRIEND),
+    Affiliation.JOKER: common_pb2.AFFILIATION_JOKER,
+    Affiliation.FAKER: common_pb2.AFFILIATION_FAKER,
+    Affiliation.NONE_SPECIFIED: common_pb2.AFFILIATION_NONE_SPECIFIED,
 }
 _AFFILIATION_FROM_PROTO = {value: key for key, value in _AFFILIATION_TO_PROTO.items()}
 _MAX_PROTOBUF_GROUP_DEPTH = 64
@@ -133,6 +149,29 @@ def _location_from_message(
             "protobuf location is missing recorded_at",
             operation="decode_protobuf",
         )
+    latitude = message.latitude
+    longitude = message.longitude
+    altitude = message.altitude if message.HasField("altitude") else None
+    has_crs = message.HasField("crs")
+    if has_crs and message.crs not in (common_pb2.CRS_LLA, common_pb2.CRS_ECEF):
+        raise ProtocolError(
+            "protobuf location contains invalid crs",
+            operation="decode_protobuf",
+        )
+    is_ecef = has_crs and message.crs == common_pb2.CRS_ECEF
+    if is_ecef:
+        # Edge encodes EPSG:4978 x/y/z into latitude/longitude/altitude and its own
+        # decoder requires all three, so a missing z is not a canonical payload.
+        if not message.HasField("altitude"):
+            raise ProtocolError(
+                "protobuf ECEF location is missing its z coordinate",
+                operation="decode_protobuf",
+            )
+        latitude, longitude, altitude = ecef_to_geodetic(
+            message.latitude,
+            message.longitude,
+            message.altitude,
+        )
     velocity: Velocity | None = None
     if message.velocity:
         if len(message.velocity) != 3:
@@ -140,10 +179,13 @@ def _location_from_message(
                 "protobuf velocity must contain exactly three values",
                 operation="decode_protobuf",
             )
+        velocity_components = tuple(message.velocity)
+        if is_ecef:
+            velocity_components = ecef_to_ned_velocity(latitude, longitude, *velocity_components)
         velocity = Velocity(
-            north=message.velocity[0],
-            east=message.velocity[1],
-            down=message.velocity[2],
+            north=velocity_components[0],
+            east=velocity_components[1],
+            down=velocity_components[2],
         )
     angular_velocity: AngularVelocity | None = None
     if message.angular_velocity:
@@ -152,17 +194,20 @@ def _location_from_message(
                 "protobuf angular_velocity must contain exactly three values",
                 operation="decode_protobuf",
             )
+        angular_components = tuple(message.angular_velocity)
+        if is_ecef:
+            angular_components = ecef_to_ned_velocity(latitude, longitude, *angular_components)
         angular_velocity = AngularVelocity(
-            roll=message.angular_velocity[0],
-            pitch=message.angular_velocity[1],
-            yaw=message.angular_velocity[2],
+            roll=angular_components[0],
+            pitch=angular_components[1],
+            yaw=angular_components[2],
         )
     try:
         return Location(
-            latitude=message.latitude,
-            longitude=message.longitude,
+            latitude=latitude,
+            longitude=longitude,
             recorded_at=recorded_at,
-            altitude=message.altitude if message.HasField("altitude") else None,
+            altitude=altitude,
             bearing=message.bearing if message.HasField("bearing") else None,
             accuracy=message.accuracy if message.HasField("accuracy") else None,
             source=message.source if message.HasField("source") else None,
@@ -747,6 +792,7 @@ def encode_entity_protobuf(entity: Entity | EntityEvent, max_size: int) -> bytes
         )
     message = entity_pb2.EntityEventMessage()
     message.recorded_at.FromDatetime(timestamp)
+    message.entity.recorded_at.CopyFrom(message.recorded_at)
     message.entity.id = public_entity.id.bytes
     message.entity.type_name = public_entity.type
     message.entity.status = _STATUS_TO_PROTO[public_entity.status]
@@ -800,6 +846,16 @@ def decode_entity_protobuf(topic: str, payload: bytes, max_size: int) -> EntityE
             operation="decode_entity",
         )
     recorded_at = _timestamp_to_datetime(message.recorded_at)
+    if message.entity.HasField("recorded_at"):
+        _timestamp_to_datetime(message.entity.recorded_at)
+        if (
+            message.entity.recorded_at.seconds,
+            message.entity.recorded_at.nanos,
+        ) != (message.recorded_at.seconds, message.recorded_at.nanos):
+            raise ProtocolError(
+                "entity protobuf recorded_at does not match its envelope",
+                operation="decode_protobuf",
+            )
     try:
         location = (
             _location_from_message(message.location, fallback_recorded_at=recorded_at)
@@ -850,10 +906,10 @@ def decode_entity_protobuf(topic: str, payload: bytes, max_size: int) -> EntityE
     return EntityEvent(timestamp=recorded_at, entity=entity, location=location)
 
 
-def encode_location_protobuf(location: Location, max_size: int) -> bytes:
-    """Encode only the independently generated public EntityLocationMessage subset."""
+def encode_location_protobuf(location: Location, entity_id: UUID, max_size: int) -> bytes:
+    """Encode an entity location with its identity in EntityLocationMessage."""
 
-    message = entity_pb2.EntityLocationMessage()
+    message = entity_pb2.EntityLocationMessage(entity_id=entity_id.bytes)
     message.location.CopyFrom(_location_to_message(location))
     return _serialize(message, max_size, operation="encode_protobuf")
 
@@ -877,9 +933,14 @@ def decode_location_protobuf(topic: str, payload: bytes, max_size: int) -> Locat
             "location protobuf is missing the public location field",
             operation="decode_protobuf",
         )
+    if len(message.entity_id) != 16:
+        raise ProtocolError(
+            "location protobuf entity ID must contain 16 bytes",
+            operation="decode_protobuf",
+        )
     location = _location_from_message(message.location)
     return LocationEvent(
-        entity_id=parsed_topic.entity_id,
+        entity_id=UUID(bytes=message.entity_id),
         integration=parsed_topic.integration,
         timestamp=location.recorded_at,
         location=location,
@@ -911,6 +972,7 @@ def decode_entity_payload(topic: str, payload: bytes, max_size: int) -> EntityEv
 
 def encode_location_payload(
     location: Location,
+    entity_id: UUID,
     wire_format: WireFormat,
     max_size: int,
 ) -> bytes:
@@ -919,7 +981,7 @@ def encode_location_payload(
     if wire_format == WireFormat.JSON:
         return encode_location_json(location, max_size)
     if wire_format == WireFormat.PROTOBUF:
-        return encode_location_protobuf(location, max_size)
+        return encode_location_protobuf(location, entity_id, max_size)
     raise ValidationError("unsupported location wire format", operation="encode_location")
 
 

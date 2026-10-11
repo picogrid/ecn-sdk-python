@@ -21,6 +21,7 @@ from uuid import UUID
 entity_id = UUID("00000000-0000-4000-8000-000000000001")
 ```
 
-JSON entity topics include the UUID. Protobuf entity topics carry it in the payload.
-Both JSON and protobuf location topics include it. Topic and payload identities must
-agree whenever both are present; disagreement is rejected.
+JSON entity and location topics include the UUID. Protobuf entity identity is
+payload-carried. Protobuf location identity is carried only by
+`EntityLocationMessage.entity_id` on the two-segment
+`entity_location_pb/{integration}` topic.

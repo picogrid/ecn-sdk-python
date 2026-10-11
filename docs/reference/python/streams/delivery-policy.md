@@ -11,7 +11,7 @@ tableOfContents: true
 >
 > Related guidance: [quickstarts/observe-data](/quickstarts/observe-data/), [how-to/observe-mesh-data](/how-to/observe-mesh-data/).
 >
-> Runnable examples: [watch_tracks.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/watch_tracks.py), [observe_mesh_data.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/observe_mesh_data.py).
+> Runnable examples: [watch_tracks.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/watch_tracks.py), [observe_mesh_data.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/observe_mesh_data.py).
 
 ```python
 from picogrid_ecn_client import DeliveryPolicy
@@ -23,7 +23,7 @@ Select how a bounded event stream handles buffered events.
 class DeliveryPolicy(Enum): ...
 ```
 
-[Source · models/common.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/models/common.py#L115)
+[Source · models/common.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/models/common.py#L128)
 
 ## Members
 

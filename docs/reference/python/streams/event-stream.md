@@ -11,7 +11,7 @@ tableOfContents: true
 >
 > Related guidance: [quickstarts/observe-data](/quickstarts/observe-data/), [how-to/observe-mesh-data](/how-to/observe-mesh-data/).
 >
-> Runnable examples: [watch_tracks.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/watch_tracks.py), [observe_mesh_data.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/observe_mesh_data.py).
+> Runnable examples: [watch_tracks.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/watch_tracks.py), [observe_mesh_data.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/observe_mesh_data.py).
 
 ```python
 from picogrid_ecn_client import EventStream
@@ -23,7 +23,7 @@ Iterate a bounded local queue of typed MQTT events.
 class EventStream(AsyncIterator[EventT], Generic[EventT]): ...
 ```
 
-[Source · streams.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/streams.py#L27)
+[Source · streams.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/streams.py#L27)
 
 Consume `EventStream` with `async for` and close it asynchronously when needed.
 
@@ -35,7 +35,7 @@ Return the fixed positive local queue size.
 buffer_size: int
 ```
 
-[Source · streams.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/streams.py#L64)
+[Source · streams.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/streams.py#L64)
 
 ## `delivery_policy`
 
@@ -45,7 +45,7 @@ Return the local full-queue delivery policy.
 delivery_policy: DeliveryPolicy
 ```
 
-[Source · streams.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/streams.py#L69)
+[Source · streams.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/streams.py#L69)
 
 ## `dropped_count`
 
@@ -55,7 +55,7 @@ Return decoded events dropped from this stream's bounded buffer.
 dropped_count: int
 ```
 
-[Source · streams.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/streams.py#L74)
+[Source · streams.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/streams.py#L74)
 
 ## `decode_error_count`
 
@@ -65,7 +65,7 @@ Return the number of matching payloads rejected by this decoder.
 decode_error_count: int
 ```
 
-[Source · streams.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/streams.py#L80)
+[Source · streams.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/streams.py#L80)
 
 ## `closed`
 
@@ -75,7 +75,7 @@ Return whether close has begun and further delivery is disabled.
 closed: bool
 ```
 
-[Source · streams.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/streams.py#L86)
+[Source · streams.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/streams.py#L86)
 
 ## `__aiter__`
 
@@ -85,7 +85,7 @@ Return this stream as its asynchronous iterator.
 def __aiter__() -> EventStream[EventT]
 ```
 
-[Source · streams.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/streams.py#L90)
+[Source · streams.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/streams.py#L90)
 
 ## `__anext__`
 
@@ -95,7 +95,7 @@ Return the next queued event, waiting until one arrives.
 async def __anext__() -> EventT
 ```
 
-[Source · streams.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/streams.py#L94)
+[Source · streams.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/streams.py#L94)
 
 ## `aclose`
 
@@ -113,4 +113,4 @@ async def aclose() -> None
 | ProtocolError | If the broker returns a malformed UNSUBACK. |
 | ConnectionError | If the transport fails while unsubscribing. |
 
-[Source · streams.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/streams.py#L150)
+[Source · streams.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/streams.py#L150)

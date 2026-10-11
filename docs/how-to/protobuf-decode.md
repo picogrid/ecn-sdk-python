@@ -19,10 +19,11 @@ python examples/decode_public_protobuf.py
 ```
 
 `decode_entity_event_protobuf` needs the topic-derived integration and category.
-`decode_entity_location_protobuf` needs the topic-derived integration and entity
-UUID. Unknown fields are ignored and future category numbers become `OTHER`. Strict
-topic agreement remains: a future payload category on a known topic is rejected,
-and `OTHER` passes only when the topic category is also unknown.
+`decode_entity_location_protobuf` needs the topic-derived integration; it decodes the
+entity UUID from the payload's 16 raw UUID bytes. Unknown fields are ignored and
+future category numbers become `OTHER`. Strict topic agreement remains: a future
+payload category on a known topic is rejected, and `OTHER` passes only when the topic
+category is also unknown.
 
 Entity category is derived from the protobuf topic; publication omits its optional
 numeric field. The descriptor field remains available for inbound compatibility. See

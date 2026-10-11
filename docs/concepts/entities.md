@@ -14,8 +14,8 @@ decoded location.
 ## Categories and observation
 
 Supported publication categories are DEVICE, DETECTION, TRACK, SYSTEM, SENSOR,
-ALERT, and GEOMETRIC. `OTHER` is a decode-only safe value for an unknown future
-category and is rejected on publication.
+ALERT, WEATHER, GEOMETRIC, ZONE, VEHICLE, and UXV. `OTHER` is a decode-only safe
+value for an unknown future category and is rejected on publication.
 
 Open a watcher only when needed and pass every known filter:
 

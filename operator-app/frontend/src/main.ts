@@ -274,6 +274,16 @@ const affiliationColors: Record<string, string> = {
   SUSPECT: '#ffb74d',
   NEUTRAL: '#5281e6',
   UNKNOWN: '#727272',
+  PENDING: '#c9b037',
+  ASSUMED_FRIEND: '#17c063',
+  EXERCISE_PENDING: '#c9b037',
+  EXERCISE_UNKNOWN: '#727272',
+  EXERCISE_FRIEND: '#17c063',
+  EXERCISE_NEUTRAL: '#5281e6',
+  EXERCISE_ASSUMED_FRIEND: '#17c063',
+  JOKER: '#ffb74d',
+  FAKER: '#f44336',
+  NONE_SPECIFIED: '#727272',
 };
 
 const affiliationLabels: Record<string, string> = {
@@ -282,6 +292,16 @@ const affiliationLabels: Record<string, string> = {
   SUSPECT: 'Suspect',
   NEUTRAL: 'Neutral',
   UNKNOWN: 'Unknown',
+  PENDING: 'Pending',
+  ASSUMED_FRIEND: 'Assumed friend',
+  EXERCISE_PENDING: 'Exercise pending',
+  EXERCISE_UNKNOWN: 'Exercise unknown',
+  EXERCISE_FRIEND: 'Exercise friend',
+  EXERCISE_NEUTRAL: 'Exercise neutral',
+  EXERCISE_ASSUMED_FRIEND: 'Exercise assumed friend',
+  JOKER: 'Joker',
+  FAKER: 'Faker',
+  NONE_SPECIFIED: 'None specified',
 };
 
 const affiliationCodes: Record<string, string> = {
@@ -290,9 +310,35 @@ const affiliationCodes: Record<string, string> = {
   SUSPECT: 'SU',
   NEUTRAL: 'NE',
   UNKNOWN: 'UN',
+  PENDING: 'PE',
+  ASSUMED_FRIEND: 'AF',
+  EXERCISE_PENDING: 'XP',
+  EXERCISE_UNKNOWN: 'XU',
+  EXERCISE_FRIEND: 'XF',
+  EXERCISE_NEUTRAL: 'XN',
+  EXERCISE_ASSUMED_FRIEND: 'XA',
+  JOKER: 'JO',
+  FAKER: 'FA',
+  NONE_SPECIFIED: 'NS',
 };
 
-const affiliations = ['FRIEND', 'HOSTILE', 'SUSPECT', 'NEUTRAL', 'UNKNOWN'] as const;
+const affiliations = [
+  'FRIEND',
+  'HOSTILE',
+  'SUSPECT',
+  'NEUTRAL',
+  'UNKNOWN',
+  'PENDING',
+  'ASSUMED_FRIEND',
+  'EXERCISE_PENDING',
+  'EXERCISE_UNKNOWN',
+  'EXERCISE_FRIEND',
+  'EXERCISE_NEUTRAL',
+  'EXERCISE_ASSUMED_FRIEND',
+  'JOKER',
+  'FAKER',
+  'NONE_SPECIFIED',
+] as const;
 
 const categoryGlyphs: Record<string, string> = {
   TRACK: 'T',
@@ -302,6 +348,10 @@ const categoryGlyphs: Record<string, string> = {
   SENSOR: 'N',
   ALERT: 'A',
   GEOMETRIC: 'G',
+  WEATHER: 'W',
+  ZONE: 'Z',
+  VEHICLE: 'V',
+  UXV: 'U',
   LOCATION_ONLY: 'L',
   UNKNOWN: '?',
 };
@@ -314,6 +364,10 @@ const categoryLabels: Record<string, string> = {
   SENSOR: 'Sensor',
   ALERT: 'Alert',
   GEOMETRIC: 'Geometric',
+  WEATHER: 'Weather',
+  ZONE: 'Zone',
+  VEHICLE: 'Vehicle',
+  UXV: 'UXV',
   LOCATION_ONLY: 'Location / PLI',
   UNKNOWN: 'Unknown',
 };
@@ -675,7 +729,7 @@ function checkboxFilter(root: HTMLElement, value: string, target: Set<string>): 
     else target.delete(value);
     render();
   });
-  label.append(input, document.createTextNode(value.replace('_', ' ')));
+  label.append(input, document.createTextNode(value.replaceAll('_', ' ')));
   root.append(label);
 }
 

@@ -56,8 +56,8 @@ class SubscriptionProbe(PublicModel):
     entity_id: UUID | None = Field(
         default=None,
         description=(
-            "Exact entity UUID; required for location, optional for JSON entity, and "
-            "forbidden for protobuf entity probes."
+            "Exact entity UUID; optional for JSON entity, required for JSON location, "
+            "and forbidden for protobuf entity or location probes."
         ),
     )
     category: EntityCategory | None = Field(
@@ -77,10 +77,14 @@ class SubscriptionProbe(PublicModel):
                 raise ValueError("entity subscription probes require a publishable category")
             if self.wire_format is WireFormat.PROTOBUF and self.entity_id is not None:
                 raise ValueError("protobuf entity topics do not contain an entity ID")
-        elif self.entity_id is None:
-            raise ValueError("location subscription probes require entity_id")
-        elif self.category is not None:
-            raise ValueError("location subscription probes do not use category")
+        else:
+            if self.category is not None:
+                raise ValueError("location subscription probes do not use category")
+            if self.wire_format is WireFormat.PROTOBUF:
+                if self.entity_id is not None:
+                    raise ValueError("protobuf location topics do not contain an entity ID")
+            elif self.entity_id is None:
+                raise ValueError("JSON location subscription probes require entity_id")
         return self
 
 

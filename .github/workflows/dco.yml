@@ -1,0 +1,64 @@
+name: DCO
+
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
+  merge_group:
+    types:
+      - checks_requested
+
+permissions: {}
+
+jobs:
+  dco:
+    name: DCO sign-off
+    if: ${{ github.repository == 'picogrid/ecn-sdk-python' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    env:
+      DCO_BASE: >-
+        ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+      DCO_HEAD: >-
+        ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.event.merge_group.head_sha }}
+      DCO_EXCLUDE_HEAD: >-
+        ${{ github.event_name == 'merge_group' && github.event.merge_group.head_sha || '' }}
+    steps:
+      - name: Reject bot-authored pull requests
+        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.user.type == 'Bot' }}
+        run: |
+          echo "DCO check failed: bot-authored pull requests cannot certify the DCO" >&2
+          exit 1
+
+      - name: Check out the trusted base history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.DCO_BASE }}
+          fetch-depth: 0
+          path: repository
+          persist-credentials: false
+
+      - name: Fetch the immutable head history as data
+        working-directory: repository
+        shell: bash
+        run: git fetch --no-tags origin "$DCO_HEAD"
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Check DCO sign-offs
+        working-directory: repository
+        shell: bash
+        run: |
+          args=(--base "$DCO_BASE" --head "$DCO_HEAD")
+          if [[ -n "$DCO_EXCLUDE_HEAD" ]]; then
+            args+=(--exclude-head "$DCO_EXCLUDE_HEAD")
+          fi
+          PYTHONDONTWRITEBYTECODE=1 python scripts/check_dco.py "${args[@]}"

@@ -323,13 +323,14 @@ async def test_narrow_filter_fanout_and_observed_state() -> None:
         )
         entity_filter = "entity/publisher/+/track"
         location_filter = f"entity_location/publisher/{entity_id}"
+        protobuf_location_filter = "entity_location_pb/publisher"
         assert (
             await _subscribe(
                 subscriber_reader,
                 subscriber_writer,
-                ((entity_filter, 1), (location_filter, 0)),
+                ((entity_filter, 1), (location_filter, 0), (protobuf_location_filter, 0)),
             )
-            == b"\x01\x00"
+            == b"\x01\x00\x00"
         )
 
         publisher_reader, publisher_writer = await _connect(
@@ -364,6 +365,20 @@ async def test_narrow_filter_fanout_and_observed_state() -> None:
         assert _published_payload(first_byte, packet) == (
             location_topic,
             json.dumps({"location": location}).encode(),
+        )
+        protobuf_location_payload = b"\x0a\x10" + bytes.fromhex("00000000000040008000000000000101")
+        await _publish(
+            publisher_writer,
+            protobuf_location_filter,
+            protobuf_location_payload,
+            qos=1,
+            packet_id=42,
+        )
+        assert await _read_packet(publisher_reader) == (0x40, b"\x00*")
+        first_byte, packet = await _read_packet(subscriber_reader)
+        assert _published_payload(first_byte, packet) == (
+            protobuf_location_filter,
+            protobuf_location_payload,
         )
         assert mock.entity_state[entity_id]["category"] == "TRACK"
         observed_location = mock.location_state[entity_id]
@@ -406,6 +421,24 @@ async def test_acl_rejects_broad_filters_and_denied_operations() -> None:
         )
         assert await _subscribe(reader, writer, (("entity/#", 0),), packet_id=2) == b"\x87"
         assert await _subscribe(reader, writer, (("entity/+/+/+", 0),), packet_id=3) == b"\x00"
+        assert (
+            await _subscribe(
+                reader,
+                writer,
+                (("entity_location_pb/+", 0),),
+                packet_id=30,
+            )
+            == b"\x00"
+        )
+        assert (
+            await _subscribe(
+                reader,
+                writer,
+                (("entity_location_pb/+/+", 0),),
+                packet_id=31,
+            )
+            == b"\x87"
+        )
         mock.set_authorization_failure("entity.read")
         assert await _subscribe(reader, writer, (("entity/+/+/track", 0),), packet_id=4) == b"\x87"
         mock.set_authorization_failure("entity.read", enabled=False)
@@ -444,6 +477,8 @@ async def test_task_acl_supports_exact_request_and_response_topics() -> None:
     entity_id = "00000000-0000-4000-8000-000000000104"
     request_topic = f"task/handler/{entity_id}/slew"
     response_topic = f"{request_topic}/response"
+    legion_response_topic = "task/response/handler/slew"
+    routed_response_topic = f"00000000-0000-4000-8000-000000000105/{response_topic}"
     async with MockECN() as mock:
         handler_reader, handler_writer = await _connect(
             mock,
@@ -468,6 +503,24 @@ async def test_task_acl_supports_exact_request_and_response_topics() -> None:
             token=FULL_ACCESS_TOKEN,
         )
         assert await _subscribe(sender_reader, sender_writer, ((response_topic, 1),)) == b"\x01"
+        assert (
+            await _subscribe(
+                sender_reader,
+                sender_writer,
+                ((legion_response_topic, 1),),
+                packet_id=3,
+            )
+            == b"\x87"
+        )
+        assert (
+            await _subscribe(
+                sender_reader,
+                sender_writer,
+                ((routed_response_topic, 1),),
+                packet_id=4,
+            )
+            == b"\x87"
+        )
 
         request = b'{"source":"local","task_id":"task-1","_response_mode":"complete","payload":{}}'
         await _publish(sender_writer, request_topic, request, qos=1, packet_id=11)
@@ -480,6 +533,14 @@ async def test_task_acl_supports_exact_request_and_response_topics() -> None:
         assert await _read_packet(handler_reader) == (0x40, b"\x00\x0c")
         first_byte, packet = await _read_packet(sender_reader)
         assert _published_payload(first_byte, packet) == (response_topic, response)
+        await _publish(
+            handler_writer,
+            routed_response_topic,
+            response,
+            qos=1,
+            packet_id=13,
+        )
+        assert await _read_packet(handler_reader) == (0x40, b"\x00\x0d")
 
         await _disconnect(handler_writer)
         await _disconnect(sender_writer)

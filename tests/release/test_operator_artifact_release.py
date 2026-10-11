@@ -407,7 +407,12 @@ def test_generated_operator_frontend_rejects_changed_public_brand_asset(
     policy = load_policy(POLICY_PATH)
     frontend = tmp_path / "frontend"
     source = POLICY_PATH.parents[1] / "operator-app" / "frontend" / "public"
-    for name in policy["public_brand_assets"]:
+    expected = {
+        name
+        for name, spec in policy["public_brand_assets"].items()
+        if "operator" in spec.get("surfaces", ["documentation", "operator"])
+    }
+    for name in expected:
         destination = frontend / name
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_bytes((source / name).read_bytes())
@@ -417,7 +422,7 @@ def test_generated_operator_frontend_rejects_changed_public_brand_asset(
         policy,
         label="operator frontend fixture",
     )
-    assert set(policy["public_brand_assets"]) <= set(inspection["files"])
+    assert expected <= set(inspection["files"])
 
     changed = frontend / "brand" / "picogrid-wordmark-dark.png"
     changed.write_bytes(changed.read_bytes() + b"changed")

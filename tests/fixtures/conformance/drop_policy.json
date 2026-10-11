@@ -1,0 +1,110 @@
+{
+  "description": "Golden delivery-policy traces for bounded watch-stream buffers. Semantics under a full buffer: 'fifo' drops the arriving event and 'latest' evicts the oldest queued event to admit the arriving one; every dropped or evicted event increments the drop counter by exactly one. A conforming harness executes the steps in order against a buffer of 'buffer_size' events, treating each 'publish' event as a distinct opaque item and each 'consume' as that many single-event reads, then drains any events left in the buffer. 'expected.delivered' is the complete consumption order including the final drain; 'expected.dropped' is the final drop counter.",
+  "vectors": [
+    {
+      "id": "fifo-no-overflow",
+      "delivery_policy": "fifo",
+      "buffer_size": 4,
+      "steps": [
+        {"op": "publish", "events": ["e1", "e2", "e3"]},
+        {"op": "consume", "count": 3}
+      ],
+      "expected": {"delivered": ["e1", "e2", "e3"], "dropped": 0}
+    },
+    {
+      "id": "latest-no-overflow",
+      "delivery_policy": "latest",
+      "buffer_size": 4,
+      "steps": [
+        {"op": "publish", "events": ["e1", "e2", "e3"]},
+        {"op": "consume", "count": 3}
+      ],
+      "expected": {"delivered": ["e1", "e2", "e3"], "dropped": 0}
+    },
+    {
+      "id": "fifo-overflow-drops-newest",
+      "delivery_policy": "fifo",
+      "buffer_size": 2,
+      "steps": [
+        {"op": "publish", "events": ["e1", "e2", "e3", "e4"]}
+      ],
+      "expected": {"delivered": ["e1", "e2"], "dropped": 2}
+    },
+    {
+      "id": "latest-overflow-evicts-oldest",
+      "delivery_policy": "latest",
+      "buffer_size": 2,
+      "steps": [
+        {"op": "publish", "events": ["e1", "e2", "e3", "e4"]}
+      ],
+      "expected": {"delivered": ["e3", "e4"], "dropped": 2}
+    },
+    {
+      "id": "fifo-interleaved-consumer",
+      "delivery_policy": "fifo",
+      "buffer_size": 2,
+      "steps": [
+        {"op": "publish", "events": ["e1", "e2"]},
+        {"op": "consume", "count": 1},
+        {"op": "publish", "events": ["e3", "e4"]},
+        {"op": "consume", "count": 2}
+      ],
+      "expected": {"delivered": ["e1", "e2", "e3"], "dropped": 1}
+    },
+    {
+      "id": "latest-interleaved-consumer",
+      "delivery_policy": "latest",
+      "buffer_size": 2,
+      "steps": [
+        {"op": "publish", "events": ["e1", "e2"]},
+        {"op": "consume", "count": 1},
+        {"op": "publish", "events": ["e3", "e4"]}
+      ],
+      "expected": {"delivered": ["e1", "e3", "e4"], "dropped": 1}
+    },
+    {
+      "id": "fifo-buffer-one-burst",
+      "delivery_policy": "fifo",
+      "buffer_size": 1,
+      "steps": [
+        {"op": "publish", "events": ["e1", "e2", "e3", "e4", "e5"]}
+      ],
+      "expected": {"delivered": ["e1"], "dropped": 4}
+    },
+    {
+      "id": "latest-buffer-one-burst",
+      "delivery_policy": "latest",
+      "buffer_size": 1,
+      "steps": [
+        {"op": "publish", "events": ["e1", "e2", "e3", "e4", "e5"]}
+      ],
+      "expected": {"delivered": ["e5"], "dropped": 4}
+    },
+    {
+      "id": "fifo-paced-consumer-no-drops",
+      "delivery_policy": "fifo",
+      "buffer_size": 2,
+      "steps": [
+        {"op": "publish", "events": ["e1"]},
+        {"op": "consume", "count": 1},
+        {"op": "publish", "events": ["e2"]},
+        {"op": "consume", "count": 1},
+        {"op": "publish", "events": ["e3", "e4"]},
+        {"op": "consume", "count": 2},
+        {"op": "publish", "events": ["e5"]}
+      ],
+      "expected": {"delivered": ["e1", "e2", "e3", "e4", "e5"], "dropped": 0}
+    },
+    {
+      "id": "latest-repeated-eviction-waves",
+      "delivery_policy": "latest",
+      "buffer_size": 3,
+      "steps": [
+        {"op": "publish", "events": ["e1", "e2", "e3", "e4", "e5"]},
+        {"op": "consume", "count": 2},
+        {"op": "publish", "events": ["e6", "e7", "e8"]}
+      ],
+      "expected": {"delivered": ["e3", "e4", "e6", "e7", "e8"], "dropped": 3}
+    }
+  ]
+}

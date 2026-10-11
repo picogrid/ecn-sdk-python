@@ -11,7 +11,7 @@ tableOfContents: true
 >
 > Related guidance: [getting-started/configuration](/getting-started/configuration/), [getting-started/authentication](/getting-started/authentication/), [security/credentials](/security/credentials/).
 >
-> Runnable examples: [preflight.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/preflight.py).
+> Runnable examples: [preflight.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/preflight.py).
 
 ```python
 from picogrid_ecn_client import AuthConfig
@@ -25,4 +25,4 @@ Authentication configuration discriminated by the literal `kind` field.
 AuthConfig = Annotated[BearerTokenAuth | MTLSAuth | NoAuth, Field(discriminator='kind', description='Bearer-token, mutual-TLS, or no-authentication configuration selected by its kind.')]
 ```
 
-[Source · auth.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/auth.py#L305)
+[Source · auth.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/auth.py#L305)

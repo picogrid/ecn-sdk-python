@@ -11,7 +11,7 @@ tableOfContents: true
 >
 > Related guidance: [getting-started/preflight](/getting-started/preflight/), [how-to/troubleshooting](/how-to/troubleshooting/).
 >
-> Runnable examples: [preflight.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/preflight.py).
+> Runnable examples: [preflight.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/preflight.py).
 
 ```python
 from picogrid_ecn_client import SubscriptionProbe
@@ -30,7 +30,7 @@ SubscriptionProbe(
 )
 ```
 
-[Source · models/diagnostics.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/models/diagnostics.py#L41)
+[Source · models/diagnostics.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/models/diagnostics.py#L41)
 
 ## Fields
 
@@ -39,5 +39,5 @@ SubscriptionProbe(
 | kind | SubscriptionProbeKind | yes | — | — | Topic family to probe: entity or geolocation. |
 | integration | str | yes | — | `min_length=2`, `max_length=128`, `pattern='^[A-Za-z0-9][A-Za-z0-9_-]{0,126}[A-Za-z0-9]$'` | Exact integration topic segment included in the bounded probe. |
 | wire_format | WireFormat | no | WireFormat.JSON | — | Payload encoding whose topic shape is probed; defaults to JSON. |
-| entity_id | UUID \| None | no | None | — | Exact entity UUID; required for location, optional for JSON entity, and forbidden for protobuf entity probes. |
+| entity_id | UUID \| None | no | None | — | Exact entity UUID; optional for JSON entity, required for JSON location, and forbidden for protobuf entity or location probes. |
 | category | EntityCategory \| None | no | None | — | Publishable entity category; required for entity probes and forbidden for location probes. |

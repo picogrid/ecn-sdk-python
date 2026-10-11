@@ -825,7 +825,7 @@ def _subscription_operation(integration_name: str, topic_filter: str) -> str | N
         if not isinstance(parsed, TaskTopic):
             return None
         if parsed.response:
-            return _TASK_SEND
+            return _TASK_SEND if parsed.route_terminal_id is None else None
         return _TASK_RECEIVE if parsed.integration == integration_name else None
 
     candidate = _concrete_filter_topic(parts)
@@ -850,7 +850,7 @@ def _concrete_filter_topic(parts: list[str]) -> str | None:
         "entity": 4,
         "entity_pb": 3,
         "entity_location": 3,
-        "entity_location_pb": 3,
+        "entity_location_pb": 2,
     }
     if len(parts) != expected_levels.get(family):
         return None

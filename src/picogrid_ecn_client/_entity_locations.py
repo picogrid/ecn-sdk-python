@@ -259,11 +259,11 @@ class EntityLocationService:
                 return
             if event is None:
                 return
-            self._record_observed_location(event)
             if entity_ids and event.entity_id not in entity_ids:
                 return
             if integrations and event.integration not in integrations:
                 return
+            self._record_observed_location(event)
             stream._put_nowait(event)
 
         stream = EventStream(

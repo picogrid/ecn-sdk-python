@@ -11,7 +11,7 @@ tableOfContents: false
 >
 > Related guidance: [shipped-tooling](/shipped-tooling/).
 >
-> Runnable examples: [preflight.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/preflight.py).
+> Runnable examples: [preflight.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/preflight.py).
 
 ```python
 from picogrid_ecn_client.workflows import preflight
@@ -41,4 +41,4 @@ async def preflight(client: ECNClient) -> PreflightResult
 | --- | --- |
 | ECNClientError | If a connectivity or authorization check cannot complete. |
 
-[Source · workflows/diagnostics.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/workflows/diagnostics.py#L39)
+[Source · workflows/diagnostics.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/workflows/diagnostics.py#L39)

@@ -10,8 +10,7 @@
     "operator-app/README.md"
   ],
   "ignorePaths": [
-    "docs/cloudflare/**",
-    "docs/reference/original-ecn-integration-parity.md"
+    "docs/cloudflare/**"
   ],
   "words": [
     "aclose",

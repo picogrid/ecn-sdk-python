@@ -17,7 +17,7 @@ from ..models import EntityCategory
 ENTITY_JSON_SUBSCRIPTION = "entity/+/+/+"
 ENTITY_PROTOBUF_SUBSCRIPTION = "entity_pb/+/+"
 LOCATION_JSON_SUBSCRIPTION = "entity_location/+/+"
-LOCATION_PROTOBUF_SUBSCRIPTION = "entity_location_pb/+/+"
+LOCATION_PROTOBUF_SUBSCRIPTION = "entity_location_pb/+"
 
 UNSUPPORTED_TOPIC_FAMILY = "unsupported"
 """Fixed classification used when a topic matches no supported family."""
@@ -33,6 +33,10 @@ _PROTOBUF_ENTITY_CATEGORIES = frozenset(
         EntityCategory.SENSOR,
         EntityCategory.ALERT,
         EntityCategory.GEOMETRIC,
+        EntityCategory.WEATHER,
+        EntityCategory.ZONE,
+        EntityCategory.VEHICLE,
+        EntityCategory.UXV,
     }
 )
 
@@ -58,7 +62,7 @@ class EntityTopic:
 @dataclass(frozen=True, slots=True)
 class LocationTopic:
     integration: str
-    entity_id: UUID
+    entity_id: UUID | None
     protobuf: bool
 
 
@@ -87,7 +91,7 @@ def _validated_integration(value: str) -> str:
     if (
         not isinstance(value, str)
         or _INTEGRATION.fullmatch(value) is None
-        or value.casefold() == "geolocation"
+        or value.casefold() in {"geolocation", "response"}
     ):
         raise ValidationError(
             "integration must match the pinned 2-128 character identifier grammar",
@@ -140,10 +144,10 @@ def build_location_topic(integration: str, entity_id: UUID) -> str:
     return f"entity_location/{_validated_integration(integration)}/{entity_id}"
 
 
-def build_location_protobuf_topic(integration: str, entity_id: UUID) -> str:
-    """Build one exact protobuf entity-location topic."""
+def build_location_protobuf_topic(integration: str) -> str:
+    """Build one exact protobuf entity-location topic (the ID is in the payload)."""
 
-    return f"entity_location_pb/{_validated_integration(integration)}/{entity_id}"
+    return f"entity_location_pb/{_validated_integration(integration)}"
 
 
 def build_entity_subscription_filters(
@@ -189,14 +193,13 @@ def build_location_subscription_filters(
         "+"
     ]
     entity_segments = sorted({str(value) for value in entity_ids}) or ["+"]
-    return tuple(
-        sorted(
-            f"{family}/{integration}/{entity_id}"
-            for family in ("entity_location", "entity_location_pb")
-            for integration in integration_segments
-            for entity_id in entity_segments
-        )
-    )
+    filters = {
+        f"entity_location/{integration}/{entity_id}"
+        for integration in integration_segments
+        for entity_id in entity_segments
+    }
+    filters.update(f"entity_location_pb/{integration}" for integration in integration_segments)
+    return tuple(sorted(filters))
 
 
 def build_task_request_topic(
@@ -271,7 +274,7 @@ def _parse_segment(value: str, topic: str) -> str:
 
 
 def _parse_integration(value: str, topic: str) -> str:
-    if _INTEGRATION.fullmatch(value) is None or value.casefold() == "geolocation":
+    if _INTEGRATION.fullmatch(value) is None or value.casefold() in {"geolocation", "response"}:
         raise _protocol_error(topic)
     return value
 
@@ -298,23 +301,26 @@ def parse_entity_topic(topic: str) -> EntityTopic:
 
 
 def parse_location_topic(topic: str) -> LocationTopic:
-    """Parse only the exact JSON/protobuf entity-location topic forms."""
+    """Parse the three-segment JSON or two-segment protobuf location form."""
 
     parts = topic.split("/")
-    if len(parts) != 3 or parts[0] not in {
-        TopicFamily.LOCATION_JSON,
-        TopicFamily.LOCATION_PROTOBUF,
-    }:
-        raise _protocol_error(topic)
-    return LocationTopic(
-        integration=_parse_integration(parts[1], topic),
-        entity_id=_parse_uuid(parts[2], topic),
-        protobuf=parts[0] == TopicFamily.LOCATION_PROTOBUF,
-    )
+    if len(parts) == 3 and parts[0] == TopicFamily.LOCATION_JSON:
+        return LocationTopic(
+            integration=_parse_integration(parts[1], topic),
+            entity_id=_parse_uuid(parts[2], topic),
+            protobuf=False,
+        )
+    if len(parts) == 2 and parts[0] == TopicFamily.LOCATION_PROTOBUF:
+        return LocationTopic(
+            integration=_parse_integration(parts[1], topic),
+            entity_id=None,
+            protobuf=True,
+        )
+    raise _protocol_error(topic)
 
 
 def parse_task_topic(topic: str) -> TaskTopic:
-    """Parse an exact local or terminal-addressed task request/response topic."""
+    """Parse a canonical local or terminal-addressed task topic."""
 
     parts = topic.split("/")
     route_terminal_id: UUID | None = None
@@ -382,10 +388,15 @@ def validate_subscription_filter(topic_filter: str) -> str:
             and _valid_filter_segment(parts[2])
         )
         or (
-            family in {TopicFamily.LOCATION_JSON, TopicFamily.LOCATION_PROTOBUF}
+            family == TopicFamily.LOCATION_JSON
             and len(parts) == 3
             and _valid_integration_filter_segment(parts[1])
             and _valid_uuid_filter_segment(parts[2])
+        )
+        or (
+            family == TopicFamily.LOCATION_PROTOBUF
+            and len(parts) == 2
+            and _valid_integration_filter_segment(parts[1])
         )
     )
     if event_shape:
@@ -422,7 +433,8 @@ def _valid_filter_segment(value: str) -> bool:
 
 def _valid_integration_filter_segment(value: str) -> bool:
     return value == "+" or (
-        _INTEGRATION.fullmatch(value) is not None and value.casefold() != "geolocation"
+        _INTEGRATION.fullmatch(value) is not None
+        and value.casefold() not in {"geolocation", "response"}
     )
 
 

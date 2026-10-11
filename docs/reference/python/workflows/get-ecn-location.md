@@ -11,7 +11,7 @@ tableOfContents: false
 >
 > Related guidance: [shipped-tooling](/shipped-tooling/).
 >
-> Runnable examples: [get_ecn_location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/get_ecn_location.py).
+> Runnable examples: [get_ecn_location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/get_ecn_location.py).
 
 ```python
 from picogrid_ecn_client.workflows import get_ecn_location
@@ -47,4 +47,4 @@ async def get_ecn_location(
 | ECNClientError | If the stream cannot be opened or consumed. |
 | TimeoutError | If no event arrives before `timeout`. |
 
-[Source · workflows/observe.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/workflows/observe.py#L300)
+[Source · workflows/observe.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/workflows/observe.py#L300)

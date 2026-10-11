@@ -11,7 +11,7 @@ tableOfContents: false
 >
 > Related guidance: [shipped-tooling](/shipped-tooling/).
 >
-> Runnable examples: [dispatch_mesh_task.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/dispatch_mesh_task.py).
+> Runnable examples: [dispatch_mesh_task.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/dispatch_mesh_task.py).
 
 ```python
 from picogrid_ecn_client.workflows import dispatch_mesh_task
@@ -58,4 +58,4 @@ async def dispatch_mesh_task(
 | --- | --- |
 | ECNClientError | If validation, dispatch, or response handling fails. |
 
-[Source · workflows/tasks.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/workflows/tasks.py#L336)
+[Source · workflows/tasks.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/workflows/tasks.py#L336)

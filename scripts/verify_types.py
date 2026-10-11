@@ -367,10 +367,9 @@ def _format_reconciliation(checker: str, reconciliation: Reconciliation) -> str:
     return f"{checker} negative mismatch (missing={missing}; unexpected={unexpected})"
 
 
-# D051 restricts the completeness allowlist to framework-generated symbols. This is
-# the exact Pydantic BaseModel member set, not a name pattern: a pattern such as
-# `model_*` would also admit an SDK-authored `model_export`, which the decision
-# forbids. Overriding `model_config` in a public model is still framework-generated
+# The completeness allowlist contains only exact framework-generated symbols, not
+# name patterns: a pattern such as `model_*` would also admit an SDK-authored
+# `model_export`. Overriding `model_config` in a public model is still framework-generated
 # because the name belongs to Pydantic's own API.
 _FRAMEWORK_MEMBERS: frozenset[str] = frozenset(
     {

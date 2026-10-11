@@ -46,7 +46,7 @@ The Python distribution is named `picogrid-ecn-client` and supports Python 3.11,
 ```console
 python -m venv .venv-ecn-sdk
 . .venv-ecn-sdk/bin/activate
-python -m pip install picogrid-ecn-client==0.1.0 # x-release-please-version
+python -m pip install picogrid-ecn-client==0.2.0 # x-release-please-version
 python -c "import picogrid_ecn_client; print(picogrid_ecn_client.__version__)"
 ```
 

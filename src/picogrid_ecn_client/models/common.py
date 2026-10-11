@@ -11,9 +11,12 @@ from enum import StrEnum
 class Affiliation(StrEnum):
     """Classify an entity's relationship to the reporting party.
 
-    ``FRIEND`` identifies friendly entities, ``HOSTILE`` identifies hostile entities,
-    ``NEUTRAL`` identifies neutral entities, ``SUSPECT`` marks uncertain potentially
-    hostile entities, and ``UNKNOWN`` represents an unspecified or unrecognized value.
+    ``FRIEND``, ``HOSTILE``, ``NEUTRAL``, ``UNKNOWN``, ``SUSPECT``, ``PENDING``,
+    and ``ASSUMED_FRIEND`` express operational affiliations. ``EXERCISE_PENDING``,
+    ``EXERCISE_UNKNOWN``, ``EXERCISE_FRIEND``, ``EXERCISE_NEUTRAL``, and
+    ``EXERCISE_ASSUMED_FRIEND`` are exercise-scoped counterparts. ``JOKER`` and
+    ``FAKER`` mark exercise deception roles; ``NONE_SPECIFIED`` is an explicit none
+    marker.
     """
 
     FRIEND = "FRIEND"
@@ -21,6 +24,16 @@ class Affiliation(StrEnum):
     NEUTRAL = "NEUTRAL"
     UNKNOWN = "UNKNOWN"
     SUSPECT = "SUSPECT"
+    PENDING = "PENDING"
+    ASSUMED_FRIEND = "ASSUMED_FRIEND"
+    EXERCISE_PENDING = "EXERCISE_PENDING"
+    EXERCISE_UNKNOWN = "EXERCISE_UNKNOWN"
+    EXERCISE_FRIEND = "EXERCISE_FRIEND"
+    EXERCISE_NEUTRAL = "EXERCISE_NEUTRAL"
+    EXERCISE_ASSUMED_FRIEND = "EXERCISE_ASSUMED_FRIEND"
+    JOKER = "JOKER"
+    FAKER = "FAKER"
+    NONE_SPECIFIED = "NONE_SPECIFIED"
 
 
 class CheckStatus(StrEnum):
@@ -126,8 +139,9 @@ class DeliveryPolicy(StrEnum):
 class EntityCategory(StrEnum):
     """Classify the domain represented by an entity.
 
-    Members identify devices, detections, tracks, systems, sensors, alerts, geometric
-    objects, or the ``OTHER`` fallback category.
+    Members identify devices, detections, tracks, systems, sensors, alerts, weather,
+    geometric objects, zones, vehicles, and uncrewed vehicles. ``OTHER`` remains the
+    fallback for an unrecognized inbound category.
     """
 
     DEVICE = "DEVICE"
@@ -136,7 +150,11 @@ class EntityCategory(StrEnum):
     SYSTEM = "SYSTEM"
     SENSOR = "SENSOR"
     ALERT = "ALERT"
+    WEATHER = "WEATHER"
     GEOMETRIC = "GEOMETRIC"
+    ZONE = "ZONE"
+    VEHICLE = "VEHICLE"
+    UXV = "UXV"
     OTHER = "OTHER"
 
 

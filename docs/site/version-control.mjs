@@ -75,8 +75,8 @@ function readIdentity(root, environment, releaseTag) {
   };
 }
 
-function sourceLink(repository, commit) {
-  if (commit) return { href: `${repository}/commit/${commit}`, sourceKind: 'commit' };
+function sourceLink(repository, tag) {
+  if (tag) return { href: `${repository}/tree/${tag}`, sourceKind: 'tag' };
   return { href: `${repository}/tree/main`, sourceKind: 'branch' };
 }
 
@@ -102,14 +102,16 @@ function readVersionControl(repository, root, packageRoot, environment) {
 
   const shortCommit = commit ? commit.slice(0, 7) : '';
   const reference = commit || 'main';
-  const { href, sourceKind } = sourceLink(repository, commit);
+  const { href, sourceKind } = sourceLink(repository, tag);
 
   return Object.freeze({
     commit,
     href,
     reference,
-    // What the reader sees and can look up in the repository.
-    referenceLabel: tag || shortCommit || 'main',
+    // What the reader sees and can look up in the public repository. The
+    // provenance commit may name the private engineering history, so it stays
+    // in metadata while the link uses only exported refs.
+    referenceLabel: tag || 'main',
     shortCommit,
     sourceKind,
     tag,

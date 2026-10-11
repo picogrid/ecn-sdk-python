@@ -11,7 +11,7 @@ tableOfContents: true
 >
 > Related guidance: [concepts/locations](/concepts/locations/), [how-to/observe-location](/how-to/observe-location/), [how-to/pli-entities](/how-to/pli-entities/).
 >
-> Runnable examples: [publish_location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/publish_location.py), [get_ecn_location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/get_ecn_location.py).
+> Runnable examples: [publish_location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/publish_location.py), [get_ecn_location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/get_ecn_location.py).
 
 ```python
 from picogrid_ecn_client import ECEFPosition
@@ -23,7 +23,7 @@ An EPSG:4978 Cartesian position in metres.
 ECEFPosition(*, x: float, y: float, z: float)
 ```
 
-[Source · models/location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/models/location.py#L92)
+[Source · models/location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/models/location.py#L92)
 
 ## Fields
 
@@ -53,4 +53,4 @@ def to_geodetic() -> GeodeticPosition
 | --- | --- |
 | ValidationError | If the position is near the center of the ellipsoid, where geodetic coordinates are not defined, with code `degenerate_ecef`. |
 
-[Source · models/location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/models/location.py#L115)
+[Source · models/location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/models/location.py#L115)

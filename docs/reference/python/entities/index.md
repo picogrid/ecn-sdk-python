@@ -9,7 +9,7 @@ tableOfContents: false
 
 > Related guidance: [concepts/entities](/concepts/entities/), [quickstarts/sensor-publisher](/quickstarts/sensor-publisher/), [how-to/pli-entities](/how-to/pli-entities/), [how-to/tracks-detections](/how-to/tracks-detections/).
 >
-> Runnable examples: [publish_entity.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/publish_entity.py), [watch_detections.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/watch_detections.py), [watch_tracks.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/watch_tracks.py).
+> Runnable examples: [publish_entity.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/publish_entity.py), [watch_detections.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/watch_detections.py), [watch_tracks.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/watch_tracks.py).
 
 | Symbol | Summary |
 | --- | --- |

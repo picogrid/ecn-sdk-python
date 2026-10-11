@@ -11,7 +11,7 @@ tableOfContents: true
 >
 > Related guidance: [concepts/lifecycle](/concepts/lifecycle/), [getting-started/preflight](/getting-started/preflight/), [how-to/cleanup](/how-to/cleanup/).
 >
-> Runnable examples: [preflight.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/preflight.py).
+> Runnable examples: [preflight.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/preflight.py).
 
 ```python
 from picogrid_ecn_client import ECNClient
@@ -23,7 +23,7 @@ Manage one explicitly configured MQTT v5 ECN connection.
 class ECNClient: ...
 ```
 
-[Source · client.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/client.py#L95)
+[Source · client.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/client.py#L95)
 
 Use `ECNClient` with `async with` to manage its asynchronous lifecycle.
 
@@ -41,7 +41,7 @@ def __init__(config: ECNConfig) -> None
 | --- | --- | --- | --- |
 | config | ECNConfig | — | Frozen connection and operation configuration. |
 
-[Source · client.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/client.py#L103)
+[Source · client.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/client.py#L103)
 
 ## `config`
 
@@ -51,7 +51,7 @@ Return the frozen configuration supplied at construction.
 config: ECNConfig
 ```
 
-[Source · client.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/client.py#L150)
+[Source · client.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/client.py#L150)
 
 ## `entities`
 
@@ -61,7 +61,7 @@ Return the stable typed entity interface.
 entities: Entities
 ```
 
-[Source · client.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/client.py#L164)
+[Source · client.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/client.py#L164)
 
 ## `locations`
 
@@ -71,7 +71,7 @@ Return the stable typed location interface.
 locations: Locations
 ```
 
-[Source · client.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/client.py#L169)
+[Source · client.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/client.py#L169)
 
 ## `tasks`
 
@@ -81,7 +81,7 @@ Return the stable typed task interface.
 tasks: Tasks
 ```
 
-[Source · client.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/client.py#L174)
+[Source · client.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/client.py#L174)
 
 ## `clock`
 
@@ -91,7 +91,7 @@ Return the ECN-relative clock diagnostic interface.
 clock: Clock
 ```
 
-[Source · client.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/client.py#L155)
+[Source · client.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/client.py#L155)
 
 ## `is_ready`
 
@@ -101,7 +101,7 @@ Return whether MQTT and every still-required subscription are ready.
 is_ready: bool
 ```
 
-[Source · client.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/client.py#L179)
+[Source · client.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/client.py#L179)
 
 ## `status`
 
@@ -111,7 +111,7 @@ Return a secret-safe snapshot of the current connection state.
 status: ConnectionStatus
 ```
 
-[Source · client.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/client.py#L186)
+[Source · client.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/client.py#L186)
 
 ## `wait_until_ready`
 
@@ -147,7 +147,7 @@ async def wait_until_ready(*, timeout: float) -> ConnectionStatus
 | TimeoutError | If the caller's deadline expires first. |
 | ValidationError | If `timeout` is not positive and finite. |
 
-[Source · client.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/client.py#L203)
+[Source · client.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/client.py#L203)
 
 ## `connection_events`
 
@@ -163,7 +163,7 @@ def connection_events() -> EventStream[ConnectionStatus]
 | --- | --- |
 | NotReadyError | If client closing has begun or the client is closed. |
 
-[Source · client.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/client.py#L250)
+[Source · client.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/client.py#L250)
 
 ## `notify_credentials_changed`
 
@@ -173,7 +173,7 @@ Wake credential-blocked recovery after an atomic credential repair.
 def notify_credentials_changed() -> None
 ```
 
-[Source · client.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/client.py#L279)
+[Source · client.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/client.py#L279)
 
 ## `request_retry`
 
@@ -183,7 +183,7 @@ Wake scheduled transient recovery or revive transient retry exhaustion.
 def request_retry() -> None
 ```
 
-[Source · client.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/client.py#L294)
+[Source · client.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/client.py#L294)
 
 ## `start`
 
@@ -205,7 +205,7 @@ async def start() -> None
 | ProtocolError | If MQTT readiness terminates on a protocol violation. |
 | ResourceLimitError | If the broker rejects a required connection resource. |
 
-[Source · client.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/client.py#L304)
+[Source · client.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/client.py#L304)
 
 ## `preflight`
 
@@ -236,7 +236,7 @@ async def preflight(
 | --- | --- |
 | TimeoutError | If closing the probe transport exceeds the configured shutdown timeout. Check failures are reported in the returned report rather than raised. |
 
-[Source · client.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/client.py#L459)
+[Source · client.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/client.py#L459)
 
 ## `close`
 
@@ -253,7 +253,7 @@ async def close() -> None
 | ConnectionError | If a component fails during cleanup. |
 | TimeoutError | If cleanup exceeds the shutdown timeout in seconds. |
 
-[Source · client.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/client.py#L529)
+[Source · client.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/client.py#L529)
 
 ## `__aenter__`
 
@@ -281,7 +281,7 @@ async def __aenter__() -> ECNClient
 | ProtocolError | If MQTT readiness terminates on a protocol violation. |
 | ResourceLimitError | If the broker rejects a required connection resource. |
 
-[Source · client.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/client.py#L565)
+[Source · client.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/client.py#L565)
 
 ## `__aexit__`
 
@@ -310,4 +310,4 @@ async def __aexit__(
 | ConnectionError | If a component fails during cleanup. |
 | TimeoutError | If cleanup exceeds the shutdown timeout in seconds. |
 
-[Source · client.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/client.py#L584)
+[Source · client.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/client.py#L584)

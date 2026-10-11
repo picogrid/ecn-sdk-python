@@ -202,9 +202,10 @@ class Locations:
     ) -> LocationEvent:
         """Wait for a future terminal-geolocation MQTT observation.
 
-        The fixed-depth JSON and protobuf filters contain one UUID segment. The
-        returned event supplies that canonical UUID. This observes a future
-        message; it is not discovery or an authoritative location query.
+        The fixed-depth JSON filter contains one UUID segment; the protobuf filter
+        carries entity identity in its payload instead. The returned event supplies
+        that canonical UUID. This observes a future message; it is not discovery or
+        an authoritative location query.
 
         Args:
             timeout: Deadline in seconds, or the configured operation timeout

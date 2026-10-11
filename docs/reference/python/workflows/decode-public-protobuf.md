@@ -11,7 +11,7 @@ tableOfContents: false
 >
 > Related guidance: [shipped-tooling](/shipped-tooling/).
 >
-> Runnable examples: [decode_public_protobuf.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/decode_public_protobuf.py).
+> Runnable examples: [decode_public_protobuf.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/decode_public_protobuf.py).
 
 ```python
 from picogrid_ecn_client.workflows import decode_public_protobuf
@@ -52,4 +52,4 @@ def decode_public_protobuf(
 | ResourceLimitError | If `payload` exceeds `maximum_payload_size`. |
 | ValidationError | If an input or decoded public field is invalid. |
 
-[Source · workflows/protobuf.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/workflows/protobuf.py#L30)
+[Source · workflows/protobuf.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/workflows/protobuf.py#L30)

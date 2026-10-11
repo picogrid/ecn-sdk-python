@@ -11,7 +11,7 @@ tableOfContents: true
 >
 > Related guidance: [concepts/locations](/concepts/locations/), [how-to/observe-location](/how-to/observe-location/), [how-to/pli-entities](/how-to/pli-entities/).
 >
-> Runnable examples: [publish_location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/publish_location.py), [get_ecn_location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/get_ecn_location.py).
+> Runnable examples: [publish_location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/publish_location.py), [get_ecn_location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/get_ecn_location.py).
 
 ```python
 from picogrid_ecn_client import AngularVelocity
@@ -23,7 +23,7 @@ Represent roll, pitch, and yaw rates in radians per second.
 AngularVelocity(*, roll: float, pitch: float, yaw: float)
 ```
 
-[Source · models/location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/models/location.py#L47)
+[Source · models/location.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/models/location.py#L47)
 
 ## Fields
 

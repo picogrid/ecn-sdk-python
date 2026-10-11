@@ -57,11 +57,7 @@ def _assert_only_public_sdk_imports(tree: ast.AST) -> None:
             modules = (node.module,)
         else:
             continue
-        sdk_imports = sdk_imports or any(
-            module == package or module.startswith(f"{package}.")
-            for module in modules
-            for package in ("picogrid_ecn_client", "picogrid_edge_sdk")
-        )
+        sdk_imports = sdk_imports or any(module.startswith("picogrid_") for module in modules)
     assert sdk_imports
     assert _public_import_violation(tree) is None
 

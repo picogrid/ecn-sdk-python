@@ -9,7 +9,7 @@ tableOfContents: false
 
 > Related guidance: [reference/exceptions](/reference/exceptions/), [how-to/troubleshooting](/how-to/troubleshooting/).
 >
-> Runnable examples: [preflight.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/preflight.py).
+> Runnable examples: [preflight.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/preflight.py).
 
 | Symbol | Summary |
 | --- | --- |

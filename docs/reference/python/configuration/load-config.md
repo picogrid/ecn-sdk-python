@@ -11,7 +11,7 @@ tableOfContents: false
 >
 > Related guidance: [getting-started/configuration](/getting-started/configuration/), [getting-started/authentication](/getting-started/authentication/), [security/credentials](/security/credentials/).
 >
-> Runnable examples: [preflight.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/preflight.py).
+> Runnable examples: [preflight.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/preflight.py).
 
 ```python
 from picogrid_ecn_client import load_config
@@ -46,4 +46,4 @@ def load_config(
 | --- | --- |
 | ConfigurationError | If profile loading or configuration validation fails. |
 
-[Source · config.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/config.py#L402)
+[Source · config.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/config.py#L403)

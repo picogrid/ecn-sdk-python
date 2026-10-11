@@ -133,16 +133,16 @@ test('rejects a Worker documentation mount that differs from site-config', async
 
 test('admits the reviewed Legion reference, and nothing else off the mount', async () => {
   const admitted = await runFixture({
-    html: '<a href="https://docs.picogrid.com/reference/start">Legion API</a>',
+    html: '<a href="https://docs.picogrid.com/legion/">Legion API</a>',
   });
   assert.equal(admitted.ok, true, admitted.output);
 
   // Its neighbour on the same host is not the reviewed target.
   const neighbour = await runFixture({
-    html: '<a href="https://docs.picogrid.com/reference/other">Legion API</a>',
+    html: '<a href="https://docs.picogrid.com/legion/other">Legion API</a>',
   });
   assert.equal(neighbour.ok, false);
-  assert.match(neighbour.output, /resolves outside \/ecn-sdk\/: .*\/reference\/other/);
+  assert.match(neighbour.output, /resolves outside \/ecn-sdk\/: .*\/legion\/other/);
 
   // A page of the guide that escapes the mount still fails.
   const escaped = await runFixture({ html: '<a href="/concepts/ecns/">Concepts</a>' });
@@ -151,7 +151,7 @@ test('admits the reviewed Legion reference, and nothing else off the mount', asy
 });
 
 test('rejects variants of the reviewed Legion reference', async () => {
-  const reviewed = 'https://docs.picogrid.com/reference/start';
+  const reviewed = 'https://docs.picogrid.com/legion/';
   // The credential is applied through the URL API rather than written inline. A
   // credential-bearing URL literal on an approved host is a publication-input
   // violation in its own right, and the release scan refuses the file carrying

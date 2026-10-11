@@ -12,7 +12,7 @@ from pydantic import AfterValidator, BaseModel, BeforeValidator, ConfigDict, Fie
 
 
 def _reject_reserved_integration(value: str) -> str:
-    if value.casefold() == "geolocation":
+    if value.casefold() in {"geolocation", "response"}:
         raise ValueError("integration name is reserved")
     return value
 
@@ -26,7 +26,7 @@ IntegrationName = Annotated[
     ),
     AfterValidator(_reject_reserved_integration),
 ]
-"""A validated integration name with reserved geolocation naming excluded."""
+"""A validated integration name excluding geolocation/response case-insensitively."""
 
 
 class PublicModel(BaseModel):

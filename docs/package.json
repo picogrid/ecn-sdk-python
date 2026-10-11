@@ -1,6 +1,6 @@
 {
   "name": "picogrid-ecn-sdk-docs",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "license": "MPL-2.0",
   "type": "module",
@@ -41,17 +41,23 @@
   },
   "devDependencies": {
     "@astrojs/check": "0.9.10",
-    "@astrojs/markdown-remark": "7.2.2",
+    "@astrojs/markdown-remark": "7.3.0",
     "@astrojs/starlight": "0.41.7",
     "@axe-core/playwright": "4.12.1",
     "@fontsource-variable/chivo-mono": "5.3.0",
     "@playwright/test": "1.62.1",
-    "astro": "7.2.0",
+    "astro": "7.3.2",
     "cspell": "10.0.1",
     "pagefind": "1.5.2",
     "pyright": "1.1.411",
-    "sharp": "0.35.3",
+    "sharp": "0.35.5",
     "typescript": "6.0.3",
-    "wrangler": "4.120.0"
+    "wrangler": "4.131.1"
+  },
+  "overrides": {
+    "miniflare": {
+      "sharp": "0.35.5",
+      "undici": "7.29.1"
+    }
   }
 }

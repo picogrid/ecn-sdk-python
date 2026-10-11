@@ -11,7 +11,7 @@ tableOfContents: true
 >
 > Related guidance: [getting-started/configuration](/getting-started/configuration/), [getting-started/authentication](/getting-started/authentication/), [security/credentials](/security/credentials/).
 >
-> Runnable examples: [preflight.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/examples/preflight.py).
+> Runnable examples: [preflight.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/examples/preflight.py).
 
 ```python
 from picogrid_ecn_client import ECNConfig
@@ -44,14 +44,14 @@ ECNConfig(
 )
 ```
 
-[Source · config.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.1.0/src/picogrid_ecn_client/config.py#L181)
+[Source · config.py](https://github.com/picogrid/ecn-sdk-python/blob/v0.2.0/src/picogrid_ecn_client/config.py#L181)
 
 ## Fields
 
 | Name | Type | Required | Default | Constraints | Description |
 | --- | --- | --- | --- | --- | --- |
 | host | str | yes | — | `min_length=1`, `max_length=1024` | DNS name or IP literal without scheme, port, credentials, whitespace, or path, from 1 through 1024 characters. |
-| integration_name | str | yes | — | `min_length=2`, `max_length=128`, `pattern='^[A-Za-z0-9][A-Za-z0-9_-]{0,126}[A-Za-z0-9]$'` | Integration name of 2 through 128 allowed ASCII characters; starts and ends alphanumeric and excludes reserved 'geolocation'. |
+| integration_name | str | yes | — | `min_length=2`, `max_length=128`, `pattern='^[A-Za-z0-9][A-Za-z0-9_-]{0,126}[A-Za-z0-9]$'` | Integration name of 2 through 128 allowed ASCII characters; starts and ends alphanumeric; 'geolocation' and 'response' are reserved case-insensitively. |
 | terminal_id | UUID \| None | no | None | — | Optional canonical connected-terminal UUID used for task source and addressed response routing. |
 | mqtt_port | int | yes | — | `ge=1`, `le=65535` | Explicit MQTT port, from 1 through 65,535. |
 | ntp_host | str \| None | no | None | `min_length=1`, `max_length=1024` | Optional NTP host for the ECN-relative clock diagnostic, from 1 through 1024 characters. When unset the diagnostic measures `host`, so set this only for a separately provided endpoint. |

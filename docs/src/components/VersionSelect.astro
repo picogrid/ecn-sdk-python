@@ -3,9 +3,9 @@
  * Version menu, in the position the Legion API documentation gives its own
  * version selector.
  *
- * It names the release a reader is looking at and links it to the exact source
- * that produced the page, so the guide's version is a first-class navigation
- * control rather than a note in the corner. Only released versions appear: the
+ * It names the release a reader is looking at and links it to an exported
+ * public source ref, so the guide's version is a first-class navigation control
+ * rather than a note in the corner. Only released versions appear: the
  * repository publishes one today, and tagged releases join the list as they are
  * cut, which is why the control is a menu rather than a label.
  *
@@ -23,7 +23,7 @@ const releases = [
     versionLabel: source.versionLabel,
     href: source.href,
     note: `${source.sourceKind} ${source.referenceLabel}`,
-    title: `Built from ${source.sourceKind} ${source.reference}`,
+    title: `Built from ${source.sourceKind} ${source.referenceLabel}`,
     current: true,
   },
 ];
