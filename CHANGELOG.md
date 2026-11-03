@@ -41,6 +41,12 @@ date.
   local subscription on a non-persistent session, so the removal now completes
   quietly. Caller cancellation still propagates.
 
+### Build security
+
+- Updated the documentation and operator build-tool locks to remediate
+  high-severity vulnerabilities in Vite, Zod, and undici. Runtime dependencies and
+  the SDK API are unchanged.
+
 ### Testing
 
 - The versioned `ecn-wire-conformance` corpus (version 0.2) pins every fixture by
