@@ -74,10 +74,17 @@ _OPERATIONAL_FQDN_CANARY = b"broker.ops." + b"example." + b"com\n"
 _PAGEFIND_SENTINEL_URL = b"https:" + b"//p"
 _SINGLE_LABEL_HOST_CANARY = b"https:" + b"//broker"
 _ENCODED_OPERATIONAL_URL_CANARY = b"endpoint=https%3A" + b"%2F%2Fbroker.ops%2E" + b"example%2Ecom"
-_SLACK_TOKEN_CANARY = b"xox" + b"b-1234567890-abcdefghijklmnop\n"
-_SLACK_APP_TOKEN_CANARY = b"xapp" + b"-1234567890-abcdefghijklmnop\n"
+# These are intentional test canaries.
+_SLACK_TOKEN_CANARY = (
+    b"xox" + b"b-1234567890-abcdefghijklmnop\n"  # pragma: allowlist secret
+)
+_SLACK_APP_TOKEN_CANARY = (
+    b"xapp" + b"-1234567890-abcdefghijklmnop\n"  # pragma: allowlist secret
+)
 _SLACK_WEBHOOK_CANARY = (
-    b"https:" + b"//hooks.slack." + b"com/services/T12345678/B12345678/abcdefghijklmnop\n"
+    b"https:"
+    + b"//hooks.slack."
+    + b"com/services/T12345678/B12345678/abcdefghijklmnop\n"  # pragma: allowlist secret
 )
 _MQTT_TRANSPORT_SOURCE = b"PROTOCOL = paho.MQTTv5\n"
 _MQTT_MOCK_SOURCE = b"if protocol_level != 5:\n    raise RuntimeError\n"
@@ -3933,6 +3940,9 @@ def test_operator_container_cleanup_does_not_mask_primary_failure(
     monkeypatch.setattr(release_workflow.shutil, "which", lambda _: "/usr/bin/docker")
     monkeypatch.setattr(release_workflow, "_docker_resource_exists", inventory)
     monkeypatch.setattr(release_workflow, "_run", run)
+    monkeypatch.setattr(
+        release_workflow, "scan_image", lambda *_args, **_kwargs: "sha256:" + "a" * 64
+    )
 
     expected = "primary build failed" if body_fails else "cleanup probe failed"
     with pytest.raises(release_workflow.VerificationError, match=f"^{expected}$"):
@@ -3942,6 +3952,63 @@ def test_operator_container_cleanup_does_not_mask_primary_failure(
             operator_wheel,
             environment={},
         )
+
+
+@pytest.mark.parametrize(
+    "scan_error",
+    (
+        release_workflow.ImageScanError("fixable HIGH/CRITICAL findings"),
+        subprocess.CalledProcessError(2, ("trivy", "image")),
+    ),
+)
+def test_operator_image_scan_failure_cleans_image_before_any_execution(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    scan_error: Exception,
+) -> None:
+    operator_root = tmp_path / "operator"
+    operator_root.mkdir()
+    (operator_root / ".env.example").write_text("PLACEHOLDER=1\n", encoding="utf-8")
+    wheel = tmp_path / "client.whl"
+    operator_wheel = tmp_path / "operator.whl"
+    wheel.write_bytes(b"synthetic client wheel")
+    operator_wheel.write_bytes(b"synthetic operator wheel")
+    reports = tmp_path / "retained-reports"
+    resources: set[str] = set()
+
+    def inventory(_docker: str, resource: str, _identifier: str, **_: object) -> bool:
+        return resource in resources
+
+    def run(command: Sequence[str], **_: object) -> str:
+        if command[1] == "build":
+            resources.add("image")
+        elif command[1:3] == ["image", "rm"]:
+            resources.remove("image")
+        elif command[1] == "run":
+            pytest.fail("an image that failed scanning must never execute")
+        return ""
+
+    def scan(_image: str, report_directory: Path, **_: object) -> str:
+        assert "image" in resources
+        report_directory.mkdir()
+        (report_directory / "image.scan.json").write_text("{}", encoding="utf-8")
+        raise scan_error
+
+    monkeypatch.setattr(release_workflow.shutil, "which", lambda _: "/usr/bin/docker")
+    monkeypatch.setattr(release_workflow, "_docker_resource_exists", inventory)
+    monkeypatch.setattr(release_workflow, "_run", run)
+    monkeypatch.setattr(release_workflow, "scan_image", scan)
+
+    with pytest.raises(release_workflow.VerificationError, match="image vulnerability gate failed"):
+        release_workflow._run_operator_container_gate(
+            operator_root,
+            wheel,
+            operator_wheel,
+            environment={"CONTAINER_SCAN_REPORT_DIRECTORY": str(reports)},
+        )
+
+    assert not resources
+    assert (reports / "image.scan.json").is_file()
 
 
 def test_pip_audit_does_not_retry_reported_vulnerabilities(

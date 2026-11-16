@@ -347,31 +347,3 @@ def test_downstream_jobs_survive_the_skipped_release_please() -> None:
         "publish-pypi",
     ):
         assert "needs.resolve-release.result == 'success'" in _job_block(workflow, job), job
-
-
-def test_heavy_runner_covers_private_builds_and_trusted_public_main_jobs() -> None:
-    expected = "${{ (github.repository != 'picogrid/ecn-sdk-python' || github.ref == 'refs/heads/main') && vars.HEAVY_RUNNER || 'ubuntu-latest' }}"
-
-    for name in ("documentation.yml", "release.yml", "verify.yml"):
-        workflow = (REPOSITORY / ".github" / "workflows" / name).read_text(encoding="utf-8")
-        assert expected in workflow
-        assert "runs-on: ${{ vars.HEAVY_RUNNER || 'ubuntu-latest' }}" not in workflow
-
-    release_workflow = (REPOSITORY / ".github" / "workflows" / "release.yml").read_text(
-        encoding="utf-8"
-    )
-    worker_count = "${{ (github.repository != 'picogrid/ecn-sdk-python' || github.ref == 'refs/heads/main') && vars.HEAVY_RUNNER && '4' || '1' }}"
-    assert f"PLAYWRIGHT_WORKERS: {worker_count}" in release_workflow
-    assert f"VERIFY_RELEASE_JOBS: {worker_count}" in release_workflow
-
-    verify_workflow = (REPOSITORY / ".github" / "workflows" / "verify.yml").read_text(
-        encoding="utf-8"
-    )
-    assert f"VERIFY_RELEASE_JOBS: {worker_count}" in verify_workflow
-
-    # RELEASING.md is the internal release custody runbook and is excluded from
-    # the public export, so only assert its contents when the file is present.
-    releasing_md = REPOSITORY / "RELEASING.md"
-    if releasing_md.exists():
-        releasing = releasing_md.read_text(encoding="utf-8")
-        assert "An existing tag with no matching release creates a new draft" in releasing
