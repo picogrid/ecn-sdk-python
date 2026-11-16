@@ -93,6 +93,23 @@ The release gate removes `node_modules`, `.astro`, and `site-dist` while reprodu
 the release environment. Run `make docs-install` again before another documentation
 check or preview.
 
+The release gate requires Trivy 0.69.3 and scans the exact local operator image
+before running it. Fixable HIGH/CRITICAL findings fail verification and block
+release promotion. Lower-severity and unfixed findings remain in the complete
+JSON and SARIF reports. CI retains these reports on failure, outside the temporary
+image build context. For a local run, set `CONTAINER_SCAN_REPORT_DIRECTORY` to an
+external directory; otherwise the reports remain in a new system temporary directory.
+The standalone Container Scan workflow gates its own image build, not release bytes.
+
+SDK image jobs are authored in `picogrid/.github` as
+`build-ecn-sdk-operator.yml` and `build-ecn-sdk-release.yml`. Do not edit their
+generated SDK copies. From that repository, run
+`python3 scripts/export-ecn-sdk-workflows.py /path/to/sdk` to refresh them.
+The private SDK calls the pinned central workflows; the curated public export
+adapts only the three SDK image workflow calls to local templates because the
+public repository cannot access the internal workflow repository. Template bodies
+remain byte-identical. `Exact release artifact` remains the required final check.
+
 ## Generated Python API reference
 
 Files under [docs/reference/python/](docs/reference/python/index.md) come from

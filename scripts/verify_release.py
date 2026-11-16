@@ -56,6 +56,7 @@ from scripts.release_checks import (
     sha256_file,
     validate_public_brand_assets,
 )
+from scripts.scan_container_image import ImageScanError, scan_image
 from scripts.version_sync import VersionSyncError, check_version_sync
 
 REPOSITORY = Path(__file__).resolve().parents[1]
@@ -2938,6 +2939,17 @@ def _run_operator_container_gate(
                 environment=environment,
                 timeout=900,
             )
+        report_directory = (
+            Path(environment["CONTAINER_SCAN_REPORT_DIRECTORY"])
+            if environment.get("CONTAINER_SCAN_REPORT_DIRECTORY")
+            else Path(tempfile.mkdtemp(prefix="picogrid-ecn-container-scan-"))
+        )
+        emit(f"Operator image scan reports: {report_directory}")
+        try:
+            with resource("network"):
+                image_id = scan_image(tag, report_directory, environment=environment)
+        except (ImageScanError, OSError, ValueError, subprocess.SubprocessError) as error:
+            raise VerificationError(f"operator image vulnerability gate failed: {error}") from None
         _run(
             [
                 docker,
@@ -2952,7 +2964,7 @@ def _run_operator_container_gate(
                 "/tmp:rw,noexec,nosuid,size=16m",
                 "--entrypoint",
                 "python",
-                tag,
+                image_id,
                 "-I",
                 "-c",
                 "import operator_app, picogrid_ecn_client",
@@ -3007,6 +3019,7 @@ def _run_operator_container_gate(
         "container_removed": True,
         "image_built": True,
         "image_import_smoke": True,
+        "image_vulnerability_scan": True,
         "image_removed": True,
     }
 
