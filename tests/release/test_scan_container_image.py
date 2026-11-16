@@ -89,8 +89,22 @@ def test_report_must_identify_the_inspected_local_image() -> None:
         scanner.normalize_report(report_with(), "sha256:" + "b" * 64)
 
 
+@pytest.mark.parametrize(
+    "configuration",
+    [
+        {},
+        {
+            "TRIVY_CONFIG": ".trivy.yaml",
+            "TRIVY_IGNOREFILE": ".trivyignore.yaml",
+            "TRIVY_IGNORE_POLICY": ".trivy-policy.rego",
+            "TRIVY_VEX": ".vex.json",
+            "TRIVY_SECRET_CONFIG": ".trivy-secret.yaml",
+            "TRIVY_SKIP_DIRS": "tests",
+        },
+    ],
+)
 def test_gate_retains_all_findings_in_json_and_sarif_before_failing(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, configuration: dict[str, str]
 ) -> None:
     report = report_with(
         {"VulnerabilityID": "CVE-FIXED", "Severity": "HIGH", "FixedVersion": "2.0"},
@@ -98,11 +112,39 @@ def test_gate_retains_all_findings_in_json_and_sarif_before_failing(
         {"VulnerabilityID": "CVE-LOW", "Severity": "LOW", "FixedVersion": "2.0"},
     )
 
-    def output(command: list[str], **_: object) -> str:
-        return IMAGE_ID if command[0] == "docker" else json.dumps(report)
+    environment = {
+        **configuration,
+        "TRIVY_OUTPUT": str(tmp_path / "unsafe.json"),
+        "TRIVY_FORMAT": "table",
+        "TRIVY_IGNORE_STATUS": "fixed",
+        "TRIVY_CACHE_DIR": str(tmp_path / "cache"),
+    }
+    expected_environment = {
+        key: value
+        for key, value in environment.items()
+        if key not in {"TRIVY_OUTPUT", "TRIVY_IGNORE_STATUS"}
+    }
 
-    def convert(command: list[str], **_: object) -> subprocess.CompletedProcess[str]:
+    def output(command: list[str], **options: object) -> str:
+        if command[0] == "docker":
+            return IMAGE_ID
+        assert options["cwd"] == Path(scanner.__file__).resolve().parents[1]
+        assert options["env"] == expected_environment
+        assert command[-1] == IMAGE_ID
+        assert command[command.index("--output") + 1] == ""
+        assert command[command.index("--format") + 1] == "json"
+        assert command[command.index("--exit-code") + 1] == "0"
+        assert command[command.index("--severity") + 1] == ",".join(scanner.LEVELS)
+        assert command[command.index("--scanners") + 1] == "vuln"
+        assert "--ignore-unfixed=false" in command
+        assert not {"--config", "--ignorefile", "--ignore-policy", "--vex"} & set(command)
+        return json.dumps(report)
+
+    def convert(command: list[str], **options: object) -> subprocess.CompletedProcess[str]:
+        assert options["cwd"] == Path(scanner.__file__).resolve().parents[1]
+        assert options["env"] == expected_environment
         scan = json.loads(Path(command[-1]).read_text(encoding="utf-8"))
+        assert "ImageConfig" not in scan["Metadata"]
         findings = scan["Results"][0]["Vulnerabilities"]
         sarif = {
             "version": "2.1.0",
@@ -115,7 +157,7 @@ def test_gate_retains_all_findings_in_json_and_sarif_before_failing(
     monkeypatch.setattr(scanner.subprocess, "run", convert)
 
     with pytest.raises(scanner.ImageScanError, match="1 fixable HIGH/CRITICAL"):
-        scanner.scan_image("operator:test", tmp_path, environment={})
+        scanner.scan_image("operator:test", tmp_path, environment=environment)
 
     saved = json.loads((tmp_path / "image.scan.json").read_text(encoding="utf-8"))
     assert "ImageConfig" not in saved["Metadata"]

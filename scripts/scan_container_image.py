@@ -10,7 +10,6 @@ import json
 import os
 import re
 import subprocess
-import tempfile
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
@@ -80,11 +79,11 @@ def scan_image(image: str, report_directory: Path, *, environment: Mapping[str, 
     sarif_path = report_directory / "image.sarif"
     for path in (scan_path, sarif_path):
         path.unlink(missing_ok=True)
-    # Neither checkout configuration nor inherited Trivy filters may hide findings.
+    # Keep repository exceptions, but prevent ambient output/status gate bypasses.
     scanner_environment = {
         key: value
         for key, value in environment.items()
-        if not key.startswith("TRIVY_") or key == "TRIVY_CACHE_DIR"
+        if key not in {"TRIVY_OUTPUT", "TRIVY_IGNORE_STATUS"}
     }
     image_id = subprocess.check_output(
         ["docker", "image", "inspect", "--format", "{{.Id}}", "--", image],
@@ -94,72 +93,64 @@ def scan_image(image: str, report_directory: Path, *, environment: Mapping[str, 
     ).strip()
     if not re.fullmatch(r"sha256:[0-9a-f]{64}", image_id):
         raise ValueError("Expected one immutable local Docker image ID")
-    with tempfile.TemporaryDirectory(prefix="ecn-image-scan-") as temporary:
-        root = Path(temporary)
-        config = root / "trivy.yaml"
-        ignore = root / "trivy.ignore"
-        config.write_text("{}\n", encoding="utf-8")
-        ignore.touch()
-        flags = ["--config", str(config), "--ignorefile", str(ignore), "--ignore-policy", ""]
-        report = json.loads(
-            subprocess.check_output(
-                [
-                    "trivy",
-                    "image",
-                    *flags,
-                    "--vex",
-                    "",
-                    "--image-src",
-                    "docker",
-                    "--scanners",
-                    "vuln",
-                    "--severity",
-                    ",".join(LEVELS),
-                    "--ignore-unfixed=false",
-                    "--list-all-pkgs",
-                    "--exit-code",
-                    "0",
-                    "--format",
-                    "json",
-                    image_id,
-                ],
-                cwd=root,
-                env=scanner_environment,
-                text=True,
-                timeout=900,
-            )
-        )
-        if not isinstance(report, dict):
-            raise ValueError("Expected a Trivy JSON object")
-        blocked = normalize_report(report, image_id)
-        scan_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
-        subprocess.run(
+    root = Path(__file__).resolve().parents[1]
+    report = json.loads(
+        subprocess.check_output(
             [
                 "trivy",
-                "convert",
-                *flags,
-                "--format",
-                "sarif",
+                "image",
+                "--image-src",
+                "docker",
+                "--scanners",
+                "vuln",
                 "--severity",
                 ",".join(LEVELS),
+                "--ignore-unfixed=false",
+                "--list-all-pkgs",
                 "--exit-code",
                 "0",
+                "--format",
+                "json",
                 "--output",
-                str(sarif_path),
-                str(scan_path),
+                "",
+                image_id,
             ],
             cwd=root,
             env=scanner_environment,
-            check=True,
-            timeout=300,
+            text=True,
+            timeout=900,
         )
-        sarif = json.loads(sarif_path.read_text(encoding="utf-8"))
-        if (
-            sarif.get("version") != "2.1.0"
-            or not isinstance(sarif.get("runs"), list)
-            or len(sarif["runs"]) != 1
-        ):
-            raise ValueError("Expected one Trivy SARIF run")
+    )
+    if not isinstance(report, dict):
+        raise ValueError("Expected a Trivy JSON object")
+    blocked = normalize_report(report, image_id)
+    scan_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    subprocess.run(
+        [
+            "trivy",
+            "convert",
+            "--format",
+            "sarif",
+            "--severity",
+            ",".join(LEVELS),
+            "--exit-code",
+            "0",
+            "--output",
+            str(sarif_path),
+            str(scan_path),
+        ],
+        cwd=root,
+        env=scanner_environment,
+        check=True,
+        timeout=300,
+    )
+    sarif = json.loads(sarif_path.read_text(encoding="utf-8"))
+    if (
+        sarif.get("version") != "2.1.0"
+        or not isinstance(sarif.get("runs"), list)
+        or len(sarif["runs"]) != 1
+    ):
+        raise ValueError("Expected one Trivy SARIF run")
     if blocked:
         raise ImageScanError(
             f"{blocked} fixable HIGH/CRITICAL image findings; reports: {report_directory}"
